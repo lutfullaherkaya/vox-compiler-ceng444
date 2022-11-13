@@ -7,6 +7,7 @@
 from sly import Parser
 from VoxLexer import VoxLexer
 import sys
+import AST
 
 
 # todo: error reporting
@@ -17,36 +18,42 @@ class VoxParser(Parser):
     start = 'program'
 
     # todo: EOF olması lazım sonda ama EOF'la ne yapılır bilemedim.
-    @_('var_decls_maybe_empty fun_decls_maybe_empty free_statements_maybe_empty')
+    @_('var_decls fun_decls free_statements')
     def program(self, p):
         pass
 
     @_('VAR ID "=" init ";"')
     def var_decl(self, p):
-        pass
+        return AST.VarDecl(p, p.ID, p.init)
 
     @_('VAR ID ";"')
     def var_decl(self, p):
-        pass
+        return AST.VarDecl(p, p.ID)
 
-    @_('var_decl var_decls_maybe_empty')
-    def var_decls_maybe_empty(self, p):
-        pass
+    @_('var_decls var_decl')
+    def var_decls(self, p):
+        if not p[0].decls:
+            p[0].lineno = p.lineno
+            p[0].index = p.index
+            p[0].end = p.end
+
+        p[0].append(p[1])
+        return p[0]
 
     @_('')
-    def var_decls_maybe_empty(self, p):
-        pass
+    def var_decls(self, p):
+        return AST.VarDecls([])
 
     @_('FUN function')
     def fun_decl(self, p):
         pass
 
-    @_('fun_decl fun_decls_maybe_empty')
-    def fun_decls_maybe_empty(self, p):
+    @_('fun_decl fun_decls')
+    def fun_decls(self, p):
         pass
 
     @_('')
-    def fun_decls_maybe_empty(self, p):
+    def fun_decls(self, p):
         pass
 
     @_('simple_stmt ";"')
@@ -57,12 +64,12 @@ class VoxParser(Parser):
     def free_statement(self, p):
         pass
 
-    @_('free_statement free_statements_maybe_empty')
-    def free_statements_maybe_empty(self, p):
+    @_('free_statement free_statements')
+    def free_statements(self, p):
         pass
 
     @_('')
-    def free_statements_maybe_empty(self, p):
+    def free_statements(self, p):
         pass
 
     @_('expr')
@@ -99,18 +106,18 @@ class VoxParser(Parser):
 
     @_('free_statement')
     def statement(self, p):
-        pass
+        return AST.Statement(p, p[0])
 
     @_('block')
     def statement(self, p):
-        pass
+        return AST.Statement(p, p[0])
 
-    @_('statement statements_maybe_empty')
-    def statements_maybe_empty(self, p):
+    @_('statement statements')
+    def statements(self, p):
         pass
 
     @_('')
-    def statements_maybe_empty(self, p):
+    def statements(self, p):
         pass
 
     @_('ID "[" aexpr "]" "=" expr')
@@ -173,9 +180,9 @@ class VoxParser(Parser):
     def for_stmt(self, p):
         pass
 
-    @_('"{" var_decls_maybe_empty statements_maybe_empty "}"')
+    @_('"{" var_decls statements "}"')
     def block(self, p):
-        pass
+        return AST.Block(p, p.var_decls, p.statements)
 
     @_('lexpr')
     def expr(self, p):

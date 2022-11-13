@@ -83,3 +83,7 @@ class VoxLexer(Lexer):
         t.type = '}'  # Set token type to the expected literal
         self.nesting_level -= 1
         return t
+
+    def ID(self, t):
+        t.value = t.value
+        return t
