@@ -2,15 +2,19 @@
 # todo: pypy kullan
 import sys
 from VoxLexer import VoxLexer
+from VoxParser import VoxParser
 
 if __name__ == '__main__':
     lexer = VoxLexer()
+    parser = VoxParser()
     if len(sys.argv) > 1:
         filename = sys.argv[1]
         with open(filename) as f:
             text = f.read()
-            for tok in lexer.tokenize(text):
-                print('%r\t\t%r' % (tok.value, tok.type))
+            print(list(map(lambda x: (str(x.type) + ('' if (x.value == x.type) else ' ' + str(x.value))),
+                           lexer.tokenize(text))))
+            result = parser.parse(lexer.tokenize(text))
+            print(result)
     else:
         while True:
             try:
@@ -18,5 +22,8 @@ if __name__ == '__main__':
             except EOFError:
                 break
             if text:
-                for tok in lexer.tokenize(text):
-                    print('%r\t\t%r' % (tok.value, tok.type))
+                print(list(map(lambda x: (str(x.type) + ('' if (x.value == x.type) else ' ' + str(x.value))),
+                               lexer.tokenize(text))))
+
+                result = parser.parse(lexer.tokenize(text))
+                print(result)

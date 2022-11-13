@@ -1,0 +1,4020 @@
+Grammar:
+
+Rule 0     S' -> program
+Rule 1     program -> var_decls_maybe_empty fun_decls_maybe_empty free_statements_maybe_empty
+Rule 2     var_decl -> VAR ID ;
+Rule 3     var_decl -> VAR ID = init ;
+Rule 4     var_decls_maybe_empty -> <empty>
+Rule 5     var_decls_maybe_empty -> var_decl var_decls_maybe_empty
+Rule 6     fun_decl -> FUN function
+Rule 7     fun_decls_maybe_empty -> <empty>
+Rule 8     fun_decls_maybe_empty -> fun_decl fun_decls_maybe_empty
+Rule 9     free_statement -> compound_stmt
+Rule 10    free_statement -> simple_stmt ;
+Rule 11    free_statements_maybe_empty -> <empty>
+Rule 12    free_statements_maybe_empty -> free_statement free_statements_maybe_empty
+Rule 13    init -> [ exprs_non_empty_w_commas ]
+Rule 14    init -> expr
+Rule 15    simple_stmt -> return_stmt
+Rule 16    simple_stmt -> print_stmt
+Rule 17    simple_stmt -> asgn_stmt
+Rule 18    compound_stmt -> for_stmt
+Rule 19    compound_stmt -> while_stmt
+Rule 20    compound_stmt -> if_stmt
+Rule 21    statement -> block
+Rule 22    statement -> free_statement
+Rule 23    statements_maybe_empty -> <empty>
+Rule 24    statements_maybe_empty -> statement statements_maybe_empty
+Rule 25    asgn_stmt -> ID = expr
+Rule 26    asgn_stmt -> ID [ aexpr ] = expr
+Rule 27    print_stmt -> PRINT expr
+Rule 28    return_stmt -> RETURN expr
+Rule 29    if_stmt -> IF lexpr statement
+Rule 30    if_stmt -> IF lexpr statement ELSE statement
+Rule 31    while_stmt -> WHILE lexpr statement
+Rule 32    for_stmt -> FOR ( ; ; ) statement
+Rule 33    for_stmt -> FOR ( ; ; asgn_stmt ) statement
+Rule 34    for_stmt -> FOR ( ; lexpr ; ) statement
+Rule 35    for_stmt -> FOR ( ; lexpr ; asgn_stmt ) statement
+Rule 36    for_stmt -> FOR ( asgn_stmt ; ; ) statement
+Rule 37    for_stmt -> FOR ( asgn_stmt ; ; asgn_stmt ) statement
+Rule 38    for_stmt -> FOR ( asgn_stmt ; lexpr ; ) statement
+Rule 39    for_stmt -> FOR ( asgn_stmt ; lexpr ; asgn_stmt ) statement
+Rule 40    block -> { var_decls_maybe_empty statements_maybe_empty }
+Rule 41    expr -> sexpr
+Rule 42    expr -> aexpr
+Rule 43    expr -> lexpr
+Rule 44    exprs_non_empty_w_commas -> expr
+Rule 45    exprs_non_empty_w_commas -> exprs_non_empty_w_commas , expr
+Rule 46    lexpr -> lterm
+Rule 47    lexpr -> lexpr OR lterm
+Rule 48    lterm -> lfact
+Rule 49    lterm -> lterm AND lfact
+Rule 50    lfact -> FALSE
+Rule 51    lfact -> TRUE
+Rule 52    lfact -> ! lfact
+Rule 53    lfact -> # ID [ aexpr ]
+Rule 54    lfact -> # ID
+Rule 55    lfact -> ( lexpr )
+Rule 56    lfact -> # call
+Rule 57    lfact -> cexpr
+Rule 58    aexpr -> term
+Rule 59    aexpr -> aexpr + term
+Rule 60    aexpr -> aexpr - term
+Rule 61    term -> fact
+Rule 62    term -> term * fact
+Rule 63    term -> term / fact
+Rule 64    fact -> ID
+Rule 65    fact -> ID [ aexpr ]
+Rule 66    fact -> ( aexpr )
+Rule 67    fact -> NUMBER
+Rule 68    fact -> call
+Rule 69    fact -> - fact
+Rule 70    cexpr -> aexpr > aexpr
+Rule 71    cexpr -> aexpr < aexpr
+Rule 72    cexpr -> aexpr GE aexpr
+Rule 73    cexpr -> aexpr LE aexpr
+Rule 74    cexpr -> aexpr EQUAL aexpr
+Rule 75    cexpr -> aexpr NOT_EQUAL aexpr
+Rule 76    sexpr -> STRING
+Rule 77    arguments -> exprs_non_empty_w_commas
+Rule 78    function -> ID ( ) block
+Rule 79    function -> ID ( parameters ) block
+Rule 80    parameters -> ids_non_empty_w_commas
+Rule 81    ids_non_empty_w_commas -> ID
+Rule 82    ids_non_empty_w_commas -> ids_non_empty_w_commas , ID
+Rule 83    call -> ID ( )
+Rule 84    call -> ID ( arguments )
+
+Terminals, with rules where they appear:
+
+!                    : 52
+#                    : 53 54 56
+(                    : 32 33 34 35 36 37 38 39 55 66 78 79 83 84
+)                    : 32 33 34 35 36 37 38 39 55 66 78 79 83 84
+*                    : 62
++                    : 59
+,                    : 45 82
+-                    : 60 69
+/                    : 63
+;                    : 2 3 10 32 32 33 33 34 34 35 35 36 36 37 37 38 38 39 39
+<                    : 71
+=                    : 3 25 26
+>                    : 70
+AND                  : 49
+ELSE                 : 30
+EQUAL                : 74
+FALSE                : 50
+FOR                  : 32 33 34 35 36 37 38 39
+FUN                  : 6
+GE                   : 72
+ID                   : 2 3 25 26 53 54 64 65 78 79 81 82 83 84
+IF                   : 29 30
+LE                   : 73
+NOT_EQUAL            : 75
+NUMBER               : 67
+OR                   : 47
+PRINT                : 27
+RETURN               : 28
+STRING               : 76
+TRUE                 : 51
+VAR                  : 2 3
+WHILE                : 31
+[                    : 13 26 53 65
+]                    : 13 26 53 65
+error                : 
+{                    : 40
+}                    : 40
+
+Nonterminals, with rules where they appear:
+
+aexpr                : 26 42 53 59 60 65 66 70 70 71 71 72 72 73 73 74 74 75 75
+arguments            : 84
+asgn_stmt            : 17 33 35 36 37 37 38 39 39
+block                : 21 78 79
+call                 : 56 68
+cexpr                : 57
+compound_stmt        : 9
+expr                 : 14 25 26 27 28 44 45
+exprs_non_empty_w_commas : 13 45 77
+fact                 : 61 62 63 69
+for_stmt             : 18
+free_statement       : 12 22
+free_statements_maybe_empty : 1 12
+fun_decl             : 8
+fun_decls_maybe_empty : 1 8
+function             : 6
+ids_non_empty_w_commas : 80 82
+if_stmt              : 20
+init                 : 3
+lexpr                : 29 30 31 34 35 38 39 43 47 55
+lfact                : 48 49 52
+lterm                : 46 47 49
+parameters           : 79
+print_stmt           : 16
+program              : 0
+return_stmt          : 15
+sexpr                : 41
+simple_stmt          : 10
+statement            : 24 29 30 30 31 32 33 34 35 36 37 38 39
+statements_maybe_empty : 24 40
+term                 : 58 59 60 62 63
+var_decl             : 5
+var_decls_maybe_empty : 1 5 40
+while_stmt           : 19
+
+
+state 0
+
+    (0) S' -> . program
+    (1) program -> . var_decls_maybe_empty fun_decls_maybe_empty free_statements_maybe_empty
+    (4) var_decls_maybe_empty -> .
+    (5) var_decls_maybe_empty -> . var_decl var_decls_maybe_empty
+    (2) var_decl -> . VAR ID ;
+    (3) var_decl -> . VAR ID = init ;
+    FUN             reduce using rule 4 (var_decls_maybe_empty -> .)
+    FOR             reduce using rule 4 (var_decls_maybe_empty -> .)
+    WHILE           reduce using rule 4 (var_decls_maybe_empty -> .)
+    IF              reduce using rule 4 (var_decls_maybe_empty -> .)
+    RETURN          reduce using rule 4 (var_decls_maybe_empty -> .)
+    PRINT           reduce using rule 4 (var_decls_maybe_empty -> .)
+    ID              reduce using rule 4 (var_decls_maybe_empty -> .)
+    $end            reduce using rule 4 (var_decls_maybe_empty -> .)
+    VAR             shift and go to state 4
+
+    program                        shift and go to state 1
+    var_decls_maybe_empty          shift and go to state 2
+    var_decl                       shift and go to state 3
+
+state 1
+
+    (0) S' -> program .
+
+
+state 2
+
+    (1) program -> var_decls_maybe_empty . fun_decls_maybe_empty free_statements_maybe_empty
+    (7) fun_decls_maybe_empty -> .
+    (8) fun_decls_maybe_empty -> . fun_decl fun_decls_maybe_empty
+    (6) fun_decl -> . FUN function
+    FOR             reduce using rule 7 (fun_decls_maybe_empty -> .)
+    WHILE           reduce using rule 7 (fun_decls_maybe_empty -> .)
+    IF              reduce using rule 7 (fun_decls_maybe_empty -> .)
+    RETURN          reduce using rule 7 (fun_decls_maybe_empty -> .)
+    PRINT           reduce using rule 7 (fun_decls_maybe_empty -> .)
+    ID              reduce using rule 7 (fun_decls_maybe_empty -> .)
+    $end            reduce using rule 7 (fun_decls_maybe_empty -> .)
+    FUN             shift and go to state 7
+
+    fun_decls_maybe_empty          shift and go to state 5
+    fun_decl                       shift and go to state 6
+
+state 3
+
+    (5) var_decls_maybe_empty -> var_decl . var_decls_maybe_empty
+    (4) var_decls_maybe_empty -> .
+    (5) var_decls_maybe_empty -> . var_decl var_decls_maybe_empty
+    (2) var_decl -> . VAR ID ;
+    (3) var_decl -> . VAR ID = init ;
+    FUN             reduce using rule 4 (var_decls_maybe_empty -> .)
+    FOR             reduce using rule 4 (var_decls_maybe_empty -> .)
+    WHILE           reduce using rule 4 (var_decls_maybe_empty -> .)
+    IF              reduce using rule 4 (var_decls_maybe_empty -> .)
+    RETURN          reduce using rule 4 (var_decls_maybe_empty -> .)
+    PRINT           reduce using rule 4 (var_decls_maybe_empty -> .)
+    ID              reduce using rule 4 (var_decls_maybe_empty -> .)
+    $end            reduce using rule 4 (var_decls_maybe_empty -> .)
+    {               reduce using rule 4 (var_decls_maybe_empty -> .)
+    }               reduce using rule 4 (var_decls_maybe_empty -> .)
+    VAR             shift and go to state 4
+
+    var_decl                       shift and go to state 3
+    var_decls_maybe_empty          shift and go to state 8
+
+state 4
+
+    (2) var_decl -> VAR . ID ;
+    (3) var_decl -> VAR . ID = init ;
+    ID              shift and go to state 9
+
+
+state 5
+
+    (1) program -> var_decls_maybe_empty fun_decls_maybe_empty . free_statements_maybe_empty
+    (11) free_statements_maybe_empty -> .
+    (12) free_statements_maybe_empty -> . free_statement free_statements_maybe_empty
+    (9) free_statement -> . compound_stmt
+    (10) free_statement -> . simple_stmt ;
+    (18) compound_stmt -> . for_stmt
+    (19) compound_stmt -> . while_stmt
+    (20) compound_stmt -> . if_stmt
+    (15) simple_stmt -> . return_stmt
+    (16) simple_stmt -> . print_stmt
+    (17) simple_stmt -> . asgn_stmt
+    (32) for_stmt -> . FOR ( ; ; ) statement
+    (33) for_stmt -> . FOR ( ; ; asgn_stmt ) statement
+    (34) for_stmt -> . FOR ( ; lexpr ; ) statement
+    (35) for_stmt -> . FOR ( ; lexpr ; asgn_stmt ) statement
+    (36) for_stmt -> . FOR ( asgn_stmt ; ; ) statement
+    (37) for_stmt -> . FOR ( asgn_stmt ; ; asgn_stmt ) statement
+    (38) for_stmt -> . FOR ( asgn_stmt ; lexpr ; ) statement
+    (39) for_stmt -> . FOR ( asgn_stmt ; lexpr ; asgn_stmt ) statement
+    (31) while_stmt -> . WHILE lexpr statement
+    (29) if_stmt -> . IF lexpr statement
+    (30) if_stmt -> . IF lexpr statement ELSE statement
+    (28) return_stmt -> . RETURN expr
+    (27) print_stmt -> . PRINT expr
+    (25) asgn_stmt -> . ID = expr
+    (26) asgn_stmt -> . ID [ aexpr ] = expr
+    $end            reduce using rule 11 (free_statements_maybe_empty -> .)
+    FOR             shift and go to state 20
+    WHILE           shift and go to state 21
+    IF              shift and go to state 22
+    RETURN          shift and go to state 23
+    PRINT           shift and go to state 24
+    ID              shift and go to state 25
+
+    free_statements_maybe_empty    shift and go to state 10
+    free_statement                 shift and go to state 11
+    compound_stmt                  shift and go to state 12
+    simple_stmt                    shift and go to state 13
+    for_stmt                       shift and go to state 14
+    while_stmt                     shift and go to state 15
+    if_stmt                        shift and go to state 16
+    return_stmt                    shift and go to state 17
+    print_stmt                     shift and go to state 18
+    asgn_stmt                      shift and go to state 19
+
+state 6
+
+    (8) fun_decls_maybe_empty -> fun_decl . fun_decls_maybe_empty
+    (7) fun_decls_maybe_empty -> .
+    (8) fun_decls_maybe_empty -> . fun_decl fun_decls_maybe_empty
+    (6) fun_decl -> . FUN function
+    FOR             reduce using rule 7 (fun_decls_maybe_empty -> .)
+    WHILE           reduce using rule 7 (fun_decls_maybe_empty -> .)
+    IF              reduce using rule 7 (fun_decls_maybe_empty -> .)
+    RETURN          reduce using rule 7 (fun_decls_maybe_empty -> .)
+    PRINT           reduce using rule 7 (fun_decls_maybe_empty -> .)
+    ID              reduce using rule 7 (fun_decls_maybe_empty -> .)
+    $end            reduce using rule 7 (fun_decls_maybe_empty -> .)
+    FUN             shift and go to state 7
+
+    fun_decl                       shift and go to state 6
+    fun_decls_maybe_empty          shift and go to state 26
+
+state 7
+
+    (6) fun_decl -> FUN . function
+    (78) function -> . ID ( ) block
+    (79) function -> . ID ( parameters ) block
+    ID              shift and go to state 28
+
+    function                       shift and go to state 27
+
+state 8
+
+    (5) var_decls_maybe_empty -> var_decl var_decls_maybe_empty .
+    FUN             reduce using rule 5 (var_decls_maybe_empty -> var_decl var_decls_maybe_empty .)
+    FOR             reduce using rule 5 (var_decls_maybe_empty -> var_decl var_decls_maybe_empty .)
+    WHILE           reduce using rule 5 (var_decls_maybe_empty -> var_decl var_decls_maybe_empty .)
+    IF              reduce using rule 5 (var_decls_maybe_empty -> var_decl var_decls_maybe_empty .)
+    RETURN          reduce using rule 5 (var_decls_maybe_empty -> var_decl var_decls_maybe_empty .)
+    PRINT           reduce using rule 5 (var_decls_maybe_empty -> var_decl var_decls_maybe_empty .)
+    ID              reduce using rule 5 (var_decls_maybe_empty -> var_decl var_decls_maybe_empty .)
+    $end            reduce using rule 5 (var_decls_maybe_empty -> var_decl var_decls_maybe_empty .)
+    {               reduce using rule 5 (var_decls_maybe_empty -> var_decl var_decls_maybe_empty .)
+    }               reduce using rule 5 (var_decls_maybe_empty -> var_decl var_decls_maybe_empty .)
+
+
+state 9
+
+    (2) var_decl -> VAR ID . ;
+    (3) var_decl -> VAR ID . = init ;
+    ;               shift and go to state 29
+    =               shift and go to state 30
+
+
+state 10
+
+    (1) program -> var_decls_maybe_empty fun_decls_maybe_empty free_statements_maybe_empty .
+    $end            reduce using rule 1 (program -> var_decls_maybe_empty fun_decls_maybe_empty free_statements_maybe_empty .)
+
+
+state 11
+
+    (12) free_statements_maybe_empty -> free_statement . free_statements_maybe_empty
+    (11) free_statements_maybe_empty -> .
+    (12) free_statements_maybe_empty -> . free_statement free_statements_maybe_empty
+    (9) free_statement -> . compound_stmt
+    (10) free_statement -> . simple_stmt ;
+    (18) compound_stmt -> . for_stmt
+    (19) compound_stmt -> . while_stmt
+    (20) compound_stmt -> . if_stmt
+    (15) simple_stmt -> . return_stmt
+    (16) simple_stmt -> . print_stmt
+    (17) simple_stmt -> . asgn_stmt
+    (32) for_stmt -> . FOR ( ; ; ) statement
+    (33) for_stmt -> . FOR ( ; ; asgn_stmt ) statement
+    (34) for_stmt -> . FOR ( ; lexpr ; ) statement
+    (35) for_stmt -> . FOR ( ; lexpr ; asgn_stmt ) statement
+    (36) for_stmt -> . FOR ( asgn_stmt ; ; ) statement
+    (37) for_stmt -> . FOR ( asgn_stmt ; ; asgn_stmt ) statement
+    (38) for_stmt -> . FOR ( asgn_stmt ; lexpr ; ) statement
+    (39) for_stmt -> . FOR ( asgn_stmt ; lexpr ; asgn_stmt ) statement
+    (31) while_stmt -> . WHILE lexpr statement
+    (29) if_stmt -> . IF lexpr statement
+    (30) if_stmt -> . IF lexpr statement ELSE statement
+    (28) return_stmt -> . RETURN expr
+    (27) print_stmt -> . PRINT expr
+    (25) asgn_stmt -> . ID = expr
+    (26) asgn_stmt -> . ID [ aexpr ] = expr
+    $end            reduce using rule 11 (free_statements_maybe_empty -> .)
+    FOR             shift and go to state 20
+    WHILE           shift and go to state 21
+    IF              shift and go to state 22
+    RETURN          shift and go to state 23
+    PRINT           shift and go to state 24
+    ID              shift and go to state 25
+
+    free_statement                 shift and go to state 11
+    free_statements_maybe_empty    shift and go to state 31
+    compound_stmt                  shift and go to state 12
+    simple_stmt                    shift and go to state 13
+    for_stmt                       shift and go to state 14
+    while_stmt                     shift and go to state 15
+    if_stmt                        shift and go to state 16
+    return_stmt                    shift and go to state 17
+    print_stmt                     shift and go to state 18
+    asgn_stmt                      shift and go to state 19
+
+state 12
+
+    (9) free_statement -> compound_stmt .
+    FOR             reduce using rule 9 (free_statement -> compound_stmt .)
+    WHILE           reduce using rule 9 (free_statement -> compound_stmt .)
+    IF              reduce using rule 9 (free_statement -> compound_stmt .)
+    RETURN          reduce using rule 9 (free_statement -> compound_stmt .)
+    PRINT           reduce using rule 9 (free_statement -> compound_stmt .)
+    ID              reduce using rule 9 (free_statement -> compound_stmt .)
+    $end            reduce using rule 9 (free_statement -> compound_stmt .)
+    ELSE            reduce using rule 9 (free_statement -> compound_stmt .)
+    {               reduce using rule 9 (free_statement -> compound_stmt .)
+    }               reduce using rule 9 (free_statement -> compound_stmt .)
+
+
+state 13
+
+    (10) free_statement -> simple_stmt . ;
+    ;               shift and go to state 32
+
+
+state 14
+
+    (18) compound_stmt -> for_stmt .
+    FOR             reduce using rule 18 (compound_stmt -> for_stmt .)
+    WHILE           reduce using rule 18 (compound_stmt -> for_stmt .)
+    IF              reduce using rule 18 (compound_stmt -> for_stmt .)
+    RETURN          reduce using rule 18 (compound_stmt -> for_stmt .)
+    PRINT           reduce using rule 18 (compound_stmt -> for_stmt .)
+    ID              reduce using rule 18 (compound_stmt -> for_stmt .)
+    $end            reduce using rule 18 (compound_stmt -> for_stmt .)
+    ELSE            reduce using rule 18 (compound_stmt -> for_stmt .)
+    {               reduce using rule 18 (compound_stmt -> for_stmt .)
+    }               reduce using rule 18 (compound_stmt -> for_stmt .)
+
+
+state 15
+
+    (19) compound_stmt -> while_stmt .
+    FOR             reduce using rule 19 (compound_stmt -> while_stmt .)
+    WHILE           reduce using rule 19 (compound_stmt -> while_stmt .)
+    IF              reduce using rule 19 (compound_stmt -> while_stmt .)
+    RETURN          reduce using rule 19 (compound_stmt -> while_stmt .)
+    PRINT           reduce using rule 19 (compound_stmt -> while_stmt .)
+    ID              reduce using rule 19 (compound_stmt -> while_stmt .)
+    $end            reduce using rule 19 (compound_stmt -> while_stmt .)
+    ELSE            reduce using rule 19 (compound_stmt -> while_stmt .)
+    {               reduce using rule 19 (compound_stmt -> while_stmt .)
+    }               reduce using rule 19 (compound_stmt -> while_stmt .)
+
+
+state 16
+
+    (20) compound_stmt -> if_stmt .
+    FOR             reduce using rule 20 (compound_stmt -> if_stmt .)
+    WHILE           reduce using rule 20 (compound_stmt -> if_stmt .)
+    IF              reduce using rule 20 (compound_stmt -> if_stmt .)
+    RETURN          reduce using rule 20 (compound_stmt -> if_stmt .)
+    PRINT           reduce using rule 20 (compound_stmt -> if_stmt .)
+    ID              reduce using rule 20 (compound_stmt -> if_stmt .)
+    $end            reduce using rule 20 (compound_stmt -> if_stmt .)
+    ELSE            reduce using rule 20 (compound_stmt -> if_stmt .)
+    {               reduce using rule 20 (compound_stmt -> if_stmt .)
+    }               reduce using rule 20 (compound_stmt -> if_stmt .)
+
+
+state 17
+
+    (15) simple_stmt -> return_stmt .
+    ;               reduce using rule 15 (simple_stmt -> return_stmt .)
+
+
+state 18
+
+    (16) simple_stmt -> print_stmt .
+    ;               reduce using rule 16 (simple_stmt -> print_stmt .)
+
+
+state 19
+
+    (17) simple_stmt -> asgn_stmt .
+    ;               reduce using rule 17 (simple_stmt -> asgn_stmt .)
+
+
+state 20
+
+    (32) for_stmt -> FOR . ( ; ; ) statement
+    (33) for_stmt -> FOR . ( ; ; asgn_stmt ) statement
+    (34) for_stmt -> FOR . ( ; lexpr ; ) statement
+    (35) for_stmt -> FOR . ( ; lexpr ; asgn_stmt ) statement
+    (36) for_stmt -> FOR . ( asgn_stmt ; ; ) statement
+    (37) for_stmt -> FOR . ( asgn_stmt ; ; asgn_stmt ) statement
+    (38) for_stmt -> FOR . ( asgn_stmt ; lexpr ; ) statement
+    (39) for_stmt -> FOR . ( asgn_stmt ; lexpr ; asgn_stmt ) statement
+    (               shift and go to state 33
+
+
+state 21
+
+    (31) while_stmt -> WHILE . lexpr statement
+    (46) lexpr -> . lterm
+    (47) lexpr -> . lexpr OR lterm
+    (48) lterm -> . lfact
+    (49) lterm -> . lterm AND lfact
+    (50) lfact -> . FALSE
+    (51) lfact -> . TRUE
+    (52) lfact -> . ! lfact
+    (53) lfact -> . # ID [ aexpr ]
+    (54) lfact -> . # ID
+    (55) lfact -> . ( lexpr )
+    (56) lfact -> . # call
+    (57) lfact -> . cexpr
+    (70) cexpr -> . aexpr > aexpr
+    (71) cexpr -> . aexpr < aexpr
+    (72) cexpr -> . aexpr GE aexpr
+    (73) cexpr -> . aexpr LE aexpr
+    (74) cexpr -> . aexpr EQUAL aexpr
+    (75) cexpr -> . aexpr NOT_EQUAL aexpr
+    (58) aexpr -> . term
+    (59) aexpr -> . aexpr + term
+    (60) aexpr -> . aexpr - term
+    (61) term -> . fact
+    (62) term -> . term * fact
+    (63) term -> . term / fact
+    (64) fact -> . ID
+    (65) fact -> . ID [ aexpr ]
+    (66) fact -> . ( aexpr )
+    (67) fact -> . NUMBER
+    (68) fact -> . call
+    (69) fact -> . - fact
+    (83) call -> . ID ( )
+    (84) call -> . ID ( arguments )
+    FALSE           shift and go to state 37
+    TRUE            shift and go to state 38
+    !               shift and go to state 39
+    #               shift and go to state 40
+    (               shift and go to state 43
+    ID              shift and go to state 41
+    NUMBER          shift and go to state 49
+    -               shift and go to state 47
+
+    lexpr                          shift and go to state 34
+    lterm                          shift and go to state 35
+    lfact                          shift and go to state 36
+    aexpr                          shift and go to state 42
+    call                           shift and go to state 44
+    cexpr                          shift and go to state 45
+    term                           shift and go to state 46
+    fact                           shift and go to state 48
+
+state 22
+
+    (29) if_stmt -> IF . lexpr statement
+    (30) if_stmt -> IF . lexpr statement ELSE statement
+    (46) lexpr -> . lterm
+    (47) lexpr -> . lexpr OR lterm
+    (48) lterm -> . lfact
+    (49) lterm -> . lterm AND lfact
+    (50) lfact -> . FALSE
+    (51) lfact -> . TRUE
+    (52) lfact -> . ! lfact
+    (53) lfact -> . # ID [ aexpr ]
+    (54) lfact -> . # ID
+    (55) lfact -> . ( lexpr )
+    (56) lfact -> . # call
+    (57) lfact -> . cexpr
+    (70) cexpr -> . aexpr > aexpr
+    (71) cexpr -> . aexpr < aexpr
+    (72) cexpr -> . aexpr GE aexpr
+    (73) cexpr -> . aexpr LE aexpr
+    (74) cexpr -> . aexpr EQUAL aexpr
+    (75) cexpr -> . aexpr NOT_EQUAL aexpr
+    (58) aexpr -> . term
+    (59) aexpr -> . aexpr + term
+    (60) aexpr -> . aexpr - term
+    (61) term -> . fact
+    (62) term -> . term * fact
+    (63) term -> . term / fact
+    (64) fact -> . ID
+    (65) fact -> . ID [ aexpr ]
+    (66) fact -> . ( aexpr )
+    (67) fact -> . NUMBER
+    (68) fact -> . call
+    (69) fact -> . - fact
+    (83) call -> . ID ( )
+    (84) call -> . ID ( arguments )
+    FALSE           shift and go to state 37
+    TRUE            shift and go to state 38
+    !               shift and go to state 39
+    #               shift and go to state 40
+    (               shift and go to state 43
+    ID              shift and go to state 41
+    NUMBER          shift and go to state 49
+    -               shift and go to state 47
+
+    lexpr                          shift and go to state 50
+    lterm                          shift and go to state 35
+    lfact                          shift and go to state 36
+    aexpr                          shift and go to state 42
+    call                           shift and go to state 44
+    cexpr                          shift and go to state 45
+    term                           shift and go to state 46
+    fact                           shift and go to state 48
+
+state 23
+
+    (28) return_stmt -> RETURN . expr
+    (41) expr -> . sexpr
+    (42) expr -> . aexpr
+    (43) expr -> . lexpr
+    (76) sexpr -> . STRING
+    (58) aexpr -> . term
+    (59) aexpr -> . aexpr + term
+    (60) aexpr -> . aexpr - term
+    (46) lexpr -> . lterm
+    (47) lexpr -> . lexpr OR lterm
+    (61) term -> . fact
+    (62) term -> . term * fact
+    (63) term -> . term / fact
+    (48) lterm -> . lfact
+    (49) lterm -> . lterm AND lfact
+    (64) fact -> . ID
+    (65) fact -> . ID [ aexpr ]
+    (66) fact -> . ( aexpr )
+    (67) fact -> . NUMBER
+    (68) fact -> . call
+    (69) fact -> . - fact
+    (50) lfact -> . FALSE
+    (51) lfact -> . TRUE
+    (52) lfact -> . ! lfact
+    (53) lfact -> . # ID [ aexpr ]
+    (54) lfact -> . # ID
+    (55) lfact -> . ( lexpr )
+    (56) lfact -> . # call
+    (57) lfact -> . cexpr
+    (83) call -> . ID ( )
+    (84) call -> . ID ( arguments )
+    (70) cexpr -> . aexpr > aexpr
+    (71) cexpr -> . aexpr < aexpr
+    (72) cexpr -> . aexpr GE aexpr
+    (73) cexpr -> . aexpr LE aexpr
+    (74) cexpr -> . aexpr EQUAL aexpr
+    (75) cexpr -> . aexpr NOT_EQUAL aexpr
+    STRING          shift and go to state 55
+    ID              shift and go to state 41
+    (               shift and go to state 56
+    NUMBER          shift and go to state 49
+    -               shift and go to state 47
+    FALSE           shift and go to state 37
+    TRUE            shift and go to state 38
+    !               shift and go to state 39
+    #               shift and go to state 40
+
+    expr                           shift and go to state 51
+    sexpr                          shift and go to state 52
+    aexpr                          shift and go to state 53
+    lexpr                          shift and go to state 54
+    term                           shift and go to state 46
+    lterm                          shift and go to state 35
+    fact                           shift and go to state 48
+    lfact                          shift and go to state 36
+    call                           shift and go to state 44
+    cexpr                          shift and go to state 45
+
+state 24
+
+    (27) print_stmt -> PRINT . expr
+    (41) expr -> . sexpr
+    (42) expr -> . aexpr
+    (43) expr -> . lexpr
+    (76) sexpr -> . STRING
+    (58) aexpr -> . term
+    (59) aexpr -> . aexpr + term
+    (60) aexpr -> . aexpr - term
+    (46) lexpr -> . lterm
+    (47) lexpr -> . lexpr OR lterm
+    (61) term -> . fact
+    (62) term -> . term * fact
+    (63) term -> . term / fact
+    (48) lterm -> . lfact
+    (49) lterm -> . lterm AND lfact
+    (64) fact -> . ID
+    (65) fact -> . ID [ aexpr ]
+    (66) fact -> . ( aexpr )
+    (67) fact -> . NUMBER
+    (68) fact -> . call
+    (69) fact -> . - fact
+    (50) lfact -> . FALSE
+    (51) lfact -> . TRUE
+    (52) lfact -> . ! lfact
+    (53) lfact -> . # ID [ aexpr ]
+    (54) lfact -> . # ID
+    (55) lfact -> . ( lexpr )
+    (56) lfact -> . # call
+    (57) lfact -> . cexpr
+    (83) call -> . ID ( )
+    (84) call -> . ID ( arguments )
+    (70) cexpr -> . aexpr > aexpr
+    (71) cexpr -> . aexpr < aexpr
+    (72) cexpr -> . aexpr GE aexpr
+    (73) cexpr -> . aexpr LE aexpr
+    (74) cexpr -> . aexpr EQUAL aexpr
+    (75) cexpr -> . aexpr NOT_EQUAL aexpr
+    STRING          shift and go to state 55
+    ID              shift and go to state 41
+    (               shift and go to state 56
+    NUMBER          shift and go to state 49
+    -               shift and go to state 47
+    FALSE           shift and go to state 37
+    TRUE            shift and go to state 38
+    !               shift and go to state 39
+    #               shift and go to state 40
+
+    expr                           shift and go to state 57
+    sexpr                          shift and go to state 52
+    aexpr                          shift and go to state 53
+    lexpr                          shift and go to state 54
+    term                           shift and go to state 46
+    lterm                          shift and go to state 35
+    fact                           shift and go to state 48
+    lfact                          shift and go to state 36
+    call                           shift and go to state 44
+    cexpr                          shift and go to state 45
+
+state 25
+
+    (25) asgn_stmt -> ID . = expr
+    (26) asgn_stmt -> ID . [ aexpr ] = expr
+    =               shift and go to state 58
+    [               shift and go to state 59
+
+
+state 26
+
+    (8) fun_decls_maybe_empty -> fun_decl fun_decls_maybe_empty .
+    FOR             reduce using rule 8 (fun_decls_maybe_empty -> fun_decl fun_decls_maybe_empty .)
+    WHILE           reduce using rule 8 (fun_decls_maybe_empty -> fun_decl fun_decls_maybe_empty .)
+    IF              reduce using rule 8 (fun_decls_maybe_empty -> fun_decl fun_decls_maybe_empty .)
+    RETURN          reduce using rule 8 (fun_decls_maybe_empty -> fun_decl fun_decls_maybe_empty .)
+    PRINT           reduce using rule 8 (fun_decls_maybe_empty -> fun_decl fun_decls_maybe_empty .)
+    ID              reduce using rule 8 (fun_decls_maybe_empty -> fun_decl fun_decls_maybe_empty .)
+    $end            reduce using rule 8 (fun_decls_maybe_empty -> fun_decl fun_decls_maybe_empty .)
+
+
+state 27
+
+    (6) fun_decl -> FUN function .
+    FUN             reduce using rule 6 (fun_decl -> FUN function .)
+    FOR             reduce using rule 6 (fun_decl -> FUN function .)
+    WHILE           reduce using rule 6 (fun_decl -> FUN function .)
+    IF              reduce using rule 6 (fun_decl -> FUN function .)
+    RETURN          reduce using rule 6 (fun_decl -> FUN function .)
+    PRINT           reduce using rule 6 (fun_decl -> FUN function .)
+    ID              reduce using rule 6 (fun_decl -> FUN function .)
+    $end            reduce using rule 6 (fun_decl -> FUN function .)
+
+
+state 28
+
+    (78) function -> ID . ( ) block
+    (79) function -> ID . ( parameters ) block
+    (               shift and go to state 60
+
+
+state 29
+
+    (2) var_decl -> VAR ID ; .
+    VAR             reduce using rule 2 (var_decl -> VAR ID ; .)
+    FUN             reduce using rule 2 (var_decl -> VAR ID ; .)
+    FOR             reduce using rule 2 (var_decl -> VAR ID ; .)
+    WHILE           reduce using rule 2 (var_decl -> VAR ID ; .)
+    IF              reduce using rule 2 (var_decl -> VAR ID ; .)
+    RETURN          reduce using rule 2 (var_decl -> VAR ID ; .)
+    PRINT           reduce using rule 2 (var_decl -> VAR ID ; .)
+    ID              reduce using rule 2 (var_decl -> VAR ID ; .)
+    $end            reduce using rule 2 (var_decl -> VAR ID ; .)
+    {               reduce using rule 2 (var_decl -> VAR ID ; .)
+    }               reduce using rule 2 (var_decl -> VAR ID ; .)
+
+
+state 30
+
+    (3) var_decl -> VAR ID = . init ;
+    (13) init -> . [ exprs_non_empty_w_commas ]
+    (14) init -> . expr
+    (41) expr -> . sexpr
+    (42) expr -> . aexpr
+    (43) expr -> . lexpr
+    (76) sexpr -> . STRING
+    (58) aexpr -> . term
+    (59) aexpr -> . aexpr + term
+    (60) aexpr -> . aexpr - term
+    (46) lexpr -> . lterm
+    (47) lexpr -> . lexpr OR lterm
+    (61) term -> . fact
+    (62) term -> . term * fact
+    (63) term -> . term / fact
+    (48) lterm -> . lfact
+    (49) lterm -> . lterm AND lfact
+    (64) fact -> . ID
+    (65) fact -> . ID [ aexpr ]
+    (66) fact -> . ( aexpr )
+    (67) fact -> . NUMBER
+    (68) fact -> . call
+    (69) fact -> . - fact
+    (50) lfact -> . FALSE
+    (51) lfact -> . TRUE
+    (52) lfact -> . ! lfact
+    (53) lfact -> . # ID [ aexpr ]
+    (54) lfact -> . # ID
+    (55) lfact -> . ( lexpr )
+    (56) lfact -> . # call
+    (57) lfact -> . cexpr
+    (83) call -> . ID ( )
+    (84) call -> . ID ( arguments )
+    (70) cexpr -> . aexpr > aexpr
+    (71) cexpr -> . aexpr < aexpr
+    (72) cexpr -> . aexpr GE aexpr
+    (73) cexpr -> . aexpr LE aexpr
+    (74) cexpr -> . aexpr EQUAL aexpr
+    (75) cexpr -> . aexpr NOT_EQUAL aexpr
+    [               shift and go to state 62
+    STRING          shift and go to state 55
+    ID              shift and go to state 41
+    (               shift and go to state 56
+    NUMBER          shift and go to state 49
+    -               shift and go to state 47
+    FALSE           shift and go to state 37
+    TRUE            shift and go to state 38
+    !               shift and go to state 39
+    #               shift and go to state 40
+
+    init                           shift and go to state 61
+    expr                           shift and go to state 63
+    sexpr                          shift and go to state 52
+    aexpr                          shift and go to state 53
+    lexpr                          shift and go to state 54
+    term                           shift and go to state 46
+    lterm                          shift and go to state 35
+    fact                           shift and go to state 48
+    lfact                          shift and go to state 36
+    call                           shift and go to state 44
+    cexpr                          shift and go to state 45
+
+state 31
+
+    (12) free_statements_maybe_empty -> free_statement free_statements_maybe_empty .
+    $end            reduce using rule 12 (free_statements_maybe_empty -> free_statement free_statements_maybe_empty .)
+
+
+state 32
+
+    (10) free_statement -> simple_stmt ; .
+    FOR             reduce using rule 10 (free_statement -> simple_stmt ; .)
+    WHILE           reduce using rule 10 (free_statement -> simple_stmt ; .)
+    IF              reduce using rule 10 (free_statement -> simple_stmt ; .)
+    RETURN          reduce using rule 10 (free_statement -> simple_stmt ; .)
+    PRINT           reduce using rule 10 (free_statement -> simple_stmt ; .)
+    ID              reduce using rule 10 (free_statement -> simple_stmt ; .)
+    $end            reduce using rule 10 (free_statement -> simple_stmt ; .)
+    ELSE            reduce using rule 10 (free_statement -> simple_stmt ; .)
+    {               reduce using rule 10 (free_statement -> simple_stmt ; .)
+    }               reduce using rule 10 (free_statement -> simple_stmt ; .)
+
+
+state 33
+
+    (32) for_stmt -> FOR ( . ; ; ) statement
+    (33) for_stmt -> FOR ( . ; ; asgn_stmt ) statement
+    (34) for_stmt -> FOR ( . ; lexpr ; ) statement
+    (35) for_stmt -> FOR ( . ; lexpr ; asgn_stmt ) statement
+    (36) for_stmt -> FOR ( . asgn_stmt ; ; ) statement
+    (37) for_stmt -> FOR ( . asgn_stmt ; ; asgn_stmt ) statement
+    (38) for_stmt -> FOR ( . asgn_stmt ; lexpr ; ) statement
+    (39) for_stmt -> FOR ( . asgn_stmt ; lexpr ; asgn_stmt ) statement
+    (25) asgn_stmt -> . ID = expr
+    (26) asgn_stmt -> . ID [ aexpr ] = expr
+    ;               shift and go to state 64
+    ID              shift and go to state 25
+
+    asgn_stmt                      shift and go to state 65
+
+state 34
+
+    (31) while_stmt -> WHILE lexpr . statement
+    (47) lexpr -> lexpr . OR lterm
+    (21) statement -> . block
+    (22) statement -> . free_statement
+    (40) block -> . { var_decls_maybe_empty statements_maybe_empty }
+    (9) free_statement -> . compound_stmt
+    (10) free_statement -> . simple_stmt ;
+    (18) compound_stmt -> . for_stmt
+    (19) compound_stmt -> . while_stmt
+    (20) compound_stmt -> . if_stmt
+    (15) simple_stmt -> . return_stmt
+    (16) simple_stmt -> . print_stmt
+    (17) simple_stmt -> . asgn_stmt
+    (32) for_stmt -> . FOR ( ; ; ) statement
+    (33) for_stmt -> . FOR ( ; ; asgn_stmt ) statement
+    (34) for_stmt -> . FOR ( ; lexpr ; ) statement
+    (35) for_stmt -> . FOR ( ; lexpr ; asgn_stmt ) statement
+    (36) for_stmt -> . FOR ( asgn_stmt ; ; ) statement
+    (37) for_stmt -> . FOR ( asgn_stmt ; ; asgn_stmt ) statement
+    (38) for_stmt -> . FOR ( asgn_stmt ; lexpr ; ) statement
+    (39) for_stmt -> . FOR ( asgn_stmt ; lexpr ; asgn_stmt ) statement
+    (31) while_stmt -> . WHILE lexpr statement
+    (29) if_stmt -> . IF lexpr statement
+    (30) if_stmt -> . IF lexpr statement ELSE statement
+    (28) return_stmt -> . RETURN expr
+    (27) print_stmt -> . PRINT expr
+    (25) asgn_stmt -> . ID = expr
+    (26) asgn_stmt -> . ID [ aexpr ] = expr
+    OR              shift and go to state 67
+    {               shift and go to state 70
+    FOR             shift and go to state 20
+    WHILE           shift and go to state 21
+    IF              shift and go to state 22
+    RETURN          shift and go to state 23
+    PRINT           shift and go to state 24
+    ID              shift and go to state 25
+
+    statement                      shift and go to state 66
+    block                          shift and go to state 68
+    free_statement                 shift and go to state 69
+    compound_stmt                  shift and go to state 12
+    simple_stmt                    shift and go to state 13
+    for_stmt                       shift and go to state 14
+    while_stmt                     shift and go to state 15
+    if_stmt                        shift and go to state 16
+    return_stmt                    shift and go to state 17
+    print_stmt                     shift and go to state 18
+    asgn_stmt                      shift and go to state 19
+
+state 35
+
+    (46) lexpr -> lterm .
+    (49) lterm -> lterm . AND lfact
+    OR              reduce using rule 46 (lexpr -> lterm .)
+    {               reduce using rule 46 (lexpr -> lterm .)
+    FOR             reduce using rule 46 (lexpr -> lterm .)
+    WHILE           reduce using rule 46 (lexpr -> lterm .)
+    IF              reduce using rule 46 (lexpr -> lterm .)
+    RETURN          reduce using rule 46 (lexpr -> lterm .)
+    PRINT           reduce using rule 46 (lexpr -> lterm .)
+    ID              reduce using rule 46 (lexpr -> lterm .)
+    ;               reduce using rule 46 (lexpr -> lterm .)
+    )               reduce using rule 46 (lexpr -> lterm .)
+    ]               reduce using rule 46 (lexpr -> lterm .)
+    ,               reduce using rule 46 (lexpr -> lterm .)
+    AND             shift and go to state 71
+
+
+state 36
+
+    (48) lterm -> lfact .
+    AND             reduce using rule 48 (lterm -> lfact .)
+    OR              reduce using rule 48 (lterm -> lfact .)
+    {               reduce using rule 48 (lterm -> lfact .)
+    FOR             reduce using rule 48 (lterm -> lfact .)
+    WHILE           reduce using rule 48 (lterm -> lfact .)
+    IF              reduce using rule 48 (lterm -> lfact .)
+    RETURN          reduce using rule 48 (lterm -> lfact .)
+    PRINT           reduce using rule 48 (lterm -> lfact .)
+    ID              reduce using rule 48 (lterm -> lfact .)
+    ;               reduce using rule 48 (lterm -> lfact .)
+    )               reduce using rule 48 (lterm -> lfact .)
+    ]               reduce using rule 48 (lterm -> lfact .)
+    ,               reduce using rule 48 (lterm -> lfact .)
+
+
+state 37
+
+    (50) lfact -> FALSE .
+    AND             reduce using rule 50 (lfact -> FALSE .)
+    OR              reduce using rule 50 (lfact -> FALSE .)
+    {               reduce using rule 50 (lfact -> FALSE .)
+    FOR             reduce using rule 50 (lfact -> FALSE .)
+    WHILE           reduce using rule 50 (lfact -> FALSE .)
+    IF              reduce using rule 50 (lfact -> FALSE .)
+    RETURN          reduce using rule 50 (lfact -> FALSE .)
+    PRINT           reduce using rule 50 (lfact -> FALSE .)
+    ID              reduce using rule 50 (lfact -> FALSE .)
+    ;               reduce using rule 50 (lfact -> FALSE .)
+    )               reduce using rule 50 (lfact -> FALSE .)
+    ]               reduce using rule 50 (lfact -> FALSE .)
+    ,               reduce using rule 50 (lfact -> FALSE .)
+
+
+state 38
+
+    (51) lfact -> TRUE .
+    AND             reduce using rule 51 (lfact -> TRUE .)
+    OR              reduce using rule 51 (lfact -> TRUE .)
+    {               reduce using rule 51 (lfact -> TRUE .)
+    FOR             reduce using rule 51 (lfact -> TRUE .)
+    WHILE           reduce using rule 51 (lfact -> TRUE .)
+    IF              reduce using rule 51 (lfact -> TRUE .)
+    RETURN          reduce using rule 51 (lfact -> TRUE .)
+    PRINT           reduce using rule 51 (lfact -> TRUE .)
+    ID              reduce using rule 51 (lfact -> TRUE .)
+    ;               reduce using rule 51 (lfact -> TRUE .)
+    )               reduce using rule 51 (lfact -> TRUE .)
+    ]               reduce using rule 51 (lfact -> TRUE .)
+    ,               reduce using rule 51 (lfact -> TRUE .)
+
+
+state 39
+
+    (52) lfact -> ! . lfact
+    (50) lfact -> . FALSE
+    (51) lfact -> . TRUE
+    (52) lfact -> . ! lfact
+    (53) lfact -> . # ID [ aexpr ]
+    (54) lfact -> . # ID
+    (55) lfact -> . ( lexpr )
+    (56) lfact -> . # call
+    (57) lfact -> . cexpr
+    (70) cexpr -> . aexpr > aexpr
+    (71) cexpr -> . aexpr < aexpr
+    (72) cexpr -> . aexpr GE aexpr
+    (73) cexpr -> . aexpr LE aexpr
+    (74) cexpr -> . aexpr EQUAL aexpr
+    (75) cexpr -> . aexpr NOT_EQUAL aexpr
+    (58) aexpr -> . term
+    (59) aexpr -> . aexpr + term
+    (60) aexpr -> . aexpr - term
+    (61) term -> . fact
+    (62) term -> . term * fact
+    (63) term -> . term / fact
+    (64) fact -> . ID
+    (65) fact -> . ID [ aexpr ]
+    (66) fact -> . ( aexpr )
+    (67) fact -> . NUMBER
+    (68) fact -> . call
+    (69) fact -> . - fact
+    (83) call -> . ID ( )
+    (84) call -> . ID ( arguments )
+    FALSE           shift and go to state 37
+    TRUE            shift and go to state 38
+    !               shift and go to state 39
+    #               shift and go to state 40
+    (               shift and go to state 43
+    ID              shift and go to state 41
+    NUMBER          shift and go to state 49
+    -               shift and go to state 47
+
+    lfact                          shift and go to state 72
+    aexpr                          shift and go to state 42
+    call                           shift and go to state 44
+    cexpr                          shift and go to state 45
+    term                           shift and go to state 46
+    fact                           shift and go to state 48
+
+state 40
+
+    (53) lfact -> # . ID [ aexpr ]
+    (54) lfact -> # . ID
+    (56) lfact -> # . call
+    (83) call -> . ID ( )
+    (84) call -> . ID ( arguments )
+    ID              shift and go to state 73
+
+    call                           shift and go to state 74
+
+state 41
+
+    (64) fact -> ID .
+    (65) fact -> ID . [ aexpr ]
+    (83) call -> ID . ( )
+    (84) call -> ID . ( arguments )
+    *               reduce using rule 64 (fact -> ID .)
+    /               reduce using rule 64 (fact -> ID .)
+    >               reduce using rule 64 (fact -> ID .)
+    <               reduce using rule 64 (fact -> ID .)
+    GE              reduce using rule 64 (fact -> ID .)
+    LE              reduce using rule 64 (fact -> ID .)
+    EQUAL           reduce using rule 64 (fact -> ID .)
+    NOT_EQUAL       reduce using rule 64 (fact -> ID .)
+    +               reduce using rule 64 (fact -> ID .)
+    -               reduce using rule 64 (fact -> ID .)
+    ;               reduce using rule 64 (fact -> ID .)
+    )               reduce using rule 64 (fact -> ID .)
+    ]               reduce using rule 64 (fact -> ID .)
+    ,               reduce using rule 64 (fact -> ID .)
+    AND             reduce using rule 64 (fact -> ID .)
+    OR              reduce using rule 64 (fact -> ID .)
+    {               reduce using rule 64 (fact -> ID .)
+    FOR             reduce using rule 64 (fact -> ID .)
+    WHILE           reduce using rule 64 (fact -> ID .)
+    IF              reduce using rule 64 (fact -> ID .)
+    RETURN          reduce using rule 64 (fact -> ID .)
+    PRINT           reduce using rule 64 (fact -> ID .)
+    ID              reduce using rule 64 (fact -> ID .)
+    [               shift and go to state 75
+    (               shift and go to state 76
+
+
+state 42
+
+    (70) cexpr -> aexpr . > aexpr
+    (71) cexpr -> aexpr . < aexpr
+    (72) cexpr -> aexpr . GE aexpr
+    (73) cexpr -> aexpr . LE aexpr
+    (74) cexpr -> aexpr . EQUAL aexpr
+    (75) cexpr -> aexpr . NOT_EQUAL aexpr
+    (59) aexpr -> aexpr . + term
+    (60) aexpr -> aexpr . - term
+    >               shift and go to state 77
+    <               shift and go to state 78
+    GE              shift and go to state 79
+    LE              shift and go to state 80
+    EQUAL           shift and go to state 81
+    NOT_EQUAL       shift and go to state 82
+    +               shift and go to state 83
+    -               shift and go to state 84
+
+
+state 43
+
+    (55) lfact -> ( . lexpr )
+    (66) fact -> ( . aexpr )
+    (46) lexpr -> . lterm
+    (47) lexpr -> . lexpr OR lterm
+    (58) aexpr -> . term
+    (59) aexpr -> . aexpr + term
+    (60) aexpr -> . aexpr - term
+    (48) lterm -> . lfact
+    (49) lterm -> . lterm AND lfact
+    (61) term -> . fact
+    (62) term -> . term * fact
+    (63) term -> . term / fact
+    (50) lfact -> . FALSE
+    (51) lfact -> . TRUE
+    (52) lfact -> . ! lfact
+    (53) lfact -> . # ID [ aexpr ]
+    (54) lfact -> . # ID
+    (55) lfact -> . ( lexpr )
+    (56) lfact -> . # call
+    (57) lfact -> . cexpr
+    (64) fact -> . ID
+    (65) fact -> . ID [ aexpr ]
+    (66) fact -> . ( aexpr )
+    (67) fact -> . NUMBER
+    (68) fact -> . call
+    (69) fact -> . - fact
+    (70) cexpr -> . aexpr > aexpr
+    (71) cexpr -> . aexpr < aexpr
+    (72) cexpr -> . aexpr GE aexpr
+    (73) cexpr -> . aexpr LE aexpr
+    (74) cexpr -> . aexpr EQUAL aexpr
+    (75) cexpr -> . aexpr NOT_EQUAL aexpr
+    (83) call -> . ID ( )
+    (84) call -> . ID ( arguments )
+    FALSE           shift and go to state 37
+    TRUE            shift and go to state 38
+    !               shift and go to state 39
+    #               shift and go to state 40
+    (               shift and go to state 43
+    ID              shift and go to state 41
+    NUMBER          shift and go to state 49
+    -               shift and go to state 47
+
+    lexpr                          shift and go to state 85
+    aexpr                          shift and go to state 86
+    lterm                          shift and go to state 35
+    term                           shift and go to state 46
+    lfact                          shift and go to state 36
+    fact                           shift and go to state 48
+    call                           shift and go to state 44
+    cexpr                          shift and go to state 45
+
+state 44
+
+    (68) fact -> call .
+    *               reduce using rule 68 (fact -> call .)
+    /               reduce using rule 68 (fact -> call .)
+    >               reduce using rule 68 (fact -> call .)
+    <               reduce using rule 68 (fact -> call .)
+    GE              reduce using rule 68 (fact -> call .)
+    LE              reduce using rule 68 (fact -> call .)
+    EQUAL           reduce using rule 68 (fact -> call .)
+    NOT_EQUAL       reduce using rule 68 (fact -> call .)
+    +               reduce using rule 68 (fact -> call .)
+    -               reduce using rule 68 (fact -> call .)
+    ;               reduce using rule 68 (fact -> call .)
+    )               reduce using rule 68 (fact -> call .)
+    ]               reduce using rule 68 (fact -> call .)
+    ,               reduce using rule 68 (fact -> call .)
+    AND             reduce using rule 68 (fact -> call .)
+    OR              reduce using rule 68 (fact -> call .)
+    {               reduce using rule 68 (fact -> call .)
+    FOR             reduce using rule 68 (fact -> call .)
+    WHILE           reduce using rule 68 (fact -> call .)
+    IF              reduce using rule 68 (fact -> call .)
+    RETURN          reduce using rule 68 (fact -> call .)
+    PRINT           reduce using rule 68 (fact -> call .)
+    ID              reduce using rule 68 (fact -> call .)
+
+
+state 45
+
+    (57) lfact -> cexpr .
+    AND             reduce using rule 57 (lfact -> cexpr .)
+    OR              reduce using rule 57 (lfact -> cexpr .)
+    {               reduce using rule 57 (lfact -> cexpr .)
+    FOR             reduce using rule 57 (lfact -> cexpr .)
+    WHILE           reduce using rule 57 (lfact -> cexpr .)
+    IF              reduce using rule 57 (lfact -> cexpr .)
+    RETURN          reduce using rule 57 (lfact -> cexpr .)
+    PRINT           reduce using rule 57 (lfact -> cexpr .)
+    ID              reduce using rule 57 (lfact -> cexpr .)
+    ;               reduce using rule 57 (lfact -> cexpr .)
+    )               reduce using rule 57 (lfact -> cexpr .)
+    ]               reduce using rule 57 (lfact -> cexpr .)
+    ,               reduce using rule 57 (lfact -> cexpr .)
+
+
+state 46
+
+    (58) aexpr -> term .
+    (62) term -> term . * fact
+    (63) term -> term . / fact
+    >               reduce using rule 58 (aexpr -> term .)
+    <               reduce using rule 58 (aexpr -> term .)
+    GE              reduce using rule 58 (aexpr -> term .)
+    LE              reduce using rule 58 (aexpr -> term .)
+    EQUAL           reduce using rule 58 (aexpr -> term .)
+    NOT_EQUAL       reduce using rule 58 (aexpr -> term .)
+    +               reduce using rule 58 (aexpr -> term .)
+    -               reduce using rule 58 (aexpr -> term .)
+    ;               reduce using rule 58 (aexpr -> term .)
+    )               reduce using rule 58 (aexpr -> term .)
+    ]               reduce using rule 58 (aexpr -> term .)
+    ,               reduce using rule 58 (aexpr -> term .)
+    AND             reduce using rule 58 (aexpr -> term .)
+    OR              reduce using rule 58 (aexpr -> term .)
+    {               reduce using rule 58 (aexpr -> term .)
+    FOR             reduce using rule 58 (aexpr -> term .)
+    WHILE           reduce using rule 58 (aexpr -> term .)
+    IF              reduce using rule 58 (aexpr -> term .)
+    RETURN          reduce using rule 58 (aexpr -> term .)
+    PRINT           reduce using rule 58 (aexpr -> term .)
+    ID              reduce using rule 58 (aexpr -> term .)
+    *               shift and go to state 87
+    /               shift and go to state 88
+
+
+state 47
+
+    (69) fact -> - . fact
+    (64) fact -> . ID
+    (65) fact -> . ID [ aexpr ]
+    (66) fact -> . ( aexpr )
+    (67) fact -> . NUMBER
+    (68) fact -> . call
+    (69) fact -> . - fact
+    (83) call -> . ID ( )
+    (84) call -> . ID ( arguments )
+    ID              shift and go to state 41
+    (               shift and go to state 90
+    NUMBER          shift and go to state 49
+    -               shift and go to state 47
+
+    fact                           shift and go to state 89
+    call                           shift and go to state 44
+
+state 48
+
+    (61) term -> fact .
+    *               reduce using rule 61 (term -> fact .)
+    /               reduce using rule 61 (term -> fact .)
+    >               reduce using rule 61 (term -> fact .)
+    <               reduce using rule 61 (term -> fact .)
+    GE              reduce using rule 61 (term -> fact .)
+    LE              reduce using rule 61 (term -> fact .)
+    EQUAL           reduce using rule 61 (term -> fact .)
+    NOT_EQUAL       reduce using rule 61 (term -> fact .)
+    +               reduce using rule 61 (term -> fact .)
+    -               reduce using rule 61 (term -> fact .)
+    ;               reduce using rule 61 (term -> fact .)
+    )               reduce using rule 61 (term -> fact .)
+    ]               reduce using rule 61 (term -> fact .)
+    ,               reduce using rule 61 (term -> fact .)
+    AND             reduce using rule 61 (term -> fact .)
+    OR              reduce using rule 61 (term -> fact .)
+    {               reduce using rule 61 (term -> fact .)
+    FOR             reduce using rule 61 (term -> fact .)
+    WHILE           reduce using rule 61 (term -> fact .)
+    IF              reduce using rule 61 (term -> fact .)
+    RETURN          reduce using rule 61 (term -> fact .)
+    PRINT           reduce using rule 61 (term -> fact .)
+    ID              reduce using rule 61 (term -> fact .)
+
+
+state 49
+
+    (67) fact -> NUMBER .
+    *               reduce using rule 67 (fact -> NUMBER .)
+    /               reduce using rule 67 (fact -> NUMBER .)
+    >               reduce using rule 67 (fact -> NUMBER .)
+    <               reduce using rule 67 (fact -> NUMBER .)
+    GE              reduce using rule 67 (fact -> NUMBER .)
+    LE              reduce using rule 67 (fact -> NUMBER .)
+    EQUAL           reduce using rule 67 (fact -> NUMBER .)
+    NOT_EQUAL       reduce using rule 67 (fact -> NUMBER .)
+    +               reduce using rule 67 (fact -> NUMBER .)
+    -               reduce using rule 67 (fact -> NUMBER .)
+    ;               reduce using rule 67 (fact -> NUMBER .)
+    )               reduce using rule 67 (fact -> NUMBER .)
+    ]               reduce using rule 67 (fact -> NUMBER .)
+    ,               reduce using rule 67 (fact -> NUMBER .)
+    AND             reduce using rule 67 (fact -> NUMBER .)
+    OR              reduce using rule 67 (fact -> NUMBER .)
+    {               reduce using rule 67 (fact -> NUMBER .)
+    FOR             reduce using rule 67 (fact -> NUMBER .)
+    WHILE           reduce using rule 67 (fact -> NUMBER .)
+    IF              reduce using rule 67 (fact -> NUMBER .)
+    RETURN          reduce using rule 67 (fact -> NUMBER .)
+    PRINT           reduce using rule 67 (fact -> NUMBER .)
+    ID              reduce using rule 67 (fact -> NUMBER .)
+
+
+state 50
+
+    (29) if_stmt -> IF lexpr . statement
+    (30) if_stmt -> IF lexpr . statement ELSE statement
+    (47) lexpr -> lexpr . OR lterm
+    (21) statement -> . block
+    (22) statement -> . free_statement
+    (40) block -> . { var_decls_maybe_empty statements_maybe_empty }
+    (9) free_statement -> . compound_stmt
+    (10) free_statement -> . simple_stmt ;
+    (18) compound_stmt -> . for_stmt
+    (19) compound_stmt -> . while_stmt
+    (20) compound_stmt -> . if_stmt
+    (15) simple_stmt -> . return_stmt
+    (16) simple_stmt -> . print_stmt
+    (17) simple_stmt -> . asgn_stmt
+    (32) for_stmt -> . FOR ( ; ; ) statement
+    (33) for_stmt -> . FOR ( ; ; asgn_stmt ) statement
+    (34) for_stmt -> . FOR ( ; lexpr ; ) statement
+    (35) for_stmt -> . FOR ( ; lexpr ; asgn_stmt ) statement
+    (36) for_stmt -> . FOR ( asgn_stmt ; ; ) statement
+    (37) for_stmt -> . FOR ( asgn_stmt ; ; asgn_stmt ) statement
+    (38) for_stmt -> . FOR ( asgn_stmt ; lexpr ; ) statement
+    (39) for_stmt -> . FOR ( asgn_stmt ; lexpr ; asgn_stmt ) statement
+    (31) while_stmt -> . WHILE lexpr statement
+    (29) if_stmt -> . IF lexpr statement
+    (30) if_stmt -> . IF lexpr statement ELSE statement
+    (28) return_stmt -> . RETURN expr
+    (27) print_stmt -> . PRINT expr
+    (25) asgn_stmt -> . ID = expr
+    (26) asgn_stmt -> . ID [ aexpr ] = expr
+    OR              shift and go to state 67
+    {               shift and go to state 70
+    FOR             shift and go to state 20
+    WHILE           shift and go to state 21
+    IF              shift and go to state 22
+    RETURN          shift and go to state 23
+    PRINT           shift and go to state 24
+    ID              shift and go to state 25
+
+    statement                      shift and go to state 91
+    block                          shift and go to state 68
+    free_statement                 shift and go to state 69
+    compound_stmt                  shift and go to state 12
+    simple_stmt                    shift and go to state 13
+    for_stmt                       shift and go to state 14
+    while_stmt                     shift and go to state 15
+    if_stmt                        shift and go to state 16
+    return_stmt                    shift and go to state 17
+    print_stmt                     shift and go to state 18
+    asgn_stmt                      shift and go to state 19
+
+state 51
+
+    (28) return_stmt -> RETURN expr .
+    ;               reduce using rule 28 (return_stmt -> RETURN expr .)
+
+
+state 52
+
+    (41) expr -> sexpr .
+    ;               reduce using rule 41 (expr -> sexpr .)
+    )               reduce using rule 41 (expr -> sexpr .)
+    ]               reduce using rule 41 (expr -> sexpr .)
+    ,               reduce using rule 41 (expr -> sexpr .)
+
+
+state 53
+
+    (42) expr -> aexpr .
+    (59) aexpr -> aexpr . + term
+    (60) aexpr -> aexpr . - term
+    (70) cexpr -> aexpr . > aexpr
+    (71) cexpr -> aexpr . < aexpr
+    (72) cexpr -> aexpr . GE aexpr
+    (73) cexpr -> aexpr . LE aexpr
+    (74) cexpr -> aexpr . EQUAL aexpr
+    (75) cexpr -> aexpr . NOT_EQUAL aexpr
+    ;               reduce using rule 42 (expr -> aexpr .)
+    )               reduce using rule 42 (expr -> aexpr .)
+    ]               reduce using rule 42 (expr -> aexpr .)
+    ,               reduce using rule 42 (expr -> aexpr .)
+    +               shift and go to state 83
+    -               shift and go to state 84
+    >               shift and go to state 77
+    <               shift and go to state 78
+    GE              shift and go to state 79
+    LE              shift and go to state 80
+    EQUAL           shift and go to state 81
+    NOT_EQUAL       shift and go to state 82
+
+
+state 54
+
+    (43) expr -> lexpr .
+    (47) lexpr -> lexpr . OR lterm
+    ;               reduce using rule 43 (expr -> lexpr .)
+    )               reduce using rule 43 (expr -> lexpr .)
+    ]               reduce using rule 43 (expr -> lexpr .)
+    ,               reduce using rule 43 (expr -> lexpr .)
+    OR              shift and go to state 67
+
+
+state 55
+
+    (76) sexpr -> STRING .
+    ;               reduce using rule 76 (sexpr -> STRING .)
+    )               reduce using rule 76 (sexpr -> STRING .)
+    ]               reduce using rule 76 (sexpr -> STRING .)
+    ,               reduce using rule 76 (sexpr -> STRING .)
+
+
+state 56
+
+    (66) fact -> ( . aexpr )
+    (55) lfact -> ( . lexpr )
+    (58) aexpr -> . term
+    (59) aexpr -> . aexpr + term
+    (60) aexpr -> . aexpr - term
+    (46) lexpr -> . lterm
+    (47) lexpr -> . lexpr OR lterm
+    (61) term -> . fact
+    (62) term -> . term * fact
+    (63) term -> . term / fact
+    (48) lterm -> . lfact
+    (49) lterm -> . lterm AND lfact
+    (64) fact -> . ID
+    (65) fact -> . ID [ aexpr ]
+    (66) fact -> . ( aexpr )
+    (67) fact -> . NUMBER
+    (68) fact -> . call
+    (69) fact -> . - fact
+    (50) lfact -> . FALSE
+    (51) lfact -> . TRUE
+    (52) lfact -> . ! lfact
+    (53) lfact -> . # ID [ aexpr ]
+    (54) lfact -> . # ID
+    (55) lfact -> . ( lexpr )
+    (56) lfact -> . # call
+    (57) lfact -> . cexpr
+    (83) call -> . ID ( )
+    (84) call -> . ID ( arguments )
+    (70) cexpr -> . aexpr > aexpr
+    (71) cexpr -> . aexpr < aexpr
+    (72) cexpr -> . aexpr GE aexpr
+    (73) cexpr -> . aexpr LE aexpr
+    (74) cexpr -> . aexpr EQUAL aexpr
+    (75) cexpr -> . aexpr NOT_EQUAL aexpr
+    ID              shift and go to state 41
+    (               shift and go to state 56
+    NUMBER          shift and go to state 49
+    -               shift and go to state 47
+    FALSE           shift and go to state 37
+    TRUE            shift and go to state 38
+    !               shift and go to state 39
+    #               shift and go to state 40
+
+    aexpr                          shift and go to state 86
+    lexpr                          shift and go to state 85
+    term                           shift and go to state 46
+    lterm                          shift and go to state 35
+    fact                           shift and go to state 48
+    lfact                          shift and go to state 36
+    call                           shift and go to state 44
+    cexpr                          shift and go to state 45
+
+state 57
+
+    (27) print_stmt -> PRINT expr .
+    ;               reduce using rule 27 (print_stmt -> PRINT expr .)
+
+
+state 58
+
+    (25) asgn_stmt -> ID = . expr
+    (41) expr -> . sexpr
+    (42) expr -> . aexpr
+    (43) expr -> . lexpr
+    (76) sexpr -> . STRING
+    (58) aexpr -> . term
+    (59) aexpr -> . aexpr + term
+    (60) aexpr -> . aexpr - term
+    (46) lexpr -> . lterm
+    (47) lexpr -> . lexpr OR lterm
+    (61) term -> . fact
+    (62) term -> . term * fact
+    (63) term -> . term / fact
+    (48) lterm -> . lfact
+    (49) lterm -> . lterm AND lfact
+    (64) fact -> . ID
+    (65) fact -> . ID [ aexpr ]
+    (66) fact -> . ( aexpr )
+    (67) fact -> . NUMBER
+    (68) fact -> . call
+    (69) fact -> . - fact
+    (50) lfact -> . FALSE
+    (51) lfact -> . TRUE
+    (52) lfact -> . ! lfact
+    (53) lfact -> . # ID [ aexpr ]
+    (54) lfact -> . # ID
+    (55) lfact -> . ( lexpr )
+    (56) lfact -> . # call
+    (57) lfact -> . cexpr
+    (83) call -> . ID ( )
+    (84) call -> . ID ( arguments )
+    (70) cexpr -> . aexpr > aexpr
+    (71) cexpr -> . aexpr < aexpr
+    (72) cexpr -> . aexpr GE aexpr
+    (73) cexpr -> . aexpr LE aexpr
+    (74) cexpr -> . aexpr EQUAL aexpr
+    (75) cexpr -> . aexpr NOT_EQUAL aexpr
+    STRING          shift and go to state 55
+    ID              shift and go to state 41
+    (               shift and go to state 56
+    NUMBER          shift and go to state 49
+    -               shift and go to state 47
+    FALSE           shift and go to state 37
+    TRUE            shift and go to state 38
+    !               shift and go to state 39
+    #               shift and go to state 40
+
+    expr                           shift and go to state 92
+    sexpr                          shift and go to state 52
+    aexpr                          shift and go to state 53
+    lexpr                          shift and go to state 54
+    term                           shift and go to state 46
+    lterm                          shift and go to state 35
+    fact                           shift and go to state 48
+    lfact                          shift and go to state 36
+    call                           shift and go to state 44
+    cexpr                          shift and go to state 45
+
+state 59
+
+    (26) asgn_stmt -> ID [ . aexpr ] = expr
+    (58) aexpr -> . term
+    (59) aexpr -> . aexpr + term
+    (60) aexpr -> . aexpr - term
+    (61) term -> . fact
+    (62) term -> . term * fact
+    (63) term -> . term / fact
+    (64) fact -> . ID
+    (65) fact -> . ID [ aexpr ]
+    (66) fact -> . ( aexpr )
+    (67) fact -> . NUMBER
+    (68) fact -> . call
+    (69) fact -> . - fact
+    (83) call -> . ID ( )
+    (84) call -> . ID ( arguments )
+    ID              shift and go to state 41
+    (               shift and go to state 90
+    NUMBER          shift and go to state 49
+    -               shift and go to state 47
+
+    aexpr                          shift and go to state 93
+    term                           shift and go to state 46
+    fact                           shift and go to state 48
+    call                           shift and go to state 44
+
+state 60
+
+    (78) function -> ID ( . ) block
+    (79) function -> ID ( . parameters ) block
+    (80) parameters -> . ids_non_empty_w_commas
+    (81) ids_non_empty_w_commas -> . ID
+    (82) ids_non_empty_w_commas -> . ids_non_empty_w_commas , ID
+    )               shift and go to state 95
+    ID              shift and go to state 94
+
+    parameters                     shift and go to state 96
+    ids_non_empty_w_commas         shift and go to state 97
+
+state 61
+
+    (3) var_decl -> VAR ID = init . ;
+    ;               shift and go to state 98
+
+
+state 62
+
+    (13) init -> [ . exprs_non_empty_w_commas ]
+    (44) exprs_non_empty_w_commas -> . expr
+    (45) exprs_non_empty_w_commas -> . exprs_non_empty_w_commas , expr
+    (41) expr -> . sexpr
+    (42) expr -> . aexpr
+    (43) expr -> . lexpr
+    (76) sexpr -> . STRING
+    (58) aexpr -> . term
+    (59) aexpr -> . aexpr + term
+    (60) aexpr -> . aexpr - term
+    (46) lexpr -> . lterm
+    (47) lexpr -> . lexpr OR lterm
+    (61) term -> . fact
+    (62) term -> . term * fact
+    (63) term -> . term / fact
+    (48) lterm -> . lfact
+    (49) lterm -> . lterm AND lfact
+    (64) fact -> . ID
+    (65) fact -> . ID [ aexpr ]
+    (66) fact -> . ( aexpr )
+    (67) fact -> . NUMBER
+    (68) fact -> . call
+    (69) fact -> . - fact
+    (50) lfact -> . FALSE
+    (51) lfact -> . TRUE
+    (52) lfact -> . ! lfact
+    (53) lfact -> . # ID [ aexpr ]
+    (54) lfact -> . # ID
+    (55) lfact -> . ( lexpr )
+    (56) lfact -> . # call
+    (57) lfact -> . cexpr
+    (83) call -> . ID ( )
+    (84) call -> . ID ( arguments )
+    (70) cexpr -> . aexpr > aexpr
+    (71) cexpr -> . aexpr < aexpr
+    (72) cexpr -> . aexpr GE aexpr
+    (73) cexpr -> . aexpr LE aexpr
+    (74) cexpr -> . aexpr EQUAL aexpr
+    (75) cexpr -> . aexpr NOT_EQUAL aexpr
+    STRING          shift and go to state 55
+    ID              shift and go to state 41
+    (               shift and go to state 56
+    NUMBER          shift and go to state 49
+    -               shift and go to state 47
+    FALSE           shift and go to state 37
+    TRUE            shift and go to state 38
+    !               shift and go to state 39
+    #               shift and go to state 40
+
+    exprs_non_empty_w_commas       shift and go to state 99
+    expr                           shift and go to state 100
+    sexpr                          shift and go to state 52
+    aexpr                          shift and go to state 53
+    lexpr                          shift and go to state 54
+    term                           shift and go to state 46
+    lterm                          shift and go to state 35
+    fact                           shift and go to state 48
+    lfact                          shift and go to state 36
+    call                           shift and go to state 44
+    cexpr                          shift and go to state 45
+
+state 63
+
+    (14) init -> expr .
+    ;               reduce using rule 14 (init -> expr .)
+
+
+state 64
+
+    (32) for_stmt -> FOR ( ; . ; ) statement
+    (33) for_stmt -> FOR ( ; . ; asgn_stmt ) statement
+    (34) for_stmt -> FOR ( ; . lexpr ; ) statement
+    (35) for_stmt -> FOR ( ; . lexpr ; asgn_stmt ) statement
+    (46) lexpr -> . lterm
+    (47) lexpr -> . lexpr OR lterm
+    (48) lterm -> . lfact
+    (49) lterm -> . lterm AND lfact
+    (50) lfact -> . FALSE
+    (51) lfact -> . TRUE
+    (52) lfact -> . ! lfact
+    (53) lfact -> . # ID [ aexpr ]
+    (54) lfact -> . # ID
+    (55) lfact -> . ( lexpr )
+    (56) lfact -> . # call
+    (57) lfact -> . cexpr
+    (70) cexpr -> . aexpr > aexpr
+    (71) cexpr -> . aexpr < aexpr
+    (72) cexpr -> . aexpr GE aexpr
+    (73) cexpr -> . aexpr LE aexpr
+    (74) cexpr -> . aexpr EQUAL aexpr
+    (75) cexpr -> . aexpr NOT_EQUAL aexpr
+    (58) aexpr -> . term
+    (59) aexpr -> . aexpr + term
+    (60) aexpr -> . aexpr - term
+    (61) term -> . fact
+    (62) term -> . term * fact
+    (63) term -> . term / fact
+    (64) fact -> . ID
+    (65) fact -> . ID [ aexpr ]
+    (66) fact -> . ( aexpr )
+    (67) fact -> . NUMBER
+    (68) fact -> . call
+    (69) fact -> . - fact
+    (83) call -> . ID ( )
+    (84) call -> . ID ( arguments )
+    ;               shift and go to state 101
+    FALSE           shift and go to state 37
+    TRUE            shift and go to state 38
+    !               shift and go to state 39
+    #               shift and go to state 40
+    (               shift and go to state 43
+    ID              shift and go to state 41
+    NUMBER          shift and go to state 49
+    -               shift and go to state 47
+
+    lexpr                          shift and go to state 102
+    lterm                          shift and go to state 35
+    lfact                          shift and go to state 36
+    aexpr                          shift and go to state 42
+    call                           shift and go to state 44
+    cexpr                          shift and go to state 45
+    term                           shift and go to state 46
+    fact                           shift and go to state 48
+
+state 65
+
+    (36) for_stmt -> FOR ( asgn_stmt . ; ; ) statement
+    (37) for_stmt -> FOR ( asgn_stmt . ; ; asgn_stmt ) statement
+    (38) for_stmt -> FOR ( asgn_stmt . ; lexpr ; ) statement
+    (39) for_stmt -> FOR ( asgn_stmt . ; lexpr ; asgn_stmt ) statement
+    ;               shift and go to state 103
+
+
+state 66
+
+    (31) while_stmt -> WHILE lexpr statement .
+    FOR             reduce using rule 31 (while_stmt -> WHILE lexpr statement .)
+    WHILE           reduce using rule 31 (while_stmt -> WHILE lexpr statement .)
+    IF              reduce using rule 31 (while_stmt -> WHILE lexpr statement .)
+    RETURN          reduce using rule 31 (while_stmt -> WHILE lexpr statement .)
+    PRINT           reduce using rule 31 (while_stmt -> WHILE lexpr statement .)
+    ID              reduce using rule 31 (while_stmt -> WHILE lexpr statement .)
+    $end            reduce using rule 31 (while_stmt -> WHILE lexpr statement .)
+    ELSE            reduce using rule 31 (while_stmt -> WHILE lexpr statement .)
+    {               reduce using rule 31 (while_stmt -> WHILE lexpr statement .)
+    }               reduce using rule 31 (while_stmt -> WHILE lexpr statement .)
+
+
+state 67
+
+    (47) lexpr -> lexpr OR . lterm
+    (48) lterm -> . lfact
+    (49) lterm -> . lterm AND lfact
+    (50) lfact -> . FALSE
+    (51) lfact -> . TRUE
+    (52) lfact -> . ! lfact
+    (53) lfact -> . # ID [ aexpr ]
+    (54) lfact -> . # ID
+    (55) lfact -> . ( lexpr )
+    (56) lfact -> . # call
+    (57) lfact -> . cexpr
+    (70) cexpr -> . aexpr > aexpr
+    (71) cexpr -> . aexpr < aexpr
+    (72) cexpr -> . aexpr GE aexpr
+    (73) cexpr -> . aexpr LE aexpr
+    (74) cexpr -> . aexpr EQUAL aexpr
+    (75) cexpr -> . aexpr NOT_EQUAL aexpr
+    (58) aexpr -> . term
+    (59) aexpr -> . aexpr + term
+    (60) aexpr -> . aexpr - term
+    (61) term -> . fact
+    (62) term -> . term * fact
+    (63) term -> . term / fact
+    (64) fact -> . ID
+    (65) fact -> . ID [ aexpr ]
+    (66) fact -> . ( aexpr )
+    (67) fact -> . NUMBER
+    (68) fact -> . call
+    (69) fact -> . - fact
+    (83) call -> . ID ( )
+    (84) call -> . ID ( arguments )
+    FALSE           shift and go to state 37
+    TRUE            shift and go to state 38
+    !               shift and go to state 39
+    #               shift and go to state 40
+    (               shift and go to state 43
+    ID              shift and go to state 41
+    NUMBER          shift and go to state 49
+    -               shift and go to state 47
+
+    lterm                          shift and go to state 104
+    lfact                          shift and go to state 36
+    aexpr                          shift and go to state 42
+    call                           shift and go to state 44
+    cexpr                          shift and go to state 45
+    term                           shift and go to state 46
+    fact                           shift and go to state 48
+
+state 68
+
+    (21) statement -> block .
+    FOR             reduce using rule 21 (statement -> block .)
+    WHILE           reduce using rule 21 (statement -> block .)
+    IF              reduce using rule 21 (statement -> block .)
+    RETURN          reduce using rule 21 (statement -> block .)
+    PRINT           reduce using rule 21 (statement -> block .)
+    ID              reduce using rule 21 (statement -> block .)
+    $end            reduce using rule 21 (statement -> block .)
+    ELSE            reduce using rule 21 (statement -> block .)
+    {               reduce using rule 21 (statement -> block .)
+    }               reduce using rule 21 (statement -> block .)
+
+
+state 69
+
+    (22) statement -> free_statement .
+    FOR             reduce using rule 22 (statement -> free_statement .)
+    WHILE           reduce using rule 22 (statement -> free_statement .)
+    IF              reduce using rule 22 (statement -> free_statement .)
+    RETURN          reduce using rule 22 (statement -> free_statement .)
+    PRINT           reduce using rule 22 (statement -> free_statement .)
+    ID              reduce using rule 22 (statement -> free_statement .)
+    $end            reduce using rule 22 (statement -> free_statement .)
+    ELSE            reduce using rule 22 (statement -> free_statement .)
+    {               reduce using rule 22 (statement -> free_statement .)
+    }               reduce using rule 22 (statement -> free_statement .)
+
+
+state 70
+
+    (40) block -> { . var_decls_maybe_empty statements_maybe_empty }
+    (4) var_decls_maybe_empty -> .
+    (5) var_decls_maybe_empty -> . var_decl var_decls_maybe_empty
+    (2) var_decl -> . VAR ID ;
+    (3) var_decl -> . VAR ID = init ;
+    {               reduce using rule 4 (var_decls_maybe_empty -> .)
+    FOR             reduce using rule 4 (var_decls_maybe_empty -> .)
+    WHILE           reduce using rule 4 (var_decls_maybe_empty -> .)
+    IF              reduce using rule 4 (var_decls_maybe_empty -> .)
+    RETURN          reduce using rule 4 (var_decls_maybe_empty -> .)
+    PRINT           reduce using rule 4 (var_decls_maybe_empty -> .)
+    ID              reduce using rule 4 (var_decls_maybe_empty -> .)
+    }               reduce using rule 4 (var_decls_maybe_empty -> .)
+    VAR             shift and go to state 4
+
+    var_decls_maybe_empty          shift and go to state 105
+    var_decl                       shift and go to state 3
+
+state 71
+
+    (49) lterm -> lterm AND . lfact
+    (50) lfact -> . FALSE
+    (51) lfact -> . TRUE
+    (52) lfact -> . ! lfact
+    (53) lfact -> . # ID [ aexpr ]
+    (54) lfact -> . # ID
+    (55) lfact -> . ( lexpr )
+    (56) lfact -> . # call
+    (57) lfact -> . cexpr
+    (70) cexpr -> . aexpr > aexpr
+    (71) cexpr -> . aexpr < aexpr
+    (72) cexpr -> . aexpr GE aexpr
+    (73) cexpr -> . aexpr LE aexpr
+    (74) cexpr -> . aexpr EQUAL aexpr
+    (75) cexpr -> . aexpr NOT_EQUAL aexpr
+    (58) aexpr -> . term
+    (59) aexpr -> . aexpr + term
+    (60) aexpr -> . aexpr - term
+    (61) term -> . fact
+    (62) term -> . term * fact
+    (63) term -> . term / fact
+    (64) fact -> . ID
+    (65) fact -> . ID [ aexpr ]
+    (66) fact -> . ( aexpr )
+    (67) fact -> . NUMBER
+    (68) fact -> . call
+    (69) fact -> . - fact
+    (83) call -> . ID ( )
+    (84) call -> . ID ( arguments )
+    FALSE           shift and go to state 37
+    TRUE            shift and go to state 38
+    !               shift and go to state 39
+    #               shift and go to state 40
+    (               shift and go to state 43
+    ID              shift and go to state 41
+    NUMBER          shift and go to state 49
+    -               shift and go to state 47
+
+    lfact                          shift and go to state 106
+    aexpr                          shift and go to state 42
+    call                           shift and go to state 44
+    cexpr                          shift and go to state 45
+    term                           shift and go to state 46
+    fact                           shift and go to state 48
+
+state 72
+
+    (52) lfact -> ! lfact .
+    AND             reduce using rule 52 (lfact -> ! lfact .)
+    OR              reduce using rule 52 (lfact -> ! lfact .)
+    {               reduce using rule 52 (lfact -> ! lfact .)
+    FOR             reduce using rule 52 (lfact -> ! lfact .)
+    WHILE           reduce using rule 52 (lfact -> ! lfact .)
+    IF              reduce using rule 52 (lfact -> ! lfact .)
+    RETURN          reduce using rule 52 (lfact -> ! lfact .)
+    PRINT           reduce using rule 52 (lfact -> ! lfact .)
+    ID              reduce using rule 52 (lfact -> ! lfact .)
+    ;               reduce using rule 52 (lfact -> ! lfact .)
+    )               reduce using rule 52 (lfact -> ! lfact .)
+    ]               reduce using rule 52 (lfact -> ! lfact .)
+    ,               reduce using rule 52 (lfact -> ! lfact .)
+
+
+state 73
+
+    (53) lfact -> # ID . [ aexpr ]
+    (54) lfact -> # ID .
+    (83) call -> ID . ( )
+    (84) call -> ID . ( arguments )
+    [               shift and go to state 107
+    AND             reduce using rule 54 (lfact -> # ID .)
+    OR              reduce using rule 54 (lfact -> # ID .)
+    {               reduce using rule 54 (lfact -> # ID .)
+    FOR             reduce using rule 54 (lfact -> # ID .)
+    WHILE           reduce using rule 54 (lfact -> # ID .)
+    IF              reduce using rule 54 (lfact -> # ID .)
+    RETURN          reduce using rule 54 (lfact -> # ID .)
+    PRINT           reduce using rule 54 (lfact -> # ID .)
+    ID              reduce using rule 54 (lfact -> # ID .)
+    ;               reduce using rule 54 (lfact -> # ID .)
+    )               reduce using rule 54 (lfact -> # ID .)
+    ]               reduce using rule 54 (lfact -> # ID .)
+    ,               reduce using rule 54 (lfact -> # ID .)
+    (               shift and go to state 76
+
+
+state 74
+
+    (56) lfact -> # call .
+    AND             reduce using rule 56 (lfact -> # call .)
+    OR              reduce using rule 56 (lfact -> # call .)
+    {               reduce using rule 56 (lfact -> # call .)
+    FOR             reduce using rule 56 (lfact -> # call .)
+    WHILE           reduce using rule 56 (lfact -> # call .)
+    IF              reduce using rule 56 (lfact -> # call .)
+    RETURN          reduce using rule 56 (lfact -> # call .)
+    PRINT           reduce using rule 56 (lfact -> # call .)
+    ID              reduce using rule 56 (lfact -> # call .)
+    ;               reduce using rule 56 (lfact -> # call .)
+    )               reduce using rule 56 (lfact -> # call .)
+    ]               reduce using rule 56 (lfact -> # call .)
+    ,               reduce using rule 56 (lfact -> # call .)
+
+
+state 75
+
+    (65) fact -> ID [ . aexpr ]
+    (58) aexpr -> . term
+    (59) aexpr -> . aexpr + term
+    (60) aexpr -> . aexpr - term
+    (61) term -> . fact
+    (62) term -> . term * fact
+    (63) term -> . term / fact
+    (64) fact -> . ID
+    (65) fact -> . ID [ aexpr ]
+    (66) fact -> . ( aexpr )
+    (67) fact -> . NUMBER
+    (68) fact -> . call
+    (69) fact -> . - fact
+    (83) call -> . ID ( )
+    (84) call -> . ID ( arguments )
+    ID              shift and go to state 41
+    (               shift and go to state 90
+    NUMBER          shift and go to state 49
+    -               shift and go to state 47
+
+    aexpr                          shift and go to state 108
+    term                           shift and go to state 46
+    fact                           shift and go to state 48
+    call                           shift and go to state 44
+
+state 76
+
+    (83) call -> ID ( . )
+    (84) call -> ID ( . arguments )
+    (77) arguments -> . exprs_non_empty_w_commas
+    (44) exprs_non_empty_w_commas -> . expr
+    (45) exprs_non_empty_w_commas -> . exprs_non_empty_w_commas , expr
+    (41) expr -> . sexpr
+    (42) expr -> . aexpr
+    (43) expr -> . lexpr
+    (76) sexpr -> . STRING
+    (58) aexpr -> . term
+    (59) aexpr -> . aexpr + term
+    (60) aexpr -> . aexpr - term
+    (46) lexpr -> . lterm
+    (47) lexpr -> . lexpr OR lterm
+    (61) term -> . fact
+    (62) term -> . term * fact
+    (63) term -> . term / fact
+    (48) lterm -> . lfact
+    (49) lterm -> . lterm AND lfact
+    (64) fact -> . ID
+    (65) fact -> . ID [ aexpr ]
+    (66) fact -> . ( aexpr )
+    (67) fact -> . NUMBER
+    (68) fact -> . call
+    (69) fact -> . - fact
+    (50) lfact -> . FALSE
+    (51) lfact -> . TRUE
+    (52) lfact -> . ! lfact
+    (53) lfact -> . # ID [ aexpr ]
+    (54) lfact -> . # ID
+    (55) lfact -> . ( lexpr )
+    (56) lfact -> . # call
+    (57) lfact -> . cexpr
+    (83) call -> . ID ( )
+    (84) call -> . ID ( arguments )
+    (70) cexpr -> . aexpr > aexpr
+    (71) cexpr -> . aexpr < aexpr
+    (72) cexpr -> . aexpr GE aexpr
+    (73) cexpr -> . aexpr LE aexpr
+    (74) cexpr -> . aexpr EQUAL aexpr
+    (75) cexpr -> . aexpr NOT_EQUAL aexpr
+    )               shift and go to state 109
+    STRING          shift and go to state 55
+    ID              shift and go to state 41
+    (               shift and go to state 56
+    NUMBER          shift and go to state 49
+    -               shift and go to state 47
+    FALSE           shift and go to state 37
+    TRUE            shift and go to state 38
+    !               shift and go to state 39
+    #               shift and go to state 40
+
+    arguments                      shift and go to state 110
+    exprs_non_empty_w_commas       shift and go to state 111
+    expr                           shift and go to state 100
+    sexpr                          shift and go to state 52
+    aexpr                          shift and go to state 53
+    lexpr                          shift and go to state 54
+    term                           shift and go to state 46
+    lterm                          shift and go to state 35
+    fact                           shift and go to state 48
+    lfact                          shift and go to state 36
+    call                           shift and go to state 44
+    cexpr                          shift and go to state 45
+
+state 77
+
+    (70) cexpr -> aexpr > . aexpr
+    (58) aexpr -> . term
+    (59) aexpr -> . aexpr + term
+    (60) aexpr -> . aexpr - term
+    (61) term -> . fact
+    (62) term -> . term * fact
+    (63) term -> . term / fact
+    (64) fact -> . ID
+    (65) fact -> . ID [ aexpr ]
+    (66) fact -> . ( aexpr )
+    (67) fact -> . NUMBER
+    (68) fact -> . call
+    (69) fact -> . - fact
+    (83) call -> . ID ( )
+    (84) call -> . ID ( arguments )
+    ID              shift and go to state 41
+    (               shift and go to state 90
+    NUMBER          shift and go to state 49
+    -               shift and go to state 47
+
+    aexpr                          shift and go to state 112
+    term                           shift and go to state 46
+    fact                           shift and go to state 48
+    call                           shift and go to state 44
+
+state 78
+
+    (71) cexpr -> aexpr < . aexpr
+    (58) aexpr -> . term
+    (59) aexpr -> . aexpr + term
+    (60) aexpr -> . aexpr - term
+    (61) term -> . fact
+    (62) term -> . term * fact
+    (63) term -> . term / fact
+    (64) fact -> . ID
+    (65) fact -> . ID [ aexpr ]
+    (66) fact -> . ( aexpr )
+    (67) fact -> . NUMBER
+    (68) fact -> . call
+    (69) fact -> . - fact
+    (83) call -> . ID ( )
+    (84) call -> . ID ( arguments )
+    ID              shift and go to state 41
+    (               shift and go to state 90
+    NUMBER          shift and go to state 49
+    -               shift and go to state 47
+
+    aexpr                          shift and go to state 113
+    term                           shift and go to state 46
+    fact                           shift and go to state 48
+    call                           shift and go to state 44
+
+state 79
+
+    (72) cexpr -> aexpr GE . aexpr
+    (58) aexpr -> . term
+    (59) aexpr -> . aexpr + term
+    (60) aexpr -> . aexpr - term
+    (61) term -> . fact
+    (62) term -> . term * fact
+    (63) term -> . term / fact
+    (64) fact -> . ID
+    (65) fact -> . ID [ aexpr ]
+    (66) fact -> . ( aexpr )
+    (67) fact -> . NUMBER
+    (68) fact -> . call
+    (69) fact -> . - fact
+    (83) call -> . ID ( )
+    (84) call -> . ID ( arguments )
+    ID              shift and go to state 41
+    (               shift and go to state 90
+    NUMBER          shift and go to state 49
+    -               shift and go to state 47
+
+    aexpr                          shift and go to state 114
+    term                           shift and go to state 46
+    fact                           shift and go to state 48
+    call                           shift and go to state 44
+
+state 80
+
+    (73) cexpr -> aexpr LE . aexpr
+    (58) aexpr -> . term
+    (59) aexpr -> . aexpr + term
+    (60) aexpr -> . aexpr - term
+    (61) term -> . fact
+    (62) term -> . term * fact
+    (63) term -> . term / fact
+    (64) fact -> . ID
+    (65) fact -> . ID [ aexpr ]
+    (66) fact -> . ( aexpr )
+    (67) fact -> . NUMBER
+    (68) fact -> . call
+    (69) fact -> . - fact
+    (83) call -> . ID ( )
+    (84) call -> . ID ( arguments )
+    ID              shift and go to state 41
+    (               shift and go to state 90
+    NUMBER          shift and go to state 49
+    -               shift and go to state 47
+
+    aexpr                          shift and go to state 115
+    term                           shift and go to state 46
+    fact                           shift and go to state 48
+    call                           shift and go to state 44
+
+state 81
+
+    (74) cexpr -> aexpr EQUAL . aexpr
+    (58) aexpr -> . term
+    (59) aexpr -> . aexpr + term
+    (60) aexpr -> . aexpr - term
+    (61) term -> . fact
+    (62) term -> . term * fact
+    (63) term -> . term / fact
+    (64) fact -> . ID
+    (65) fact -> . ID [ aexpr ]
+    (66) fact -> . ( aexpr )
+    (67) fact -> . NUMBER
+    (68) fact -> . call
+    (69) fact -> . - fact
+    (83) call -> . ID ( )
+    (84) call -> . ID ( arguments )
+    ID              shift and go to state 41
+    (               shift and go to state 90
+    NUMBER          shift and go to state 49
+    -               shift and go to state 47
+
+    aexpr                          shift and go to state 116
+    term                           shift and go to state 46
+    fact                           shift and go to state 48
+    call                           shift and go to state 44
+
+state 82
+
+    (75) cexpr -> aexpr NOT_EQUAL . aexpr
+    (58) aexpr -> . term
+    (59) aexpr -> . aexpr + term
+    (60) aexpr -> . aexpr - term
+    (61) term -> . fact
+    (62) term -> . term * fact
+    (63) term -> . term / fact
+    (64) fact -> . ID
+    (65) fact -> . ID [ aexpr ]
+    (66) fact -> . ( aexpr )
+    (67) fact -> . NUMBER
+    (68) fact -> . call
+    (69) fact -> . - fact
+    (83) call -> . ID ( )
+    (84) call -> . ID ( arguments )
+    ID              shift and go to state 41
+    (               shift and go to state 90
+    NUMBER          shift and go to state 49
+    -               shift and go to state 47
+
+    aexpr                          shift and go to state 117
+    term                           shift and go to state 46
+    fact                           shift and go to state 48
+    call                           shift and go to state 44
+
+state 83
+
+    (59) aexpr -> aexpr + . term
+    (61) term -> . fact
+    (62) term -> . term * fact
+    (63) term -> . term / fact
+    (64) fact -> . ID
+    (65) fact -> . ID [ aexpr ]
+    (66) fact -> . ( aexpr )
+    (67) fact -> . NUMBER
+    (68) fact -> . call
+    (69) fact -> . - fact
+    (83) call -> . ID ( )
+    (84) call -> . ID ( arguments )
+    ID              shift and go to state 41
+    (               shift and go to state 90
+    NUMBER          shift and go to state 49
+    -               shift and go to state 47
+
+    term                           shift and go to state 118
+    fact                           shift and go to state 48
+    call                           shift and go to state 44
+
+state 84
+
+    (60) aexpr -> aexpr - . term
+    (61) term -> . fact
+    (62) term -> . term * fact
+    (63) term -> . term / fact
+    (64) fact -> . ID
+    (65) fact -> . ID [ aexpr ]
+    (66) fact -> . ( aexpr )
+    (67) fact -> . NUMBER
+    (68) fact -> . call
+    (69) fact -> . - fact
+    (83) call -> . ID ( )
+    (84) call -> . ID ( arguments )
+    ID              shift and go to state 41
+    (               shift and go to state 90
+    NUMBER          shift and go to state 49
+    -               shift and go to state 47
+
+    term                           shift and go to state 119
+    fact                           shift and go to state 48
+    call                           shift and go to state 44
+
+state 85
+
+    (55) lfact -> ( lexpr . )
+    (47) lexpr -> lexpr . OR lterm
+    )               shift and go to state 120
+    OR              shift and go to state 67
+
+
+state 86
+
+    (66) fact -> ( aexpr . )
+    (59) aexpr -> aexpr . + term
+    (60) aexpr -> aexpr . - term
+    (70) cexpr -> aexpr . > aexpr
+    (71) cexpr -> aexpr . < aexpr
+    (72) cexpr -> aexpr . GE aexpr
+    (73) cexpr -> aexpr . LE aexpr
+    (74) cexpr -> aexpr . EQUAL aexpr
+    (75) cexpr -> aexpr . NOT_EQUAL aexpr
+    )               shift and go to state 121
+    +               shift and go to state 83
+    -               shift and go to state 84
+    >               shift and go to state 77
+    <               shift and go to state 78
+    GE              shift and go to state 79
+    LE              shift and go to state 80
+    EQUAL           shift and go to state 81
+    NOT_EQUAL       shift and go to state 82
+
+
+state 87
+
+    (62) term -> term * . fact
+    (64) fact -> . ID
+    (65) fact -> . ID [ aexpr ]
+    (66) fact -> . ( aexpr )
+    (67) fact -> . NUMBER
+    (68) fact -> . call
+    (69) fact -> . - fact
+    (83) call -> . ID ( )
+    (84) call -> . ID ( arguments )
+    ID              shift and go to state 41
+    (               shift and go to state 90
+    NUMBER          shift and go to state 49
+    -               shift and go to state 47
+
+    fact                           shift and go to state 122
+    call                           shift and go to state 44
+
+state 88
+
+    (63) term -> term / . fact
+    (64) fact -> . ID
+    (65) fact -> . ID [ aexpr ]
+    (66) fact -> . ( aexpr )
+    (67) fact -> . NUMBER
+    (68) fact -> . call
+    (69) fact -> . - fact
+    (83) call -> . ID ( )
+    (84) call -> . ID ( arguments )
+    ID              shift and go to state 41
+    (               shift and go to state 90
+    NUMBER          shift and go to state 49
+    -               shift and go to state 47
+
+    fact                           shift and go to state 123
+    call                           shift and go to state 44
+
+state 89
+
+    (69) fact -> - fact .
+    *               reduce using rule 69 (fact -> - fact .)
+    /               reduce using rule 69 (fact -> - fact .)
+    >               reduce using rule 69 (fact -> - fact .)
+    <               reduce using rule 69 (fact -> - fact .)
+    GE              reduce using rule 69 (fact -> - fact .)
+    LE              reduce using rule 69 (fact -> - fact .)
+    EQUAL           reduce using rule 69 (fact -> - fact .)
+    NOT_EQUAL       reduce using rule 69 (fact -> - fact .)
+    +               reduce using rule 69 (fact -> - fact .)
+    -               reduce using rule 69 (fact -> - fact .)
+    ;               reduce using rule 69 (fact -> - fact .)
+    )               reduce using rule 69 (fact -> - fact .)
+    ]               reduce using rule 69 (fact -> - fact .)
+    ,               reduce using rule 69 (fact -> - fact .)
+    AND             reduce using rule 69 (fact -> - fact .)
+    OR              reduce using rule 69 (fact -> - fact .)
+    {               reduce using rule 69 (fact -> - fact .)
+    FOR             reduce using rule 69 (fact -> - fact .)
+    WHILE           reduce using rule 69 (fact -> - fact .)
+    IF              reduce using rule 69 (fact -> - fact .)
+    RETURN          reduce using rule 69 (fact -> - fact .)
+    PRINT           reduce using rule 69 (fact -> - fact .)
+    ID              reduce using rule 69 (fact -> - fact .)
+
+
+state 90
+
+    (66) fact -> ( . aexpr )
+    (58) aexpr -> . term
+    (59) aexpr -> . aexpr + term
+    (60) aexpr -> . aexpr - term
+    (61) term -> . fact
+    (62) term -> . term * fact
+    (63) term -> . term / fact
+    (64) fact -> . ID
+    (65) fact -> . ID [ aexpr ]
+    (66) fact -> . ( aexpr )
+    (67) fact -> . NUMBER
+    (68) fact -> . call
+    (69) fact -> . - fact
+    (83) call -> . ID ( )
+    (84) call -> . ID ( arguments )
+    ID              shift and go to state 41
+    (               shift and go to state 90
+    NUMBER          shift and go to state 49
+    -               shift and go to state 47
+
+    aexpr                          shift and go to state 124
+    term                           shift and go to state 46
+    fact                           shift and go to state 48
+    call                           shift and go to state 44
+
+state 91
+
+    (29) if_stmt -> IF lexpr statement .
+    (30) if_stmt -> IF lexpr statement . ELSE statement
+  ! shift/reduce conflict for ELSE resolved as shift
+    FOR             reduce using rule 29 (if_stmt -> IF lexpr statement .)
+    WHILE           reduce using rule 29 (if_stmt -> IF lexpr statement .)
+    IF              reduce using rule 29 (if_stmt -> IF lexpr statement .)
+    RETURN          reduce using rule 29 (if_stmt -> IF lexpr statement .)
+    PRINT           reduce using rule 29 (if_stmt -> IF lexpr statement .)
+    ID              reduce using rule 29 (if_stmt -> IF lexpr statement .)
+    $end            reduce using rule 29 (if_stmt -> IF lexpr statement .)
+    {               reduce using rule 29 (if_stmt -> IF lexpr statement .)
+    }               reduce using rule 29 (if_stmt -> IF lexpr statement .)
+    ELSE            shift and go to state 125
+
+
+state 92
+
+    (25) asgn_stmt -> ID = expr .
+    ;               reduce using rule 25 (asgn_stmt -> ID = expr .)
+    )               reduce using rule 25 (asgn_stmt -> ID = expr .)
+
+
+state 93
+
+    (26) asgn_stmt -> ID [ aexpr . ] = expr
+    (59) aexpr -> aexpr . + term
+    (60) aexpr -> aexpr . - term
+    ]               shift and go to state 126
+    +               shift and go to state 83
+    -               shift and go to state 84
+
+
+state 94
+
+    (81) ids_non_empty_w_commas -> ID .
+    ,               reduce using rule 81 (ids_non_empty_w_commas -> ID .)
+    )               reduce using rule 81 (ids_non_empty_w_commas -> ID .)
+
+
+state 95
+
+    (78) function -> ID ( ) . block
+    (40) block -> . { var_decls_maybe_empty statements_maybe_empty }
+    {               shift and go to state 70
+
+    block                          shift and go to state 127
+
+state 96
+
+    (79) function -> ID ( parameters . ) block
+    )               shift and go to state 128
+
+
+state 97
+
+    (80) parameters -> ids_non_empty_w_commas .
+    (82) ids_non_empty_w_commas -> ids_non_empty_w_commas . , ID
+    )               reduce using rule 80 (parameters -> ids_non_empty_w_commas .)
+    ,               shift and go to state 129
+
+
+state 98
+
+    (3) var_decl -> VAR ID = init ; .
+    VAR             reduce using rule 3 (var_decl -> VAR ID = init ; .)
+    FUN             reduce using rule 3 (var_decl -> VAR ID = init ; .)
+    FOR             reduce using rule 3 (var_decl -> VAR ID = init ; .)
+    WHILE           reduce using rule 3 (var_decl -> VAR ID = init ; .)
+    IF              reduce using rule 3 (var_decl -> VAR ID = init ; .)
+    RETURN          reduce using rule 3 (var_decl -> VAR ID = init ; .)
+    PRINT           reduce using rule 3 (var_decl -> VAR ID = init ; .)
+    ID              reduce using rule 3 (var_decl -> VAR ID = init ; .)
+    $end            reduce using rule 3 (var_decl -> VAR ID = init ; .)
+    {               reduce using rule 3 (var_decl -> VAR ID = init ; .)
+    }               reduce using rule 3 (var_decl -> VAR ID = init ; .)
+
+
+state 99
+
+    (13) init -> [ exprs_non_empty_w_commas . ]
+    (45) exprs_non_empty_w_commas -> exprs_non_empty_w_commas . , expr
+    ]               shift and go to state 130
+    ,               shift and go to state 131
+
+
+state 100
+
+    (44) exprs_non_empty_w_commas -> expr .
+    ]               reduce using rule 44 (exprs_non_empty_w_commas -> expr .)
+    ,               reduce using rule 44 (exprs_non_empty_w_commas -> expr .)
+    )               reduce using rule 44 (exprs_non_empty_w_commas -> expr .)
+
+
+state 101
+
+    (32) for_stmt -> FOR ( ; ; . ) statement
+    (33) for_stmt -> FOR ( ; ; . asgn_stmt ) statement
+    (25) asgn_stmt -> . ID = expr
+    (26) asgn_stmt -> . ID [ aexpr ] = expr
+    )               shift and go to state 132
+    ID              shift and go to state 25
+
+    asgn_stmt                      shift and go to state 133
+
+state 102
+
+    (34) for_stmt -> FOR ( ; lexpr . ; ) statement
+    (35) for_stmt -> FOR ( ; lexpr . ; asgn_stmt ) statement
+    (47) lexpr -> lexpr . OR lterm
+    ;               shift and go to state 134
+    OR              shift and go to state 67
+
+
+state 103
+
+    (36) for_stmt -> FOR ( asgn_stmt ; . ; ) statement
+    (37) for_stmt -> FOR ( asgn_stmt ; . ; asgn_stmt ) statement
+    (38) for_stmt -> FOR ( asgn_stmt ; . lexpr ; ) statement
+    (39) for_stmt -> FOR ( asgn_stmt ; . lexpr ; asgn_stmt ) statement
+    (46) lexpr -> . lterm
+    (47) lexpr -> . lexpr OR lterm
+    (48) lterm -> . lfact
+    (49) lterm -> . lterm AND lfact
+    (50) lfact -> . FALSE
+    (51) lfact -> . TRUE
+    (52) lfact -> . ! lfact
+    (53) lfact -> . # ID [ aexpr ]
+    (54) lfact -> . # ID
+    (55) lfact -> . ( lexpr )
+    (56) lfact -> . # call
+    (57) lfact -> . cexpr
+    (70) cexpr -> . aexpr > aexpr
+    (71) cexpr -> . aexpr < aexpr
+    (72) cexpr -> . aexpr GE aexpr
+    (73) cexpr -> . aexpr LE aexpr
+    (74) cexpr -> . aexpr EQUAL aexpr
+    (75) cexpr -> . aexpr NOT_EQUAL aexpr
+    (58) aexpr -> . term
+    (59) aexpr -> . aexpr + term
+    (60) aexpr -> . aexpr - term
+    (61) term -> . fact
+    (62) term -> . term * fact
+    (63) term -> . term / fact
+    (64) fact -> . ID
+    (65) fact -> . ID [ aexpr ]
+    (66) fact -> . ( aexpr )
+    (67) fact -> . NUMBER
+    (68) fact -> . call
+    (69) fact -> . - fact
+    (83) call -> . ID ( )
+    (84) call -> . ID ( arguments )
+    ;               shift and go to state 135
+    FALSE           shift and go to state 37
+    TRUE            shift and go to state 38
+    !               shift and go to state 39
+    #               shift and go to state 40
+    (               shift and go to state 43
+    ID              shift and go to state 41
+    NUMBER          shift and go to state 49
+    -               shift and go to state 47
+
+    lexpr                          shift and go to state 136
+    lterm                          shift and go to state 35
+    lfact                          shift and go to state 36
+    aexpr                          shift and go to state 42
+    call                           shift and go to state 44
+    cexpr                          shift and go to state 45
+    term                           shift and go to state 46
+    fact                           shift and go to state 48
+
+state 104
+
+    (47) lexpr -> lexpr OR lterm .
+    (49) lterm -> lterm . AND lfact
+    OR              reduce using rule 47 (lexpr -> lexpr OR lterm .)
+    {               reduce using rule 47 (lexpr -> lexpr OR lterm .)
+    FOR             reduce using rule 47 (lexpr -> lexpr OR lterm .)
+    WHILE           reduce using rule 47 (lexpr -> lexpr OR lterm .)
+    IF              reduce using rule 47 (lexpr -> lexpr OR lterm .)
+    RETURN          reduce using rule 47 (lexpr -> lexpr OR lterm .)
+    PRINT           reduce using rule 47 (lexpr -> lexpr OR lterm .)
+    ID              reduce using rule 47 (lexpr -> lexpr OR lterm .)
+    ;               reduce using rule 47 (lexpr -> lexpr OR lterm .)
+    )               reduce using rule 47 (lexpr -> lexpr OR lterm .)
+    ]               reduce using rule 47 (lexpr -> lexpr OR lterm .)
+    ,               reduce using rule 47 (lexpr -> lexpr OR lterm .)
+    AND             shift and go to state 71
+
+
+state 105
+
+    (40) block -> { var_decls_maybe_empty . statements_maybe_empty }
+    (23) statements_maybe_empty -> .
+    (24) statements_maybe_empty -> . statement statements_maybe_empty
+    (21) statement -> . block
+    (22) statement -> . free_statement
+    (40) block -> . { var_decls_maybe_empty statements_maybe_empty }
+    (9) free_statement -> . compound_stmt
+    (10) free_statement -> . simple_stmt ;
+    (18) compound_stmt -> . for_stmt
+    (19) compound_stmt -> . while_stmt
+    (20) compound_stmt -> . if_stmt
+    (15) simple_stmt -> . return_stmt
+    (16) simple_stmt -> . print_stmt
+    (17) simple_stmt -> . asgn_stmt
+    (32) for_stmt -> . FOR ( ; ; ) statement
+    (33) for_stmt -> . FOR ( ; ; asgn_stmt ) statement
+    (34) for_stmt -> . FOR ( ; lexpr ; ) statement
+    (35) for_stmt -> . FOR ( ; lexpr ; asgn_stmt ) statement
+    (36) for_stmt -> . FOR ( asgn_stmt ; ; ) statement
+    (37) for_stmt -> . FOR ( asgn_stmt ; ; asgn_stmt ) statement
+    (38) for_stmt -> . FOR ( asgn_stmt ; lexpr ; ) statement
+    (39) for_stmt -> . FOR ( asgn_stmt ; lexpr ; asgn_stmt ) statement
+    (31) while_stmt -> . WHILE lexpr statement
+    (29) if_stmt -> . IF lexpr statement
+    (30) if_stmt -> . IF lexpr statement ELSE statement
+    (28) return_stmt -> . RETURN expr
+    (27) print_stmt -> . PRINT expr
+    (25) asgn_stmt -> . ID = expr
+    (26) asgn_stmt -> . ID [ aexpr ] = expr
+    }               reduce using rule 23 (statements_maybe_empty -> .)
+    {               shift and go to state 70
+    FOR             shift and go to state 20
+    WHILE           shift and go to state 21
+    IF              shift and go to state 22
+    RETURN          shift and go to state 23
+    PRINT           shift and go to state 24
+    ID              shift and go to state 25
+
+    statements_maybe_empty         shift and go to state 137
+    statement                      shift and go to state 138
+    block                          shift and go to state 68
+    free_statement                 shift and go to state 69
+    compound_stmt                  shift and go to state 12
+    simple_stmt                    shift and go to state 13
+    for_stmt                       shift and go to state 14
+    while_stmt                     shift and go to state 15
+    if_stmt                        shift and go to state 16
+    return_stmt                    shift and go to state 17
+    print_stmt                     shift and go to state 18
+    asgn_stmt                      shift and go to state 19
+
+state 106
+
+    (49) lterm -> lterm AND lfact .
+    AND             reduce using rule 49 (lterm -> lterm AND lfact .)
+    OR              reduce using rule 49 (lterm -> lterm AND lfact .)
+    {               reduce using rule 49 (lterm -> lterm AND lfact .)
+    FOR             reduce using rule 49 (lterm -> lterm AND lfact .)
+    WHILE           reduce using rule 49 (lterm -> lterm AND lfact .)
+    IF              reduce using rule 49 (lterm -> lterm AND lfact .)
+    RETURN          reduce using rule 49 (lterm -> lterm AND lfact .)
+    PRINT           reduce using rule 49 (lterm -> lterm AND lfact .)
+    ID              reduce using rule 49 (lterm -> lterm AND lfact .)
+    ;               reduce using rule 49 (lterm -> lterm AND lfact .)
+    )               reduce using rule 49 (lterm -> lterm AND lfact .)
+    ]               reduce using rule 49 (lterm -> lterm AND lfact .)
+    ,               reduce using rule 49 (lterm -> lterm AND lfact .)
+
+
+state 107
+
+    (53) lfact -> # ID [ . aexpr ]
+    (58) aexpr -> . term
+    (59) aexpr -> . aexpr + term
+    (60) aexpr -> . aexpr - term
+    (61) term -> . fact
+    (62) term -> . term * fact
+    (63) term -> . term / fact
+    (64) fact -> . ID
+    (65) fact -> . ID [ aexpr ]
+    (66) fact -> . ( aexpr )
+    (67) fact -> . NUMBER
+    (68) fact -> . call
+    (69) fact -> . - fact
+    (83) call -> . ID ( )
+    (84) call -> . ID ( arguments )
+    ID              shift and go to state 41
+    (               shift and go to state 90
+    NUMBER          shift and go to state 49
+    -               shift and go to state 47
+
+    aexpr                          shift and go to state 139
+    term                           shift and go to state 46
+    fact                           shift and go to state 48
+    call                           shift and go to state 44
+
+state 108
+
+    (65) fact -> ID [ aexpr . ]
+    (59) aexpr -> aexpr . + term
+    (60) aexpr -> aexpr . - term
+    ]               shift and go to state 140
+    +               shift and go to state 83
+    -               shift and go to state 84
+
+
+state 109
+
+    (83) call -> ID ( ) .
+    *               reduce using rule 83 (call -> ID ( ) .)
+    /               reduce using rule 83 (call -> ID ( ) .)
+    >               reduce using rule 83 (call -> ID ( ) .)
+    <               reduce using rule 83 (call -> ID ( ) .)
+    GE              reduce using rule 83 (call -> ID ( ) .)
+    LE              reduce using rule 83 (call -> ID ( ) .)
+    EQUAL           reduce using rule 83 (call -> ID ( ) .)
+    NOT_EQUAL       reduce using rule 83 (call -> ID ( ) .)
+    +               reduce using rule 83 (call -> ID ( ) .)
+    -               reduce using rule 83 (call -> ID ( ) .)
+    ;               reduce using rule 83 (call -> ID ( ) .)
+    AND             reduce using rule 83 (call -> ID ( ) .)
+    OR              reduce using rule 83 (call -> ID ( ) .)
+    {               reduce using rule 83 (call -> ID ( ) .)
+    FOR             reduce using rule 83 (call -> ID ( ) .)
+    WHILE           reduce using rule 83 (call -> ID ( ) .)
+    IF              reduce using rule 83 (call -> ID ( ) .)
+    RETURN          reduce using rule 83 (call -> ID ( ) .)
+    PRINT           reduce using rule 83 (call -> ID ( ) .)
+    ID              reduce using rule 83 (call -> ID ( ) .)
+    )               reduce using rule 83 (call -> ID ( ) .)
+    ]               reduce using rule 83 (call -> ID ( ) .)
+    ,               reduce using rule 83 (call -> ID ( ) .)
+
+
+state 110
+
+    (84) call -> ID ( arguments . )
+    )               shift and go to state 141
+
+
+state 111
+
+    (77) arguments -> exprs_non_empty_w_commas .
+    (45) exprs_non_empty_w_commas -> exprs_non_empty_w_commas . , expr
+    )               reduce using rule 77 (arguments -> exprs_non_empty_w_commas .)
+    ,               shift and go to state 131
+
+
+state 112
+
+    (70) cexpr -> aexpr > aexpr .
+    (59) aexpr -> aexpr . + term
+    (60) aexpr -> aexpr . - term
+    AND             reduce using rule 70 (cexpr -> aexpr > aexpr .)
+    OR              reduce using rule 70 (cexpr -> aexpr > aexpr .)
+    {               reduce using rule 70 (cexpr -> aexpr > aexpr .)
+    FOR             reduce using rule 70 (cexpr -> aexpr > aexpr .)
+    WHILE           reduce using rule 70 (cexpr -> aexpr > aexpr .)
+    IF              reduce using rule 70 (cexpr -> aexpr > aexpr .)
+    RETURN          reduce using rule 70 (cexpr -> aexpr > aexpr .)
+    PRINT           reduce using rule 70 (cexpr -> aexpr > aexpr .)
+    ID              reduce using rule 70 (cexpr -> aexpr > aexpr .)
+    ;               reduce using rule 70 (cexpr -> aexpr > aexpr .)
+    )               reduce using rule 70 (cexpr -> aexpr > aexpr .)
+    ]               reduce using rule 70 (cexpr -> aexpr > aexpr .)
+    ,               reduce using rule 70 (cexpr -> aexpr > aexpr .)
+    +               shift and go to state 83
+    -               shift and go to state 84
+
+
+state 113
+
+    (71) cexpr -> aexpr < aexpr .
+    (59) aexpr -> aexpr . + term
+    (60) aexpr -> aexpr . - term
+    AND             reduce using rule 71 (cexpr -> aexpr < aexpr .)
+    OR              reduce using rule 71 (cexpr -> aexpr < aexpr .)
+    {               reduce using rule 71 (cexpr -> aexpr < aexpr .)
+    FOR             reduce using rule 71 (cexpr -> aexpr < aexpr .)
+    WHILE           reduce using rule 71 (cexpr -> aexpr < aexpr .)
+    IF              reduce using rule 71 (cexpr -> aexpr < aexpr .)
+    RETURN          reduce using rule 71 (cexpr -> aexpr < aexpr .)
+    PRINT           reduce using rule 71 (cexpr -> aexpr < aexpr .)
+    ID              reduce using rule 71 (cexpr -> aexpr < aexpr .)
+    ;               reduce using rule 71 (cexpr -> aexpr < aexpr .)
+    )               reduce using rule 71 (cexpr -> aexpr < aexpr .)
+    ]               reduce using rule 71 (cexpr -> aexpr < aexpr .)
+    ,               reduce using rule 71 (cexpr -> aexpr < aexpr .)
+    +               shift and go to state 83
+    -               shift and go to state 84
+
+
+state 114
+
+    (72) cexpr -> aexpr GE aexpr .
+    (59) aexpr -> aexpr . + term
+    (60) aexpr -> aexpr . - term
+    AND             reduce using rule 72 (cexpr -> aexpr GE aexpr .)
+    OR              reduce using rule 72 (cexpr -> aexpr GE aexpr .)
+    {               reduce using rule 72 (cexpr -> aexpr GE aexpr .)
+    FOR             reduce using rule 72 (cexpr -> aexpr GE aexpr .)
+    WHILE           reduce using rule 72 (cexpr -> aexpr GE aexpr .)
+    IF              reduce using rule 72 (cexpr -> aexpr GE aexpr .)
+    RETURN          reduce using rule 72 (cexpr -> aexpr GE aexpr .)
+    PRINT           reduce using rule 72 (cexpr -> aexpr GE aexpr .)
+    ID              reduce using rule 72 (cexpr -> aexpr GE aexpr .)
+    ;               reduce using rule 72 (cexpr -> aexpr GE aexpr .)
+    )               reduce using rule 72 (cexpr -> aexpr GE aexpr .)
+    ]               reduce using rule 72 (cexpr -> aexpr GE aexpr .)
+    ,               reduce using rule 72 (cexpr -> aexpr GE aexpr .)
+    +               shift and go to state 83
+    -               shift and go to state 84
+
+
+state 115
+
+    (73) cexpr -> aexpr LE aexpr .
+    (59) aexpr -> aexpr . + term
+    (60) aexpr -> aexpr . - term
+    AND             reduce using rule 73 (cexpr -> aexpr LE aexpr .)
+    OR              reduce using rule 73 (cexpr -> aexpr LE aexpr .)
+    {               reduce using rule 73 (cexpr -> aexpr LE aexpr .)
+    FOR             reduce using rule 73 (cexpr -> aexpr LE aexpr .)
+    WHILE           reduce using rule 73 (cexpr -> aexpr LE aexpr .)
+    IF              reduce using rule 73 (cexpr -> aexpr LE aexpr .)
+    RETURN          reduce using rule 73 (cexpr -> aexpr LE aexpr .)
+    PRINT           reduce using rule 73 (cexpr -> aexpr LE aexpr .)
+    ID              reduce using rule 73 (cexpr -> aexpr LE aexpr .)
+    ;               reduce using rule 73 (cexpr -> aexpr LE aexpr .)
+    )               reduce using rule 73 (cexpr -> aexpr LE aexpr .)
+    ]               reduce using rule 73 (cexpr -> aexpr LE aexpr .)
+    ,               reduce using rule 73 (cexpr -> aexpr LE aexpr .)
+    +               shift and go to state 83
+    -               shift and go to state 84
+
+
+state 116
+
+    (74) cexpr -> aexpr EQUAL aexpr .
+    (59) aexpr -> aexpr . + term
+    (60) aexpr -> aexpr . - term
+    AND             reduce using rule 74 (cexpr -> aexpr EQUAL aexpr .)
+    OR              reduce using rule 74 (cexpr -> aexpr EQUAL aexpr .)
+    {               reduce using rule 74 (cexpr -> aexpr EQUAL aexpr .)
+    FOR             reduce using rule 74 (cexpr -> aexpr EQUAL aexpr .)
+    WHILE           reduce using rule 74 (cexpr -> aexpr EQUAL aexpr .)
+    IF              reduce using rule 74 (cexpr -> aexpr EQUAL aexpr .)
+    RETURN          reduce using rule 74 (cexpr -> aexpr EQUAL aexpr .)
+    PRINT           reduce using rule 74 (cexpr -> aexpr EQUAL aexpr .)
+    ID              reduce using rule 74 (cexpr -> aexpr EQUAL aexpr .)
+    ;               reduce using rule 74 (cexpr -> aexpr EQUAL aexpr .)
+    )               reduce using rule 74 (cexpr -> aexpr EQUAL aexpr .)
+    ]               reduce using rule 74 (cexpr -> aexpr EQUAL aexpr .)
+    ,               reduce using rule 74 (cexpr -> aexpr EQUAL aexpr .)
+    +               shift and go to state 83
+    -               shift and go to state 84
+
+
+state 117
+
+    (75) cexpr -> aexpr NOT_EQUAL aexpr .
+    (59) aexpr -> aexpr . + term
+    (60) aexpr -> aexpr . - term
+    AND             reduce using rule 75 (cexpr -> aexpr NOT_EQUAL aexpr .)
+    OR              reduce using rule 75 (cexpr -> aexpr NOT_EQUAL aexpr .)
+    {               reduce using rule 75 (cexpr -> aexpr NOT_EQUAL aexpr .)
+    FOR             reduce using rule 75 (cexpr -> aexpr NOT_EQUAL aexpr .)
+    WHILE           reduce using rule 75 (cexpr -> aexpr NOT_EQUAL aexpr .)
+    IF              reduce using rule 75 (cexpr -> aexpr NOT_EQUAL aexpr .)
+    RETURN          reduce using rule 75 (cexpr -> aexpr NOT_EQUAL aexpr .)
+    PRINT           reduce using rule 75 (cexpr -> aexpr NOT_EQUAL aexpr .)
+    ID              reduce using rule 75 (cexpr -> aexpr NOT_EQUAL aexpr .)
+    ;               reduce using rule 75 (cexpr -> aexpr NOT_EQUAL aexpr .)
+    )               reduce using rule 75 (cexpr -> aexpr NOT_EQUAL aexpr .)
+    ]               reduce using rule 75 (cexpr -> aexpr NOT_EQUAL aexpr .)
+    ,               reduce using rule 75 (cexpr -> aexpr NOT_EQUAL aexpr .)
+    +               shift and go to state 83
+    -               shift and go to state 84
+
+
+state 118
+
+    (59) aexpr -> aexpr + term .
+    (62) term -> term . * fact
+    (63) term -> term . / fact
+    >               reduce using rule 59 (aexpr -> aexpr + term .)
+    <               reduce using rule 59 (aexpr -> aexpr + term .)
+    GE              reduce using rule 59 (aexpr -> aexpr + term .)
+    LE              reduce using rule 59 (aexpr -> aexpr + term .)
+    EQUAL           reduce using rule 59 (aexpr -> aexpr + term .)
+    NOT_EQUAL       reduce using rule 59 (aexpr -> aexpr + term .)
+    +               reduce using rule 59 (aexpr -> aexpr + term .)
+    -               reduce using rule 59 (aexpr -> aexpr + term .)
+    ;               reduce using rule 59 (aexpr -> aexpr + term .)
+    )               reduce using rule 59 (aexpr -> aexpr + term .)
+    ]               reduce using rule 59 (aexpr -> aexpr + term .)
+    ,               reduce using rule 59 (aexpr -> aexpr + term .)
+    AND             reduce using rule 59 (aexpr -> aexpr + term .)
+    OR              reduce using rule 59 (aexpr -> aexpr + term .)
+    {               reduce using rule 59 (aexpr -> aexpr + term .)
+    FOR             reduce using rule 59 (aexpr -> aexpr + term .)
+    WHILE           reduce using rule 59 (aexpr -> aexpr + term .)
+    IF              reduce using rule 59 (aexpr -> aexpr + term .)
+    RETURN          reduce using rule 59 (aexpr -> aexpr + term .)
+    PRINT           reduce using rule 59 (aexpr -> aexpr + term .)
+    ID              reduce using rule 59 (aexpr -> aexpr + term .)
+    *               shift and go to state 87
+    /               shift and go to state 88
+
+
+state 119
+
+    (60) aexpr -> aexpr - term .
+    (62) term -> term . * fact
+    (63) term -> term . / fact
+    >               reduce using rule 60 (aexpr -> aexpr - term .)
+    <               reduce using rule 60 (aexpr -> aexpr - term .)
+    GE              reduce using rule 60 (aexpr -> aexpr - term .)
+    LE              reduce using rule 60 (aexpr -> aexpr - term .)
+    EQUAL           reduce using rule 60 (aexpr -> aexpr - term .)
+    NOT_EQUAL       reduce using rule 60 (aexpr -> aexpr - term .)
+    +               reduce using rule 60 (aexpr -> aexpr - term .)
+    -               reduce using rule 60 (aexpr -> aexpr - term .)
+    ;               reduce using rule 60 (aexpr -> aexpr - term .)
+    )               reduce using rule 60 (aexpr -> aexpr - term .)
+    ]               reduce using rule 60 (aexpr -> aexpr - term .)
+    ,               reduce using rule 60 (aexpr -> aexpr - term .)
+    AND             reduce using rule 60 (aexpr -> aexpr - term .)
+    OR              reduce using rule 60 (aexpr -> aexpr - term .)
+    {               reduce using rule 60 (aexpr -> aexpr - term .)
+    FOR             reduce using rule 60 (aexpr -> aexpr - term .)
+    WHILE           reduce using rule 60 (aexpr -> aexpr - term .)
+    IF              reduce using rule 60 (aexpr -> aexpr - term .)
+    RETURN          reduce using rule 60 (aexpr -> aexpr - term .)
+    PRINT           reduce using rule 60 (aexpr -> aexpr - term .)
+    ID              reduce using rule 60 (aexpr -> aexpr - term .)
+    *               shift and go to state 87
+    /               shift and go to state 88
+
+
+state 120
+
+    (55) lfact -> ( lexpr ) .
+    AND             reduce using rule 55 (lfact -> ( lexpr ) .)
+    OR              reduce using rule 55 (lfact -> ( lexpr ) .)
+    {               reduce using rule 55 (lfact -> ( lexpr ) .)
+    FOR             reduce using rule 55 (lfact -> ( lexpr ) .)
+    WHILE           reduce using rule 55 (lfact -> ( lexpr ) .)
+    IF              reduce using rule 55 (lfact -> ( lexpr ) .)
+    RETURN          reduce using rule 55 (lfact -> ( lexpr ) .)
+    PRINT           reduce using rule 55 (lfact -> ( lexpr ) .)
+    ID              reduce using rule 55 (lfact -> ( lexpr ) .)
+    ;               reduce using rule 55 (lfact -> ( lexpr ) .)
+    )               reduce using rule 55 (lfact -> ( lexpr ) .)
+    ]               reduce using rule 55 (lfact -> ( lexpr ) .)
+    ,               reduce using rule 55 (lfact -> ( lexpr ) .)
+
+
+state 121
+
+    (66) fact -> ( aexpr ) .
+    *               reduce using rule 66 (fact -> ( aexpr ) .)
+    /               reduce using rule 66 (fact -> ( aexpr ) .)
+    >               reduce using rule 66 (fact -> ( aexpr ) .)
+    <               reduce using rule 66 (fact -> ( aexpr ) .)
+    GE              reduce using rule 66 (fact -> ( aexpr ) .)
+    LE              reduce using rule 66 (fact -> ( aexpr ) .)
+    EQUAL           reduce using rule 66 (fact -> ( aexpr ) .)
+    NOT_EQUAL       reduce using rule 66 (fact -> ( aexpr ) .)
+    +               reduce using rule 66 (fact -> ( aexpr ) .)
+    -               reduce using rule 66 (fact -> ( aexpr ) .)
+    ;               reduce using rule 66 (fact -> ( aexpr ) .)
+    )               reduce using rule 66 (fact -> ( aexpr ) .)
+    ]               reduce using rule 66 (fact -> ( aexpr ) .)
+    ,               reduce using rule 66 (fact -> ( aexpr ) .)
+    AND             reduce using rule 66 (fact -> ( aexpr ) .)
+    OR              reduce using rule 66 (fact -> ( aexpr ) .)
+    {               reduce using rule 66 (fact -> ( aexpr ) .)
+    FOR             reduce using rule 66 (fact -> ( aexpr ) .)
+    WHILE           reduce using rule 66 (fact -> ( aexpr ) .)
+    IF              reduce using rule 66 (fact -> ( aexpr ) .)
+    RETURN          reduce using rule 66 (fact -> ( aexpr ) .)
+    PRINT           reduce using rule 66 (fact -> ( aexpr ) .)
+    ID              reduce using rule 66 (fact -> ( aexpr ) .)
+
+
+state 122
+
+    (62) term -> term * fact .
+    *               reduce using rule 62 (term -> term * fact .)
+    /               reduce using rule 62 (term -> term * fact .)
+    >               reduce using rule 62 (term -> term * fact .)
+    <               reduce using rule 62 (term -> term * fact .)
+    GE              reduce using rule 62 (term -> term * fact .)
+    LE              reduce using rule 62 (term -> term * fact .)
+    EQUAL           reduce using rule 62 (term -> term * fact .)
+    NOT_EQUAL       reduce using rule 62 (term -> term * fact .)
+    +               reduce using rule 62 (term -> term * fact .)
+    -               reduce using rule 62 (term -> term * fact .)
+    ;               reduce using rule 62 (term -> term * fact .)
+    )               reduce using rule 62 (term -> term * fact .)
+    ]               reduce using rule 62 (term -> term * fact .)
+    ,               reduce using rule 62 (term -> term * fact .)
+    AND             reduce using rule 62 (term -> term * fact .)
+    OR              reduce using rule 62 (term -> term * fact .)
+    {               reduce using rule 62 (term -> term * fact .)
+    FOR             reduce using rule 62 (term -> term * fact .)
+    WHILE           reduce using rule 62 (term -> term * fact .)
+    IF              reduce using rule 62 (term -> term * fact .)
+    RETURN          reduce using rule 62 (term -> term * fact .)
+    PRINT           reduce using rule 62 (term -> term * fact .)
+    ID              reduce using rule 62 (term -> term * fact .)
+
+
+state 123
+
+    (63) term -> term / fact .
+    *               reduce using rule 63 (term -> term / fact .)
+    /               reduce using rule 63 (term -> term / fact .)
+    >               reduce using rule 63 (term -> term / fact .)
+    <               reduce using rule 63 (term -> term / fact .)
+    GE              reduce using rule 63 (term -> term / fact .)
+    LE              reduce using rule 63 (term -> term / fact .)
+    EQUAL           reduce using rule 63 (term -> term / fact .)
+    NOT_EQUAL       reduce using rule 63 (term -> term / fact .)
+    +               reduce using rule 63 (term -> term / fact .)
+    -               reduce using rule 63 (term -> term / fact .)
+    ;               reduce using rule 63 (term -> term / fact .)
+    )               reduce using rule 63 (term -> term / fact .)
+    ]               reduce using rule 63 (term -> term / fact .)
+    ,               reduce using rule 63 (term -> term / fact .)
+    AND             reduce using rule 63 (term -> term / fact .)
+    OR              reduce using rule 63 (term -> term / fact .)
+    {               reduce using rule 63 (term -> term / fact .)
+    FOR             reduce using rule 63 (term -> term / fact .)
+    WHILE           reduce using rule 63 (term -> term / fact .)
+    IF              reduce using rule 63 (term -> term / fact .)
+    RETURN          reduce using rule 63 (term -> term / fact .)
+    PRINT           reduce using rule 63 (term -> term / fact .)
+    ID              reduce using rule 63 (term -> term / fact .)
+
+
+state 124
+
+    (66) fact -> ( aexpr . )
+    (59) aexpr -> aexpr . + term
+    (60) aexpr -> aexpr . - term
+    )               shift and go to state 121
+    +               shift and go to state 83
+    -               shift and go to state 84
+
+
+state 125
+
+    (30) if_stmt -> IF lexpr statement ELSE . statement
+    (21) statement -> . block
+    (22) statement -> . free_statement
+    (40) block -> . { var_decls_maybe_empty statements_maybe_empty }
+    (9) free_statement -> . compound_stmt
+    (10) free_statement -> . simple_stmt ;
+    (18) compound_stmt -> . for_stmt
+    (19) compound_stmt -> . while_stmt
+    (20) compound_stmt -> . if_stmt
+    (15) simple_stmt -> . return_stmt
+    (16) simple_stmt -> . print_stmt
+    (17) simple_stmt -> . asgn_stmt
+    (32) for_stmt -> . FOR ( ; ; ) statement
+    (33) for_stmt -> . FOR ( ; ; asgn_stmt ) statement
+    (34) for_stmt -> . FOR ( ; lexpr ; ) statement
+    (35) for_stmt -> . FOR ( ; lexpr ; asgn_stmt ) statement
+    (36) for_stmt -> . FOR ( asgn_stmt ; ; ) statement
+    (37) for_stmt -> . FOR ( asgn_stmt ; ; asgn_stmt ) statement
+    (38) for_stmt -> . FOR ( asgn_stmt ; lexpr ; ) statement
+    (39) for_stmt -> . FOR ( asgn_stmt ; lexpr ; asgn_stmt ) statement
+    (31) while_stmt -> . WHILE lexpr statement
+    (29) if_stmt -> . IF lexpr statement
+    (30) if_stmt -> . IF lexpr statement ELSE statement
+    (28) return_stmt -> . RETURN expr
+    (27) print_stmt -> . PRINT expr
+    (25) asgn_stmt -> . ID = expr
+    (26) asgn_stmt -> . ID [ aexpr ] = expr
+    {               shift and go to state 70
+    FOR             shift and go to state 20
+    WHILE           shift and go to state 21
+    IF              shift and go to state 22
+    RETURN          shift and go to state 23
+    PRINT           shift and go to state 24
+    ID              shift and go to state 25
+
+    statement                      shift and go to state 142
+    block                          shift and go to state 68
+    free_statement                 shift and go to state 69
+    compound_stmt                  shift and go to state 12
+    simple_stmt                    shift and go to state 13
+    for_stmt                       shift and go to state 14
+    while_stmt                     shift and go to state 15
+    if_stmt                        shift and go to state 16
+    return_stmt                    shift and go to state 17
+    print_stmt                     shift and go to state 18
+    asgn_stmt                      shift and go to state 19
+
+state 126
+
+    (26) asgn_stmt -> ID [ aexpr ] . = expr
+    =               shift and go to state 143
+
+
+state 127
+
+    (78) function -> ID ( ) block .
+    FUN             reduce using rule 78 (function -> ID ( ) block .)
+    FOR             reduce using rule 78 (function -> ID ( ) block .)
+    WHILE           reduce using rule 78 (function -> ID ( ) block .)
+    IF              reduce using rule 78 (function -> ID ( ) block .)
+    RETURN          reduce using rule 78 (function -> ID ( ) block .)
+    PRINT           reduce using rule 78 (function -> ID ( ) block .)
+    ID              reduce using rule 78 (function -> ID ( ) block .)
+    $end            reduce using rule 78 (function -> ID ( ) block .)
+
+
+state 128
+
+    (79) function -> ID ( parameters ) . block
+    (40) block -> . { var_decls_maybe_empty statements_maybe_empty }
+    {               shift and go to state 70
+
+    block                          shift and go to state 144
+
+state 129
+
+    (82) ids_non_empty_w_commas -> ids_non_empty_w_commas , . ID
+    ID              shift and go to state 145
+
+
+state 130
+
+    (13) init -> [ exprs_non_empty_w_commas ] .
+    ;               reduce using rule 13 (init -> [ exprs_non_empty_w_commas ] .)
+
+
+state 131
+
+    (45) exprs_non_empty_w_commas -> exprs_non_empty_w_commas , . expr
+    (41) expr -> . sexpr
+    (42) expr -> . aexpr
+    (43) expr -> . lexpr
+    (76) sexpr -> . STRING
+    (58) aexpr -> . term
+    (59) aexpr -> . aexpr + term
+    (60) aexpr -> . aexpr - term
+    (46) lexpr -> . lterm
+    (47) lexpr -> . lexpr OR lterm
+    (61) term -> . fact
+    (62) term -> . term * fact
+    (63) term -> . term / fact
+    (48) lterm -> . lfact
+    (49) lterm -> . lterm AND lfact
+    (64) fact -> . ID
+    (65) fact -> . ID [ aexpr ]
+    (66) fact -> . ( aexpr )
+    (67) fact -> . NUMBER
+    (68) fact -> . call
+    (69) fact -> . - fact
+    (50) lfact -> . FALSE
+    (51) lfact -> . TRUE
+    (52) lfact -> . ! lfact
+    (53) lfact -> . # ID [ aexpr ]
+    (54) lfact -> . # ID
+    (55) lfact -> . ( lexpr )
+    (56) lfact -> . # call
+    (57) lfact -> . cexpr
+    (83) call -> . ID ( )
+    (84) call -> . ID ( arguments )
+    (70) cexpr -> . aexpr > aexpr
+    (71) cexpr -> . aexpr < aexpr
+    (72) cexpr -> . aexpr GE aexpr
+    (73) cexpr -> . aexpr LE aexpr
+    (74) cexpr -> . aexpr EQUAL aexpr
+    (75) cexpr -> . aexpr NOT_EQUAL aexpr
+    STRING          shift and go to state 55
+    ID              shift and go to state 41
+    (               shift and go to state 56
+    NUMBER          shift and go to state 49
+    -               shift and go to state 47
+    FALSE           shift and go to state 37
+    TRUE            shift and go to state 38
+    !               shift and go to state 39
+    #               shift and go to state 40
+
+    expr                           shift and go to state 146
+    sexpr                          shift and go to state 52
+    aexpr                          shift and go to state 53
+    lexpr                          shift and go to state 54
+    term                           shift and go to state 46
+    lterm                          shift and go to state 35
+    fact                           shift and go to state 48
+    lfact                          shift and go to state 36
+    call                           shift and go to state 44
+    cexpr                          shift and go to state 45
+
+state 132
+
+    (32) for_stmt -> FOR ( ; ; ) . statement
+    (21) statement -> . block
+    (22) statement -> . free_statement
+    (40) block -> . { var_decls_maybe_empty statements_maybe_empty }
+    (9) free_statement -> . compound_stmt
+    (10) free_statement -> . simple_stmt ;
+    (18) compound_stmt -> . for_stmt
+    (19) compound_stmt -> . while_stmt
+    (20) compound_stmt -> . if_stmt
+    (15) simple_stmt -> . return_stmt
+    (16) simple_stmt -> . print_stmt
+    (17) simple_stmt -> . asgn_stmt
+    (32) for_stmt -> . FOR ( ; ; ) statement
+    (33) for_stmt -> . FOR ( ; ; asgn_stmt ) statement
+    (34) for_stmt -> . FOR ( ; lexpr ; ) statement
+    (35) for_stmt -> . FOR ( ; lexpr ; asgn_stmt ) statement
+    (36) for_stmt -> . FOR ( asgn_stmt ; ; ) statement
+    (37) for_stmt -> . FOR ( asgn_stmt ; ; asgn_stmt ) statement
+    (38) for_stmt -> . FOR ( asgn_stmt ; lexpr ; ) statement
+    (39) for_stmt -> . FOR ( asgn_stmt ; lexpr ; asgn_stmt ) statement
+    (31) while_stmt -> . WHILE lexpr statement
+    (29) if_stmt -> . IF lexpr statement
+    (30) if_stmt -> . IF lexpr statement ELSE statement
+    (28) return_stmt -> . RETURN expr
+    (27) print_stmt -> . PRINT expr
+    (25) asgn_stmt -> . ID = expr
+    (26) asgn_stmt -> . ID [ aexpr ] = expr
+    {               shift and go to state 70
+    FOR             shift and go to state 20
+    WHILE           shift and go to state 21
+    IF              shift and go to state 22
+    RETURN          shift and go to state 23
+    PRINT           shift and go to state 24
+    ID              shift and go to state 25
+
+    statement                      shift and go to state 147
+    block                          shift and go to state 68
+    free_statement                 shift and go to state 69
+    compound_stmt                  shift and go to state 12
+    simple_stmt                    shift and go to state 13
+    for_stmt                       shift and go to state 14
+    while_stmt                     shift and go to state 15
+    if_stmt                        shift and go to state 16
+    return_stmt                    shift and go to state 17
+    print_stmt                     shift and go to state 18
+    asgn_stmt                      shift and go to state 19
+
+state 133
+
+    (33) for_stmt -> FOR ( ; ; asgn_stmt . ) statement
+    )               shift and go to state 148
+
+
+state 134
+
+    (34) for_stmt -> FOR ( ; lexpr ; . ) statement
+    (35) for_stmt -> FOR ( ; lexpr ; . asgn_stmt ) statement
+    (25) asgn_stmt -> . ID = expr
+    (26) asgn_stmt -> . ID [ aexpr ] = expr
+    )               shift and go to state 149
+    ID              shift and go to state 25
+
+    asgn_stmt                      shift and go to state 150
+
+state 135
+
+    (36) for_stmt -> FOR ( asgn_stmt ; ; . ) statement
+    (37) for_stmt -> FOR ( asgn_stmt ; ; . asgn_stmt ) statement
+    (25) asgn_stmt -> . ID = expr
+    (26) asgn_stmt -> . ID [ aexpr ] = expr
+    )               shift and go to state 152
+    ID              shift and go to state 25
+
+    asgn_stmt                      shift and go to state 151
+
+state 136
+
+    (38) for_stmt -> FOR ( asgn_stmt ; lexpr . ; ) statement
+    (39) for_stmt -> FOR ( asgn_stmt ; lexpr . ; asgn_stmt ) statement
+    (47) lexpr -> lexpr . OR lterm
+    ;               shift and go to state 153
+    OR              shift and go to state 67
+
+
+state 137
+
+    (40) block -> { var_decls_maybe_empty statements_maybe_empty . }
+    }               shift and go to state 154
+
+
+state 138
+
+    (24) statements_maybe_empty -> statement . statements_maybe_empty
+    (23) statements_maybe_empty -> .
+    (24) statements_maybe_empty -> . statement statements_maybe_empty
+    (21) statement -> . block
+    (22) statement -> . free_statement
+    (40) block -> . { var_decls_maybe_empty statements_maybe_empty }
+    (9) free_statement -> . compound_stmt
+    (10) free_statement -> . simple_stmt ;
+    (18) compound_stmt -> . for_stmt
+    (19) compound_stmt -> . while_stmt
+    (20) compound_stmt -> . if_stmt
+    (15) simple_stmt -> . return_stmt
+    (16) simple_stmt -> . print_stmt
+    (17) simple_stmt -> . asgn_stmt
+    (32) for_stmt -> . FOR ( ; ; ) statement
+    (33) for_stmt -> . FOR ( ; ; asgn_stmt ) statement
+    (34) for_stmt -> . FOR ( ; lexpr ; ) statement
+    (35) for_stmt -> . FOR ( ; lexpr ; asgn_stmt ) statement
+    (36) for_stmt -> . FOR ( asgn_stmt ; ; ) statement
+    (37) for_stmt -> . FOR ( asgn_stmt ; ; asgn_stmt ) statement
+    (38) for_stmt -> . FOR ( asgn_stmt ; lexpr ; ) statement
+    (39) for_stmt -> . FOR ( asgn_stmt ; lexpr ; asgn_stmt ) statement
+    (31) while_stmt -> . WHILE lexpr statement
+    (29) if_stmt -> . IF lexpr statement
+    (30) if_stmt -> . IF lexpr statement ELSE statement
+    (28) return_stmt -> . RETURN expr
+    (27) print_stmt -> . PRINT expr
+    (25) asgn_stmt -> . ID = expr
+    (26) asgn_stmt -> . ID [ aexpr ] = expr
+    }               reduce using rule 23 (statements_maybe_empty -> .)
+    {               shift and go to state 70
+    FOR             shift and go to state 20
+    WHILE           shift and go to state 21
+    IF              shift and go to state 22
+    RETURN          shift and go to state 23
+    PRINT           shift and go to state 24
+    ID              shift and go to state 25
+
+    statement                      shift and go to state 138
+    statements_maybe_empty         shift and go to state 155
+    block                          shift and go to state 68
+    free_statement                 shift and go to state 69
+    compound_stmt                  shift and go to state 12
+    simple_stmt                    shift and go to state 13
+    for_stmt                       shift and go to state 14
+    while_stmt                     shift and go to state 15
+    if_stmt                        shift and go to state 16
+    return_stmt                    shift and go to state 17
+    print_stmt                     shift and go to state 18
+    asgn_stmt                      shift and go to state 19
+
+state 139
+
+    (53) lfact -> # ID [ aexpr . ]
+    (59) aexpr -> aexpr . + term
+    (60) aexpr -> aexpr . - term
+    ]               shift and go to state 156
+    +               shift and go to state 83
+    -               shift and go to state 84
+
+
+state 140
+
+    (65) fact -> ID [ aexpr ] .
+    *               reduce using rule 65 (fact -> ID [ aexpr ] .)
+    /               reduce using rule 65 (fact -> ID [ aexpr ] .)
+    >               reduce using rule 65 (fact -> ID [ aexpr ] .)
+    <               reduce using rule 65 (fact -> ID [ aexpr ] .)
+    GE              reduce using rule 65 (fact -> ID [ aexpr ] .)
+    LE              reduce using rule 65 (fact -> ID [ aexpr ] .)
+    EQUAL           reduce using rule 65 (fact -> ID [ aexpr ] .)
+    NOT_EQUAL       reduce using rule 65 (fact -> ID [ aexpr ] .)
+    +               reduce using rule 65 (fact -> ID [ aexpr ] .)
+    -               reduce using rule 65 (fact -> ID [ aexpr ] .)
+    ;               reduce using rule 65 (fact -> ID [ aexpr ] .)
+    )               reduce using rule 65 (fact -> ID [ aexpr ] .)
+    ]               reduce using rule 65 (fact -> ID [ aexpr ] .)
+    ,               reduce using rule 65 (fact -> ID [ aexpr ] .)
+    AND             reduce using rule 65 (fact -> ID [ aexpr ] .)
+    OR              reduce using rule 65 (fact -> ID [ aexpr ] .)
+    {               reduce using rule 65 (fact -> ID [ aexpr ] .)
+    FOR             reduce using rule 65 (fact -> ID [ aexpr ] .)
+    WHILE           reduce using rule 65 (fact -> ID [ aexpr ] .)
+    IF              reduce using rule 65 (fact -> ID [ aexpr ] .)
+    RETURN          reduce using rule 65 (fact -> ID [ aexpr ] .)
+    PRINT           reduce using rule 65 (fact -> ID [ aexpr ] .)
+    ID              reduce using rule 65 (fact -> ID [ aexpr ] .)
+
+
+state 141
+
+    (84) call -> ID ( arguments ) .
+    *               reduce using rule 84 (call -> ID ( arguments ) .)
+    /               reduce using rule 84 (call -> ID ( arguments ) .)
+    >               reduce using rule 84 (call -> ID ( arguments ) .)
+    <               reduce using rule 84 (call -> ID ( arguments ) .)
+    GE              reduce using rule 84 (call -> ID ( arguments ) .)
+    LE              reduce using rule 84 (call -> ID ( arguments ) .)
+    EQUAL           reduce using rule 84 (call -> ID ( arguments ) .)
+    NOT_EQUAL       reduce using rule 84 (call -> ID ( arguments ) .)
+    +               reduce using rule 84 (call -> ID ( arguments ) .)
+    -               reduce using rule 84 (call -> ID ( arguments ) .)
+    ;               reduce using rule 84 (call -> ID ( arguments ) .)
+    AND             reduce using rule 84 (call -> ID ( arguments ) .)
+    OR              reduce using rule 84 (call -> ID ( arguments ) .)
+    {               reduce using rule 84 (call -> ID ( arguments ) .)
+    FOR             reduce using rule 84 (call -> ID ( arguments ) .)
+    WHILE           reduce using rule 84 (call -> ID ( arguments ) .)
+    IF              reduce using rule 84 (call -> ID ( arguments ) .)
+    RETURN          reduce using rule 84 (call -> ID ( arguments ) .)
+    PRINT           reduce using rule 84 (call -> ID ( arguments ) .)
+    ID              reduce using rule 84 (call -> ID ( arguments ) .)
+    )               reduce using rule 84 (call -> ID ( arguments ) .)
+    ]               reduce using rule 84 (call -> ID ( arguments ) .)
+    ,               reduce using rule 84 (call -> ID ( arguments ) .)
+
+
+state 142
+
+    (30) if_stmt -> IF lexpr statement ELSE statement .
+    FOR             reduce using rule 30 (if_stmt -> IF lexpr statement ELSE statement .)
+    WHILE           reduce using rule 30 (if_stmt -> IF lexpr statement ELSE statement .)
+    IF              reduce using rule 30 (if_stmt -> IF lexpr statement ELSE statement .)
+    RETURN          reduce using rule 30 (if_stmt -> IF lexpr statement ELSE statement .)
+    PRINT           reduce using rule 30 (if_stmt -> IF lexpr statement ELSE statement .)
+    ID              reduce using rule 30 (if_stmt -> IF lexpr statement ELSE statement .)
+    $end            reduce using rule 30 (if_stmt -> IF lexpr statement ELSE statement .)
+    ELSE            reduce using rule 30 (if_stmt -> IF lexpr statement ELSE statement .)
+    {               reduce using rule 30 (if_stmt -> IF lexpr statement ELSE statement .)
+    }               reduce using rule 30 (if_stmt -> IF lexpr statement ELSE statement .)
+
+
+state 143
+
+    (26) asgn_stmt -> ID [ aexpr ] = . expr
+    (41) expr -> . sexpr
+    (42) expr -> . aexpr
+    (43) expr -> . lexpr
+    (76) sexpr -> . STRING
+    (58) aexpr -> . term
+    (59) aexpr -> . aexpr + term
+    (60) aexpr -> . aexpr - term
+    (46) lexpr -> . lterm
+    (47) lexpr -> . lexpr OR lterm
+    (61) term -> . fact
+    (62) term -> . term * fact
+    (63) term -> . term / fact
+    (48) lterm -> . lfact
+    (49) lterm -> . lterm AND lfact
+    (64) fact -> . ID
+    (65) fact -> . ID [ aexpr ]
+    (66) fact -> . ( aexpr )
+    (67) fact -> . NUMBER
+    (68) fact -> . call
+    (69) fact -> . - fact
+    (50) lfact -> . FALSE
+    (51) lfact -> . TRUE
+    (52) lfact -> . ! lfact
+    (53) lfact -> . # ID [ aexpr ]
+    (54) lfact -> . # ID
+    (55) lfact -> . ( lexpr )
+    (56) lfact -> . # call
+    (57) lfact -> . cexpr
+    (83) call -> . ID ( )
+    (84) call -> . ID ( arguments )
+    (70) cexpr -> . aexpr > aexpr
+    (71) cexpr -> . aexpr < aexpr
+    (72) cexpr -> . aexpr GE aexpr
+    (73) cexpr -> . aexpr LE aexpr
+    (74) cexpr -> . aexpr EQUAL aexpr
+    (75) cexpr -> . aexpr NOT_EQUAL aexpr
+    STRING          shift and go to state 55
+    ID              shift and go to state 41
+    (               shift and go to state 56
+    NUMBER          shift and go to state 49
+    -               shift and go to state 47
+    FALSE           shift and go to state 37
+    TRUE            shift and go to state 38
+    !               shift and go to state 39
+    #               shift and go to state 40
+
+    aexpr                          shift and go to state 53
+    expr                           shift and go to state 157
+    sexpr                          shift and go to state 52
+    lexpr                          shift and go to state 54
+    term                           shift and go to state 46
+    lterm                          shift and go to state 35
+    fact                           shift and go to state 48
+    lfact                          shift and go to state 36
+    call                           shift and go to state 44
+    cexpr                          shift and go to state 45
+
+state 144
+
+    (79) function -> ID ( parameters ) block .
+    FUN             reduce using rule 79 (function -> ID ( parameters ) block .)
+    FOR             reduce using rule 79 (function -> ID ( parameters ) block .)
+    WHILE           reduce using rule 79 (function -> ID ( parameters ) block .)
+    IF              reduce using rule 79 (function -> ID ( parameters ) block .)
+    RETURN          reduce using rule 79 (function -> ID ( parameters ) block .)
+    PRINT           reduce using rule 79 (function -> ID ( parameters ) block .)
+    ID              reduce using rule 79 (function -> ID ( parameters ) block .)
+    $end            reduce using rule 79 (function -> ID ( parameters ) block .)
+
+
+state 145
+
+    (82) ids_non_empty_w_commas -> ids_non_empty_w_commas , ID .
+    ,               reduce using rule 82 (ids_non_empty_w_commas -> ids_non_empty_w_commas , ID .)
+    )               reduce using rule 82 (ids_non_empty_w_commas -> ids_non_empty_w_commas , ID .)
+
+
+state 146
+
+    (45) exprs_non_empty_w_commas -> exprs_non_empty_w_commas , expr .
+    ]               reduce using rule 45 (exprs_non_empty_w_commas -> exprs_non_empty_w_commas , expr .)
+    ,               reduce using rule 45 (exprs_non_empty_w_commas -> exprs_non_empty_w_commas , expr .)
+    )               reduce using rule 45 (exprs_non_empty_w_commas -> exprs_non_empty_w_commas , expr .)
+
+
+state 147
+
+    (32) for_stmt -> FOR ( ; ; ) statement .
+    FOR             reduce using rule 32 (for_stmt -> FOR ( ; ; ) statement .)
+    WHILE           reduce using rule 32 (for_stmt -> FOR ( ; ; ) statement .)
+    IF              reduce using rule 32 (for_stmt -> FOR ( ; ; ) statement .)
+    RETURN          reduce using rule 32 (for_stmt -> FOR ( ; ; ) statement .)
+    PRINT           reduce using rule 32 (for_stmt -> FOR ( ; ; ) statement .)
+    ID              reduce using rule 32 (for_stmt -> FOR ( ; ; ) statement .)
+    $end            reduce using rule 32 (for_stmt -> FOR ( ; ; ) statement .)
+    ELSE            reduce using rule 32 (for_stmt -> FOR ( ; ; ) statement .)
+    {               reduce using rule 32 (for_stmt -> FOR ( ; ; ) statement .)
+    }               reduce using rule 32 (for_stmt -> FOR ( ; ; ) statement .)
+
+
+state 148
+
+    (33) for_stmt -> FOR ( ; ; asgn_stmt ) . statement
+    (21) statement -> . block
+    (22) statement -> . free_statement
+    (40) block -> . { var_decls_maybe_empty statements_maybe_empty }
+    (9) free_statement -> . compound_stmt
+    (10) free_statement -> . simple_stmt ;
+    (18) compound_stmt -> . for_stmt
+    (19) compound_stmt -> . while_stmt
+    (20) compound_stmt -> . if_stmt
+    (15) simple_stmt -> . return_stmt
+    (16) simple_stmt -> . print_stmt
+    (17) simple_stmt -> . asgn_stmt
+    (32) for_stmt -> . FOR ( ; ; ) statement
+    (33) for_stmt -> . FOR ( ; ; asgn_stmt ) statement
+    (34) for_stmt -> . FOR ( ; lexpr ; ) statement
+    (35) for_stmt -> . FOR ( ; lexpr ; asgn_stmt ) statement
+    (36) for_stmt -> . FOR ( asgn_stmt ; ; ) statement
+    (37) for_stmt -> . FOR ( asgn_stmt ; ; asgn_stmt ) statement
+    (38) for_stmt -> . FOR ( asgn_stmt ; lexpr ; ) statement
+    (39) for_stmt -> . FOR ( asgn_stmt ; lexpr ; asgn_stmt ) statement
+    (31) while_stmt -> . WHILE lexpr statement
+    (29) if_stmt -> . IF lexpr statement
+    (30) if_stmt -> . IF lexpr statement ELSE statement
+    (28) return_stmt -> . RETURN expr
+    (27) print_stmt -> . PRINT expr
+    (25) asgn_stmt -> . ID = expr
+    (26) asgn_stmt -> . ID [ aexpr ] = expr
+    {               shift and go to state 70
+    FOR             shift and go to state 20
+    WHILE           shift and go to state 21
+    IF              shift and go to state 22
+    RETURN          shift and go to state 23
+    PRINT           shift and go to state 24
+    ID              shift and go to state 25
+
+    asgn_stmt                      shift and go to state 19
+    statement                      shift and go to state 158
+    block                          shift and go to state 68
+    free_statement                 shift and go to state 69
+    compound_stmt                  shift and go to state 12
+    simple_stmt                    shift and go to state 13
+    for_stmt                       shift and go to state 14
+    while_stmt                     shift and go to state 15
+    if_stmt                        shift and go to state 16
+    return_stmt                    shift and go to state 17
+    print_stmt                     shift and go to state 18
+
+state 149
+
+    (34) for_stmt -> FOR ( ; lexpr ; ) . statement
+    (21) statement -> . block
+    (22) statement -> . free_statement
+    (40) block -> . { var_decls_maybe_empty statements_maybe_empty }
+    (9) free_statement -> . compound_stmt
+    (10) free_statement -> . simple_stmt ;
+    (18) compound_stmt -> . for_stmt
+    (19) compound_stmt -> . while_stmt
+    (20) compound_stmt -> . if_stmt
+    (15) simple_stmt -> . return_stmt
+    (16) simple_stmt -> . print_stmt
+    (17) simple_stmt -> . asgn_stmt
+    (32) for_stmt -> . FOR ( ; ; ) statement
+    (33) for_stmt -> . FOR ( ; ; asgn_stmt ) statement
+    (34) for_stmt -> . FOR ( ; lexpr ; ) statement
+    (35) for_stmt -> . FOR ( ; lexpr ; asgn_stmt ) statement
+    (36) for_stmt -> . FOR ( asgn_stmt ; ; ) statement
+    (37) for_stmt -> . FOR ( asgn_stmt ; ; asgn_stmt ) statement
+    (38) for_stmt -> . FOR ( asgn_stmt ; lexpr ; ) statement
+    (39) for_stmt -> . FOR ( asgn_stmt ; lexpr ; asgn_stmt ) statement
+    (31) while_stmt -> . WHILE lexpr statement
+    (29) if_stmt -> . IF lexpr statement
+    (30) if_stmt -> . IF lexpr statement ELSE statement
+    (28) return_stmt -> . RETURN expr
+    (27) print_stmt -> . PRINT expr
+    (25) asgn_stmt -> . ID = expr
+    (26) asgn_stmt -> . ID [ aexpr ] = expr
+    {               shift and go to state 70
+    FOR             shift and go to state 20
+    WHILE           shift and go to state 21
+    IF              shift and go to state 22
+    RETURN          shift and go to state 23
+    PRINT           shift and go to state 24
+    ID              shift and go to state 25
+
+    statement                      shift and go to state 159
+    block                          shift and go to state 68
+    free_statement                 shift and go to state 69
+    compound_stmt                  shift and go to state 12
+    simple_stmt                    shift and go to state 13
+    for_stmt                       shift and go to state 14
+    while_stmt                     shift and go to state 15
+    if_stmt                        shift and go to state 16
+    return_stmt                    shift and go to state 17
+    print_stmt                     shift and go to state 18
+    asgn_stmt                      shift and go to state 19
+
+state 150
+
+    (35) for_stmt -> FOR ( ; lexpr ; asgn_stmt . ) statement
+    )               shift and go to state 160
+
+
+state 151
+
+    (37) for_stmt -> FOR ( asgn_stmt ; ; asgn_stmt . ) statement
+    )               shift and go to state 161
+
+
+state 152
+
+    (36) for_stmt -> FOR ( asgn_stmt ; ; ) . statement
+    (21) statement -> . block
+    (22) statement -> . free_statement
+    (40) block -> . { var_decls_maybe_empty statements_maybe_empty }
+    (9) free_statement -> . compound_stmt
+    (10) free_statement -> . simple_stmt ;
+    (18) compound_stmt -> . for_stmt
+    (19) compound_stmt -> . while_stmt
+    (20) compound_stmt -> . if_stmt
+    (15) simple_stmt -> . return_stmt
+    (16) simple_stmt -> . print_stmt
+    (17) simple_stmt -> . asgn_stmt
+    (32) for_stmt -> . FOR ( ; ; ) statement
+    (33) for_stmt -> . FOR ( ; ; asgn_stmt ) statement
+    (34) for_stmt -> . FOR ( ; lexpr ; ) statement
+    (35) for_stmt -> . FOR ( ; lexpr ; asgn_stmt ) statement
+    (36) for_stmt -> . FOR ( asgn_stmt ; ; ) statement
+    (37) for_stmt -> . FOR ( asgn_stmt ; ; asgn_stmt ) statement
+    (38) for_stmt -> . FOR ( asgn_stmt ; lexpr ; ) statement
+    (39) for_stmt -> . FOR ( asgn_stmt ; lexpr ; asgn_stmt ) statement
+    (31) while_stmt -> . WHILE lexpr statement
+    (29) if_stmt -> . IF lexpr statement
+    (30) if_stmt -> . IF lexpr statement ELSE statement
+    (28) return_stmt -> . RETURN expr
+    (27) print_stmt -> . PRINT expr
+    (25) asgn_stmt -> . ID = expr
+    (26) asgn_stmt -> . ID [ aexpr ] = expr
+    {               shift and go to state 70
+    FOR             shift and go to state 20
+    WHILE           shift and go to state 21
+    IF              shift and go to state 22
+    RETURN          shift and go to state 23
+    PRINT           shift and go to state 24
+    ID              shift and go to state 25
+
+    asgn_stmt                      shift and go to state 19
+    statement                      shift and go to state 162
+    block                          shift and go to state 68
+    free_statement                 shift and go to state 69
+    compound_stmt                  shift and go to state 12
+    simple_stmt                    shift and go to state 13
+    for_stmt                       shift and go to state 14
+    while_stmt                     shift and go to state 15
+    if_stmt                        shift and go to state 16
+    return_stmt                    shift and go to state 17
+    print_stmt                     shift and go to state 18
+
+state 153
+
+    (38) for_stmt -> FOR ( asgn_stmt ; lexpr ; . ) statement
+    (39) for_stmt -> FOR ( asgn_stmt ; lexpr ; . asgn_stmt ) statement
+    (25) asgn_stmt -> . ID = expr
+    (26) asgn_stmt -> . ID [ aexpr ] = expr
+    )               shift and go to state 164
+    ID              shift and go to state 25
+
+    asgn_stmt                      shift and go to state 163
+
+state 154
+
+    (40) block -> { var_decls_maybe_empty statements_maybe_empty } .
+    FOR             reduce using rule 40 (block -> { var_decls_maybe_empty statements_maybe_empty } .)
+    WHILE           reduce using rule 40 (block -> { var_decls_maybe_empty statements_maybe_empty } .)
+    IF              reduce using rule 40 (block -> { var_decls_maybe_empty statements_maybe_empty } .)
+    RETURN          reduce using rule 40 (block -> { var_decls_maybe_empty statements_maybe_empty } .)
+    PRINT           reduce using rule 40 (block -> { var_decls_maybe_empty statements_maybe_empty } .)
+    ID              reduce using rule 40 (block -> { var_decls_maybe_empty statements_maybe_empty } .)
+    $end            reduce using rule 40 (block -> { var_decls_maybe_empty statements_maybe_empty } .)
+    ELSE            reduce using rule 40 (block -> { var_decls_maybe_empty statements_maybe_empty } .)
+    {               reduce using rule 40 (block -> { var_decls_maybe_empty statements_maybe_empty } .)
+    }               reduce using rule 40 (block -> { var_decls_maybe_empty statements_maybe_empty } .)
+    FUN             reduce using rule 40 (block -> { var_decls_maybe_empty statements_maybe_empty } .)
+
+
+state 155
+
+    (24) statements_maybe_empty -> statement statements_maybe_empty .
+    }               reduce using rule 24 (statements_maybe_empty -> statement statements_maybe_empty .)
+
+
+state 156
+
+    (53) lfact -> # ID [ aexpr ] .
+    AND             reduce using rule 53 (lfact -> # ID [ aexpr ] .)
+    OR              reduce using rule 53 (lfact -> # ID [ aexpr ] .)
+    {               reduce using rule 53 (lfact -> # ID [ aexpr ] .)
+    FOR             reduce using rule 53 (lfact -> # ID [ aexpr ] .)
+    WHILE           reduce using rule 53 (lfact -> # ID [ aexpr ] .)
+    IF              reduce using rule 53 (lfact -> # ID [ aexpr ] .)
+    RETURN          reduce using rule 53 (lfact -> # ID [ aexpr ] .)
+    PRINT           reduce using rule 53 (lfact -> # ID [ aexpr ] .)
+    ID              reduce using rule 53 (lfact -> # ID [ aexpr ] .)
+    ;               reduce using rule 53 (lfact -> # ID [ aexpr ] .)
+    )               reduce using rule 53 (lfact -> # ID [ aexpr ] .)
+    ]               reduce using rule 53 (lfact -> # ID [ aexpr ] .)
+    ,               reduce using rule 53 (lfact -> # ID [ aexpr ] .)
+
+
+state 157
+
+    (26) asgn_stmt -> ID [ aexpr ] = expr .
+    ;               reduce using rule 26 (asgn_stmt -> ID [ aexpr ] = expr .)
+    )               reduce using rule 26 (asgn_stmt -> ID [ aexpr ] = expr .)
+
+
+state 158
+
+    (33) for_stmt -> FOR ( ; ; asgn_stmt ) statement .
+    FOR             reduce using rule 33 (for_stmt -> FOR ( ; ; asgn_stmt ) statement .)
+    WHILE           reduce using rule 33 (for_stmt -> FOR ( ; ; asgn_stmt ) statement .)
+    IF              reduce using rule 33 (for_stmt -> FOR ( ; ; asgn_stmt ) statement .)
+    RETURN          reduce using rule 33 (for_stmt -> FOR ( ; ; asgn_stmt ) statement .)
+    PRINT           reduce using rule 33 (for_stmt -> FOR ( ; ; asgn_stmt ) statement .)
+    ID              reduce using rule 33 (for_stmt -> FOR ( ; ; asgn_stmt ) statement .)
+    $end            reduce using rule 33 (for_stmt -> FOR ( ; ; asgn_stmt ) statement .)
+    ELSE            reduce using rule 33 (for_stmt -> FOR ( ; ; asgn_stmt ) statement .)
+    {               reduce using rule 33 (for_stmt -> FOR ( ; ; asgn_stmt ) statement .)
+    }               reduce using rule 33 (for_stmt -> FOR ( ; ; asgn_stmt ) statement .)
+
+
+state 159
+
+    (34) for_stmt -> FOR ( ; lexpr ; ) statement .
+    FOR             reduce using rule 34 (for_stmt -> FOR ( ; lexpr ; ) statement .)
+    WHILE           reduce using rule 34 (for_stmt -> FOR ( ; lexpr ; ) statement .)
+    IF              reduce using rule 34 (for_stmt -> FOR ( ; lexpr ; ) statement .)
+    RETURN          reduce using rule 34 (for_stmt -> FOR ( ; lexpr ; ) statement .)
+    PRINT           reduce using rule 34 (for_stmt -> FOR ( ; lexpr ; ) statement .)
+    ID              reduce using rule 34 (for_stmt -> FOR ( ; lexpr ; ) statement .)
+    $end            reduce using rule 34 (for_stmt -> FOR ( ; lexpr ; ) statement .)
+    ELSE            reduce using rule 34 (for_stmt -> FOR ( ; lexpr ; ) statement .)
+    {               reduce using rule 34 (for_stmt -> FOR ( ; lexpr ; ) statement .)
+    }               reduce using rule 34 (for_stmt -> FOR ( ; lexpr ; ) statement .)
+
+
+state 160
+
+    (35) for_stmt -> FOR ( ; lexpr ; asgn_stmt ) . statement
+    (21) statement -> . block
+    (22) statement -> . free_statement
+    (40) block -> . { var_decls_maybe_empty statements_maybe_empty }
+    (9) free_statement -> . compound_stmt
+    (10) free_statement -> . simple_stmt ;
+    (18) compound_stmt -> . for_stmt
+    (19) compound_stmt -> . while_stmt
+    (20) compound_stmt -> . if_stmt
+    (15) simple_stmt -> . return_stmt
+    (16) simple_stmt -> . print_stmt
+    (17) simple_stmt -> . asgn_stmt
+    (32) for_stmt -> . FOR ( ; ; ) statement
+    (33) for_stmt -> . FOR ( ; ; asgn_stmt ) statement
+    (34) for_stmt -> . FOR ( ; lexpr ; ) statement
+    (35) for_stmt -> . FOR ( ; lexpr ; asgn_stmt ) statement
+    (36) for_stmt -> . FOR ( asgn_stmt ; ; ) statement
+    (37) for_stmt -> . FOR ( asgn_stmt ; ; asgn_stmt ) statement
+    (38) for_stmt -> . FOR ( asgn_stmt ; lexpr ; ) statement
+    (39) for_stmt -> . FOR ( asgn_stmt ; lexpr ; asgn_stmt ) statement
+    (31) while_stmt -> . WHILE lexpr statement
+    (29) if_stmt -> . IF lexpr statement
+    (30) if_stmt -> . IF lexpr statement ELSE statement
+    (28) return_stmt -> . RETURN expr
+    (27) print_stmt -> . PRINT expr
+    (25) asgn_stmt -> . ID = expr
+    (26) asgn_stmt -> . ID [ aexpr ] = expr
+    {               shift and go to state 70
+    FOR             shift and go to state 20
+    WHILE           shift and go to state 21
+    IF              shift and go to state 22
+    RETURN          shift and go to state 23
+    PRINT           shift and go to state 24
+    ID              shift and go to state 25
+
+    asgn_stmt                      shift and go to state 19
+    statement                      shift and go to state 165
+    block                          shift and go to state 68
+    free_statement                 shift and go to state 69
+    compound_stmt                  shift and go to state 12
+    simple_stmt                    shift and go to state 13
+    for_stmt                       shift and go to state 14
+    while_stmt                     shift and go to state 15
+    if_stmt                        shift and go to state 16
+    return_stmt                    shift and go to state 17
+    print_stmt                     shift and go to state 18
+
+state 161
+
+    (37) for_stmt -> FOR ( asgn_stmt ; ; asgn_stmt ) . statement
+    (21) statement -> . block
+    (22) statement -> . free_statement
+    (40) block -> . { var_decls_maybe_empty statements_maybe_empty }
+    (9) free_statement -> . compound_stmt
+    (10) free_statement -> . simple_stmt ;
+    (18) compound_stmt -> . for_stmt
+    (19) compound_stmt -> . while_stmt
+    (20) compound_stmt -> . if_stmt
+    (15) simple_stmt -> . return_stmt
+    (16) simple_stmt -> . print_stmt
+    (17) simple_stmt -> . asgn_stmt
+    (32) for_stmt -> . FOR ( ; ; ) statement
+    (33) for_stmt -> . FOR ( ; ; asgn_stmt ) statement
+    (34) for_stmt -> . FOR ( ; lexpr ; ) statement
+    (35) for_stmt -> . FOR ( ; lexpr ; asgn_stmt ) statement
+    (36) for_stmt -> . FOR ( asgn_stmt ; ; ) statement
+    (37) for_stmt -> . FOR ( asgn_stmt ; ; asgn_stmt ) statement
+    (38) for_stmt -> . FOR ( asgn_stmt ; lexpr ; ) statement
+    (39) for_stmt -> . FOR ( asgn_stmt ; lexpr ; asgn_stmt ) statement
+    (31) while_stmt -> . WHILE lexpr statement
+    (29) if_stmt -> . IF lexpr statement
+    (30) if_stmt -> . IF lexpr statement ELSE statement
+    (28) return_stmt -> . RETURN expr
+    (27) print_stmt -> . PRINT expr
+    (25) asgn_stmt -> . ID = expr
+    (26) asgn_stmt -> . ID [ aexpr ] = expr
+    {               shift and go to state 70
+    FOR             shift and go to state 20
+    WHILE           shift and go to state 21
+    IF              shift and go to state 22
+    RETURN          shift and go to state 23
+    PRINT           shift and go to state 24
+    ID              shift and go to state 25
+
+    asgn_stmt                      shift and go to state 19
+    statement                      shift and go to state 166
+    block                          shift and go to state 68
+    free_statement                 shift and go to state 69
+    compound_stmt                  shift and go to state 12
+    simple_stmt                    shift and go to state 13
+    for_stmt                       shift and go to state 14
+    while_stmt                     shift and go to state 15
+    if_stmt                        shift and go to state 16
+    return_stmt                    shift and go to state 17
+    print_stmt                     shift and go to state 18
+
+state 162
+
+    (36) for_stmt -> FOR ( asgn_stmt ; ; ) statement .
+    FOR             reduce using rule 36 (for_stmt -> FOR ( asgn_stmt ; ; ) statement .)
+    WHILE           reduce using rule 36 (for_stmt -> FOR ( asgn_stmt ; ; ) statement .)
+    IF              reduce using rule 36 (for_stmt -> FOR ( asgn_stmt ; ; ) statement .)
+    RETURN          reduce using rule 36 (for_stmt -> FOR ( asgn_stmt ; ; ) statement .)
+    PRINT           reduce using rule 36 (for_stmt -> FOR ( asgn_stmt ; ; ) statement .)
+    ID              reduce using rule 36 (for_stmt -> FOR ( asgn_stmt ; ; ) statement .)
+    $end            reduce using rule 36 (for_stmt -> FOR ( asgn_stmt ; ; ) statement .)
+    ELSE            reduce using rule 36 (for_stmt -> FOR ( asgn_stmt ; ; ) statement .)
+    {               reduce using rule 36 (for_stmt -> FOR ( asgn_stmt ; ; ) statement .)
+    }               reduce using rule 36 (for_stmt -> FOR ( asgn_stmt ; ; ) statement .)
+
+
+state 163
+
+    (39) for_stmt -> FOR ( asgn_stmt ; lexpr ; asgn_stmt . ) statement
+    )               shift and go to state 167
+
+
+state 164
+
+    (38) for_stmt -> FOR ( asgn_stmt ; lexpr ; ) . statement
+    (21) statement -> . block
+    (22) statement -> . free_statement
+    (40) block -> . { var_decls_maybe_empty statements_maybe_empty }
+    (9) free_statement -> . compound_stmt
+    (10) free_statement -> . simple_stmt ;
+    (18) compound_stmt -> . for_stmt
+    (19) compound_stmt -> . while_stmt
+    (20) compound_stmt -> . if_stmt
+    (15) simple_stmt -> . return_stmt
+    (16) simple_stmt -> . print_stmt
+    (17) simple_stmt -> . asgn_stmt
+    (32) for_stmt -> . FOR ( ; ; ) statement
+    (33) for_stmt -> . FOR ( ; ; asgn_stmt ) statement
+    (34) for_stmt -> . FOR ( ; lexpr ; ) statement
+    (35) for_stmt -> . FOR ( ; lexpr ; asgn_stmt ) statement
+    (36) for_stmt -> . FOR ( asgn_stmt ; ; ) statement
+    (37) for_stmt -> . FOR ( asgn_stmt ; ; asgn_stmt ) statement
+    (38) for_stmt -> . FOR ( asgn_stmt ; lexpr ; ) statement
+    (39) for_stmt -> . FOR ( asgn_stmt ; lexpr ; asgn_stmt ) statement
+    (31) while_stmt -> . WHILE lexpr statement
+    (29) if_stmt -> . IF lexpr statement
+    (30) if_stmt -> . IF lexpr statement ELSE statement
+    (28) return_stmt -> . RETURN expr
+    (27) print_stmt -> . PRINT expr
+    (25) asgn_stmt -> . ID = expr
+    (26) asgn_stmt -> . ID [ aexpr ] = expr
+    {               shift and go to state 70
+    FOR             shift and go to state 20
+    WHILE           shift and go to state 21
+    IF              shift and go to state 22
+    RETURN          shift and go to state 23
+    PRINT           shift and go to state 24
+    ID              shift and go to state 25
+
+    asgn_stmt                      shift and go to state 19
+    statement                      shift and go to state 168
+    block                          shift and go to state 68
+    free_statement                 shift and go to state 69
+    compound_stmt                  shift and go to state 12
+    simple_stmt                    shift and go to state 13
+    for_stmt                       shift and go to state 14
+    while_stmt                     shift and go to state 15
+    if_stmt                        shift and go to state 16
+    return_stmt                    shift and go to state 17
+    print_stmt                     shift and go to state 18
+
+state 165
+
+    (35) for_stmt -> FOR ( ; lexpr ; asgn_stmt ) statement .
+    FOR             reduce using rule 35 (for_stmt -> FOR ( ; lexpr ; asgn_stmt ) statement .)
+    WHILE           reduce using rule 35 (for_stmt -> FOR ( ; lexpr ; asgn_stmt ) statement .)
+    IF              reduce using rule 35 (for_stmt -> FOR ( ; lexpr ; asgn_stmt ) statement .)
+    RETURN          reduce using rule 35 (for_stmt -> FOR ( ; lexpr ; asgn_stmt ) statement .)
+    PRINT           reduce using rule 35 (for_stmt -> FOR ( ; lexpr ; asgn_stmt ) statement .)
+    ID              reduce using rule 35 (for_stmt -> FOR ( ; lexpr ; asgn_stmt ) statement .)
+    $end            reduce using rule 35 (for_stmt -> FOR ( ; lexpr ; asgn_stmt ) statement .)
+    ELSE            reduce using rule 35 (for_stmt -> FOR ( ; lexpr ; asgn_stmt ) statement .)
+    {               reduce using rule 35 (for_stmt -> FOR ( ; lexpr ; asgn_stmt ) statement .)
+    }               reduce using rule 35 (for_stmt -> FOR ( ; lexpr ; asgn_stmt ) statement .)
+
+
+state 166
+
+    (37) for_stmt -> FOR ( asgn_stmt ; ; asgn_stmt ) statement .
+    FOR             reduce using rule 37 (for_stmt -> FOR ( asgn_stmt ; ; asgn_stmt ) statement .)
+    WHILE           reduce using rule 37 (for_stmt -> FOR ( asgn_stmt ; ; asgn_stmt ) statement .)
+    IF              reduce using rule 37 (for_stmt -> FOR ( asgn_stmt ; ; asgn_stmt ) statement .)
+    RETURN          reduce using rule 37 (for_stmt -> FOR ( asgn_stmt ; ; asgn_stmt ) statement .)
+    PRINT           reduce using rule 37 (for_stmt -> FOR ( asgn_stmt ; ; asgn_stmt ) statement .)
+    ID              reduce using rule 37 (for_stmt -> FOR ( asgn_stmt ; ; asgn_stmt ) statement .)
+    $end            reduce using rule 37 (for_stmt -> FOR ( asgn_stmt ; ; asgn_stmt ) statement .)
+    ELSE            reduce using rule 37 (for_stmt -> FOR ( asgn_stmt ; ; asgn_stmt ) statement .)
+    {               reduce using rule 37 (for_stmt -> FOR ( asgn_stmt ; ; asgn_stmt ) statement .)
+    }               reduce using rule 37 (for_stmt -> FOR ( asgn_stmt ; ; asgn_stmt ) statement .)
+
+
+state 167
+
+    (39) for_stmt -> FOR ( asgn_stmt ; lexpr ; asgn_stmt ) . statement
+    (21) statement -> . block
+    (22) statement -> . free_statement
+    (40) block -> . { var_decls_maybe_empty statements_maybe_empty }
+    (9) free_statement -> . compound_stmt
+    (10) free_statement -> . simple_stmt ;
+    (18) compound_stmt -> . for_stmt
+    (19) compound_stmt -> . while_stmt
+    (20) compound_stmt -> . if_stmt
+    (15) simple_stmt -> . return_stmt
+    (16) simple_stmt -> . print_stmt
+    (17) simple_stmt -> . asgn_stmt
+    (32) for_stmt -> . FOR ( ; ; ) statement
+    (33) for_stmt -> . FOR ( ; ; asgn_stmt ) statement
+    (34) for_stmt -> . FOR ( ; lexpr ; ) statement
+    (35) for_stmt -> . FOR ( ; lexpr ; asgn_stmt ) statement
+    (36) for_stmt -> . FOR ( asgn_stmt ; ; ) statement
+    (37) for_stmt -> . FOR ( asgn_stmt ; ; asgn_stmt ) statement
+    (38) for_stmt -> . FOR ( asgn_stmt ; lexpr ; ) statement
+    (39) for_stmt -> . FOR ( asgn_stmt ; lexpr ; asgn_stmt ) statement
+    (31) while_stmt -> . WHILE lexpr statement
+    (29) if_stmt -> . IF lexpr statement
+    (30) if_stmt -> . IF lexpr statement ELSE statement
+    (28) return_stmt -> . RETURN expr
+    (27) print_stmt -> . PRINT expr
+    (25) asgn_stmt -> . ID = expr
+    (26) asgn_stmt -> . ID [ aexpr ] = expr
+    {               shift and go to state 70
+    FOR             shift and go to state 20
+    WHILE           shift and go to state 21
+    IF              shift and go to state 22
+    RETURN          shift and go to state 23
+    PRINT           shift and go to state 24
+    ID              shift and go to state 25
+
+    asgn_stmt                      shift and go to state 19
+    statement                      shift and go to state 169
+    block                          shift and go to state 68
+    free_statement                 shift and go to state 69
+    compound_stmt                  shift and go to state 12
+    simple_stmt                    shift and go to state 13
+    for_stmt                       shift and go to state 14
+    while_stmt                     shift and go to state 15
+    if_stmt                        shift and go to state 16
+    return_stmt                    shift and go to state 17
+    print_stmt                     shift and go to state 18
+
+state 168
+
+    (38) for_stmt -> FOR ( asgn_stmt ; lexpr ; ) statement .
+    FOR             reduce using rule 38 (for_stmt -> FOR ( asgn_stmt ; lexpr ; ) statement .)
+    WHILE           reduce using rule 38 (for_stmt -> FOR ( asgn_stmt ; lexpr ; ) statement .)
+    IF              reduce using rule 38 (for_stmt -> FOR ( asgn_stmt ; lexpr ; ) statement .)
+    RETURN          reduce using rule 38 (for_stmt -> FOR ( asgn_stmt ; lexpr ; ) statement .)
+    PRINT           reduce using rule 38 (for_stmt -> FOR ( asgn_stmt ; lexpr ; ) statement .)
+    ID              reduce using rule 38 (for_stmt -> FOR ( asgn_stmt ; lexpr ; ) statement .)
+    $end            reduce using rule 38 (for_stmt -> FOR ( asgn_stmt ; lexpr ; ) statement .)
+    ELSE            reduce using rule 38 (for_stmt -> FOR ( asgn_stmt ; lexpr ; ) statement .)
+    {               reduce using rule 38 (for_stmt -> FOR ( asgn_stmt ; lexpr ; ) statement .)
+    }               reduce using rule 38 (for_stmt -> FOR ( asgn_stmt ; lexpr ; ) statement .)
+
+
+state 169
+
+    (39) for_stmt -> FOR ( asgn_stmt ; lexpr ; asgn_stmt ) statement .
+    FOR             reduce using rule 39 (for_stmt -> FOR ( asgn_stmt ; lexpr ; asgn_stmt ) statement .)
+    WHILE           reduce using rule 39 (for_stmt -> FOR ( asgn_stmt ; lexpr ; asgn_stmt ) statement .)
+    IF              reduce using rule 39 (for_stmt -> FOR ( asgn_stmt ; lexpr ; asgn_stmt ) statement .)
+    RETURN          reduce using rule 39 (for_stmt -> FOR ( asgn_stmt ; lexpr ; asgn_stmt ) statement .)
+    PRINT           reduce using rule 39 (for_stmt -> FOR ( asgn_stmt ; lexpr ; asgn_stmt ) statement .)
+    ID              reduce using rule 39 (for_stmt -> FOR ( asgn_stmt ; lexpr ; asgn_stmt ) statement .)
+    $end            reduce using rule 39 (for_stmt -> FOR ( asgn_stmt ; lexpr ; asgn_stmt ) statement .)
+    ELSE            reduce using rule 39 (for_stmt -> FOR ( asgn_stmt ; lexpr ; asgn_stmt ) statement .)
+    {               reduce using rule 39 (for_stmt -> FOR ( asgn_stmt ; lexpr ; asgn_stmt ) statement .)
+    }               reduce using rule 39 (for_stmt -> FOR ( asgn_stmt ; lexpr ; asgn_stmt ) statement .)
+
+
+Conflicts:
+
+shift/reduce conflict for ELSE in state 91 resolved as shift

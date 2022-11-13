@@ -5,7 +5,7 @@
 # Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
 
 
-from sly import Lexer, Parser
+from sly import Lexer
 
 
 # Compute column.
@@ -32,7 +32,6 @@ class VoxLexer(Lexer):
         AND, OR,
         TRUE, FALSE,
         EQUAL, NOT_EQUAL, LE, GE,
-
     }
 
     literals = {'(', ')', '{', '}', '[', ']', '#', '=', ';', '<', '>', '!', '+', '-', '*', '/', ','}
