@@ -1,11 +1,11 @@
 # https://github.com/bozsahin/ceng444
 # todo: pypy kullan
 import sys
-from VoxLexer import VoxLexer
+from lexer import Lexer
 from VoxParser import VoxParser
 
 if __name__ == '__main__':
-    lexer = VoxLexer()
+    lexer = Lexer()
     parser = VoxParser()
     if len(sys.argv) > 1:
         filename = sys.argv[1]
