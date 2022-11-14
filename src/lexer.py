@@ -121,4 +121,3 @@ class Lexer(sly.Lexer):
         t.value = False
         return t
 
-    # todo: Sanitize your tokens for the literals in the language (not token literals)!
