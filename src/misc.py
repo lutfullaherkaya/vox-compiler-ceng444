@@ -2,7 +2,7 @@ from ast_tools import *
 from typing import List
 
 from lexer import Lexer
-from my_parser import Parser
+from vox_parser import Parser
 
 
 def process(source):
@@ -21,7 +21,7 @@ def generate_ast(intermediate) -> Program:
 def undeclared_vars(intermediate) -> List[Identifier]:
     '''return all of the undeclared uses of the variables in the order they appear in the source code here,
      using the return value of process()'''
-    return []
+    return UnDeclVarVisitor().visit(intermediate)
 
 
 def multiple_var_declarations(intermediate) -> List[Identifier]:
