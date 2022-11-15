@@ -467,15 +467,15 @@ class Scope:
         self.drop_symbol_table()
 
     def add(self, identifier: Identifier):
-        if identifier not in self.symbol_table:
+        if identifier.name not in self.symbol_table:
             self.symbol_table[identifier.name] = Symbol(identifier)
 
     def remove(self, identifier: Identifier):
-        if identifier in self.symbol_table:
+        if identifier.name in self.symbol_table:
             del self.symbol_table[identifier.name]
 
     def get(self, identifier: Identifier) -> Optional[Symbol]:
-        if identifier in self.symbol_table:
+        if identifier.name in self.symbol_table:
             return self.symbol_table[identifier.name]
         elif self.parent is not None:
             return self.parent.get(identifier)
