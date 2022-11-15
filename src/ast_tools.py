@@ -2,6 +2,18 @@ from __future__ import annotations
 from dataclasses import dataclass
 from abc import ABC, abstractmethod
 from typing import List, Union
+import sys
+
+
+def semantic_error(msg, line=None, column=None):
+    sys.stderr.write(f"Semantic error at {get_location_str(line, column)}: {msg}\n")
+
+
+def get_location_str(line, column=None):
+    string = f'line {line}'
+    if column is not None:
+        string += f', column {column}'
+    return string
 
 
 @dataclass(frozen=True)
@@ -435,3 +447,106 @@ class PrintVisitor(ASTNodeVisitor):
 
     def visit_Call(self, call: Call):
         return f"{call.callee.name}({', '.join([self.visit(elem) for elem in call.arguments])})"
+
+
+class MultiVarDeclVisitor(ASTNodeVisitor):
+    @staticmethod
+    def get_and_error_multiple_var_decls(var_decls: List[VarDecl]) -> List[VarDecl]:
+        decl_map = {}
+        result = []
+        for var_decl in var_decls:
+            var_name = var_decl.identifier.name
+            if var_name in decl_map:
+                semantic_error(f'Variable "{var_name}" already declared in scope at'
+                               f' {get_location_str(decl_map[var_name].identifier.lineno)}.', var_decl.identifier.lineno)
+                result.append(var_decl)
+            else:
+                decl_map[var_name] = var_decl
+        return result
+
+    def visit_SLiteral(self, sliteral: SLiteral):
+        pass
+
+    def visit_Program(self, program: Program):
+        multiple_var_decls = self.get_and_error_multiple_var_decls(program.var_decls)
+        for fun_decl in program.fun_decls:
+            multiple_var_decls += self.visit(fun_decl)
+        for stmt in program.statements:
+            visited_var_decls = self.visit(stmt)
+            if visited_var_decls is not None:
+                multiple_var_decls += visited_var_decls
+        return multiple_var_decls
+
+    def visit_ErrorStmt(self, errorstmt: ErrorStmt):
+        pass
+
+    def visit_VarDecl(self, vardecl: VarDecl):
+        pass
+
+    def visit_FunDecl(self, fundecl: FunDecl):
+        return self.visit(fundecl.body)
+
+    def visit_Assign(self, assign: Assign):
+        pass
+
+    def visit_SetVector(self, setvector: SetVector):
+        pass
+
+    def visit_ForLoop(self, forloop: ForLoop):
+        return self.visit(forloop.body)
+
+    def visit_Return(self, returnn: Return):
+        pass
+
+    def visit_WhileLoop(self, whileloop: WhileLoop):
+        return self.visit(whileloop.body)
+
+    def visit_Block(self, block: Block):
+        multiple_var_decls = self.get_and_error_multiple_var_decls(block.var_decls)
+        for stmt in block.statements:
+            visited_var_decls = self.visit(stmt)
+            if visited_var_decls is not None:
+                multiple_var_decls += visited_var_decls
+        return multiple_var_decls
+
+    def visit_Print(self, printt: Print):
+        pass
+
+    def visit_IfElse(self, ifelse: IfElse):
+        if ifelse.else_branch is None:
+            return self.visit(ifelse.if_branch)
+        else:
+            return self.visit(ifelse.if_branch) + self.visit(ifelse.else_branch)
+
+    def visit_LBinary(self, lbinary: LBinary):
+        pass
+
+    def visit_Comparison(self, comparison: Comparison):
+        pass
+
+    def visit_LLiteral(self, lliteral: LLiteral):
+        pass
+
+    def visit_LPrimary(self, lprimary: LPrimary):
+        pass
+
+    def visit_GetVector(self, getvector: GetVector):
+        pass
+
+    def visit_Variable(self, variable: Variable):
+        pass
+
+    def visit_LNot(self, lnot: LNot):
+        pass
+
+    def visit_ABinary(self, abinary: ABinary):
+        pass
+
+    def visit_AUMinus(self, auminus: AUMinus):
+        pass
+
+    def visit_ALiteral(self, aliteral: ALiteral):
+        pass
+
+    def visit_Call(self, call: Call):
+        pass
