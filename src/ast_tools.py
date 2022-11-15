@@ -664,38 +664,36 @@ class MultiVarDeclVisitor(ASTNodeVisitor):
         return result
 
     def visit_SLiteral(self, sliteral: SLiteral):
-        pass
+        return []
 
     def visit_Program(self, program: Program):
         multiple_var_decls = self.get_and_error_multiple_var_decls(program.var_decls)
         for fun_decl in program.fun_decls:
             multiple_var_decls += self.visit(fun_decl)
         for stmt in program.statements:
-            visited_var_decls = self.visit(stmt)
-            if visited_var_decls is not None:
-                multiple_var_decls += visited_var_decls
+            multiple_var_decls += self.visit(stmt)
         return multiple_var_decls
 
     def visit_ErrorStmt(self, errorstmt: ErrorStmt):
-        pass
+        return []
 
     def visit_VarDecl(self, vardecl: VarDecl):
-        pass
+        return []
 
     def visit_FunDecl(self, fundecl: FunDecl):
         return self.visit(fundecl.body)
 
     def visit_Assign(self, assign: Assign):
-        pass
+        return []
 
     def visit_SetVector(self, setvector: SetVector):
-        pass
+        return []
 
     def visit_ForLoop(self, forloop: ForLoop):
         return self.visit(forloop.body)
 
     def visit_Return(self, returnn: Return):
-        pass
+        return []
 
     def visit_WhileLoop(self, whileloop: WhileLoop):
         return self.visit(whileloop.body)
@@ -704,12 +702,11 @@ class MultiVarDeclVisitor(ASTNodeVisitor):
         multiple_var_decls = self.get_and_error_multiple_var_decls(block.var_decls)
         for stmt in block.statements:
             visited_var_decls = self.visit(stmt)
-            if visited_var_decls is not None:
-                multiple_var_decls += visited_var_decls
+            multiple_var_decls += visited_var_decls
         return multiple_var_decls
 
     def visit_Print(self, printt: Print):
-        pass
+        return []
 
     def visit_IfElse(self, ifelse: IfElse):
         if ifelse.else_branch is None:
@@ -718,34 +715,34 @@ class MultiVarDeclVisitor(ASTNodeVisitor):
             return self.visit(ifelse.if_branch) + self.visit(ifelse.else_branch)
 
     def visit_LBinary(self, lbinary: LBinary):
-        pass
+        return []
 
     def visit_Comparison(self, comparison: Comparison):
-        pass
+        return []
 
     def visit_LLiteral(self, lliteral: LLiteral):
-        pass
+        return []
 
     def visit_LPrimary(self, lprimary: LPrimary):
-        pass
+        return []
 
     def visit_GetVector(self, getvector: GetVector):
-        pass
+        return []
 
     def visit_Variable(self, variable: Variable):
-        pass
+        return []
 
     def visit_LNot(self, lnot: LNot):
-        pass
+        return []
 
     def visit_ABinary(self, abinary: ABinary):
-        pass
+        return []
 
     def visit_AUMinus(self, auminus: AUMinus):
-        pass
+        return []
 
     def visit_ALiteral(self, aliteral: ALiteral):
-        pass
+        return []
 
     def visit_Call(self, call: Call):
-        pass
+        return []

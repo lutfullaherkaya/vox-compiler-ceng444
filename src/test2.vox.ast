@@ -1,0 +1,52 @@
+TOP_LVL VAR_DECLS:
+
+TOP_LVL FUN_DECLS:
+fun a(b){
+  VAR_DECLS:
+
+  STMTS:
+
+}
+fun fun_(a__ab){
+  VAR_DECLS:
+    var a;
+  STMTS:
+    ERROR_STMT;
+    ERROR_STMT;
+    ERROR_STMT;
+}
+TOP_LVL STMTS:
+if True a = a(a()); else {
+  VAR_DECLS:
+    var endif;
+  STMTS:
+    ERROR_STMT;
+} endif
+while (Lc< a 5.0) {
+  VAR_DECLS:
+
+  STMTS:
+    a = (A+ a 1.0);
+    if (Lc== a 3.0) {
+      VAR_DECLS:
+    
+      STMTS:
+        ERROR_STMT;
+    } endif
+    if (Lc== a 4.0) {
+      VAR_DECLS:
+    
+      STMTS:
+        ERROR_STMT;
+    } endif
+    ERROR_STMT;
+    for (;;) {
+      VAR_DECLS:
+    
+      STMTS:
+        ERROR_STMT;
+        ERROR_STMT;
+        ERROR_STMT;
+    }
+    ERROR_STMT;
+}

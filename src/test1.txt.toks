@@ -1,0 +1,3 @@
+Tokens:
+Token(type='VAR', value='var', lineno=1, index=0, end=3)
+Token(type=';', value=';', lineno=1, index=3, end=4)

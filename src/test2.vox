@@ -1,0 +1,28 @@
+// bu test güzel oldu
+fun a(b) {}
+fun fun_ (a__ab) {
+var a;
+var ü;
+var b; var a;
+}
+if true
+    a = a(a());
+else {// comment
+    var endif;
+    fun_(x);
+
+}
+while (a < 5) {
+    a = a + 1;
+    if (a == 3) {
+        continue;
+    }
+    if (a == 4) {
+        break;
+    }
+        var this-is-a-very-long-variable-name;
+    for (;;) {var this_is_an_infinite_loop for (;;);}
+        var this-is-a-very-long-variable-name;
+
+}
+
