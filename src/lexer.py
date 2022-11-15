@@ -6,6 +6,7 @@
 
 
 import sly
+import ast_tools
 
 
 # Compute column.
@@ -48,7 +49,7 @@ class Lexer(sly.Lexer):
 
     def error(self, t):
         char = t.value[0]
-        print(f"Lexer error at line {self.lineno}: Illegal character '{char}'")
+        print(f"sly: Lexer error at line {self.lineno}: Illegal character '{char}'")
         self.index += 1
         t.value = char
         return t
@@ -120,4 +121,3 @@ class Lexer(sly.Lexer):
         # each token t for TRUE/FALSE should have type(t.value) == bool
         t.value = False
         return t
-

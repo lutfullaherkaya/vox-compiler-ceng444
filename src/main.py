@@ -1,20 +1,24 @@
 # https://github.com/bozsahin/ceng444
 # todo: pypy kullan
 import sys
-from lexer import Lexer
-from VoxParser import VoxParser
+import misc
+
 
 if __name__ == '__main__':
-    lexer = Lexer()
-    parser = VoxParser()
+
     if len(sys.argv) > 1:
         filename = sys.argv[1]
         with open(filename) as f:
             text = f.read()
-            print(list(map(lambda x: (str(x.type) + ('' if (x.value == x.type) else ' ' + str(x.value))),
-                           lexer.tokenize(text))))
-            result = parser.parse(lexer.tokenize(text))
-            print(result)
+
+            intermediate = misc.process(text)
+            ast = misc.generate_ast(intermediate)
+            ast_str = misc.PrintVisitor().visit(ast)
+            print('PrintVisitor Output:')
+            print(ast_str)
+
+
+
     else:
         while True:
             try:
@@ -22,8 +26,5 @@ if __name__ == '__main__':
             except EOFError:
                 break
             if text:
-                print(list(map(lambda x: (str(x.type) + ('' if (x.value == x.type) else ' ' + str(x.value))),
-                               lexer.tokenize(text))))
+                print(misc.generate_ast(misc.process(text)))
 
-                result = parser.parse(lexer.tokenize(text))
-                print(result)
