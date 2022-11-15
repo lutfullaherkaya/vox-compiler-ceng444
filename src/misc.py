@@ -9,8 +9,6 @@ def process(source):
     '''parse the source text here. you may return the AST specified in ast_tools.py or something else.'''
     lexer = Lexer()
     parser = Parser()
-    tokens = lexer.tokenize(source)
-    print(list(tokens))
     result = parser.parse(lexer.tokenize(source))
     return result
 

@@ -2,18 +2,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from abc import ABC, abstractmethod
 from typing import List, Union
-import sys
-
-
-def error(msg, line=None, column=None):
-    sys.stderr.write(f"Error at {get_location_str(line, column)}: {msg}\n")
-
-
-def get_location_str(line, column=None):
-    string = f'line {line}'
-    if column is not None:
-        string += f', column {column}'
-    return string
 
 
 @dataclass(frozen=True)
