@@ -1,6 +1,0 @@
-TOP_LVL VAR_DECLS:
-var a;
-var a = (A+ a b);
-TOP_LVL FUN_DECLS:
-
-TOP_LVL STMTS:

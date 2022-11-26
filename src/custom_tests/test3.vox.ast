@@ -1,0 +1,30 @@
+TOP_LVL VAR_DECLS:
+var _;
+var b;
+var c;
+TOP_LVL FUN_DECLS:
+fun aaa(x){
+  VAR_DECLS:
+
+  STMTS:
+    b = x;
+    c = x;
+    return x;
+}
+TOP_LVL STMTS:
+for (;;) {
+  VAR_DECLS:
+
+  STMTS:
+    ERROR_STMT;
+}
+ERROR_STMT;
+ERROR_STMT;
+ERROR_STMT;
+ERROR_STMT;
+for (a = 0.0;(Lc< a (A* (A* (A* a a) a) a));a = (A+ (A+ (A+ a a) a) a)) {
+  VAR_DECLS:
+    var a = aaa((A+ a a));
+  STMTS:
+
+}

@@ -1,1 +1,0 @@
-for (;;) {var iable} // when the error rule catches the }, the for loop can't catch it

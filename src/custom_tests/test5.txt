@@ -1,0 +1,3139 @@
+dragon book
+
+Preface
+
+
+In the time since the 1986 edition of this book, the world of compiler design
+has changed significantly. Programming languages have evolved to present new
+compilation problems. Computer architectures offer a variety of resources of
+which the compiler designer must take advantage. Perhaps most interestingly,
+the venerable technology of code optimization has found use outside compilers.
+It is now used in tools that find bugs in software, and most importantly, find
+security holes in existing code. And much of the "front-end" technology -
+grammars, regular expressions, parsers, and syntax-directed translators - are
+still in wide use.
+
+Thus, our philosophy from previous versions of the book has not changed.
+We recognize that few readers will build, or even maintain, a compiler for a
+major programming language. Yet the models, theory, and algorithms associ_
+ated with a compiler can be applied to a wide range of problems in software
+design and software development. We therefore emphasize problems that are
+most commonly encountered in designing a language processor, regardless of
+the source language or target machine.
+
+
+Use of the Book
+
+It takes at least two quarters or even two semesters to cover all or most of the
+material in this book. It is common to cover the first half in an undergraduate
+course and the second half of the book - stressing code optimization - in
+a second course at the graduate or mezzanine level. Here is an outline of the
+chapters:
+
+Chapter 1 contains motivational material and also presents some background
+issues in computer architecture and programming-language principles.
+
+Chapter 2 develops a miniature compiler and introduces many of the impor_
+tant concepts, which are then developed in later chapters. The compiler itself
+appears in the appendix.
+
+Chapter 3 covers lexical analysis, regular expressions, finite-state machines, and
+scanner-generator tools. This material is fundamental to text-processing of all
+sorts.
+
+
+v
+
+
+
+VI
+
+
+PREFACE
+
+
+Chapter 4 covers the major parsing methods, top-down (recursive-descent, LL)
+and bottom-up (LR and its variants).
+
+Chapter 5 introduces the principal ideas in syntax-directed definitions and
+syntax-directed translations.
+
+Chapter 6 takes the theory of Chapter 5 and shows how to use it to generate
+intermediate code for a typical programming language.
+
+Chapter 7 covers run-time environments, especially management of the run-time
+stack and garbage collection.
+
+Chapter 8 is on object-code generation. It covers construction of basic blocks,
+generation of code from expressions and basic blocks, and register-allocation
+techniques.
+
+Chapter 9 introduces the technology of code optimization, including flow graphs,
+data-flow frameworks, and iterative algorithms for solving these frameworks.
+
+Chapter 10 covers instruction-level optimization. The emphasis is on the ex_
+traction of parallelism from small sequences of instructions and scheduling them
+on single processors that can do more than one thing at once.
+
+Chapter 11 talks about larger-scale parallelism detection and exploitation. Here,
+the emphasis is on numeric codes that have many tight loops that range over
+multidimensional arrays.
+
+Chapter 12 is on interprocedural analysis. It covers pointer analysis, aliasing,
+and data-flow analysis that takes into account the sequence of procedure calls
+that reach a given point in the code.
+
+Courses from material in this book have been taught at Columbia, Harvard,
+and Stanford. At Columbia, a senior/first-year graduate course on program_
+ming languages and translators has been regularly offered using material from
+the first eight chapters. A highlight of this course is a semester-long project
+in which students work in small teams to create and implement a little lan_
+guage of their own design. The student-created languages have covered diverse
+application domains including quantum computation, music synthesis, com_
+puter graphics, gaming, matrix operations and many other areas. Students use
+compiler-component generators such as ANTLR, Lex, and Yacc and the syntax-
+directed translation techniques discussed in chapters two and five to build their
+compilers. A follow-on graduate course has focused on material in Chapters 9
+through 12, emphasizing code generation and optimization for contemporary
+machines including network processors and multiprocessor architectures.
+
+At Stanford, a one-quarter introductory course covers roughly the mate_
+rial in Chapters 1 through 8, although there is an introduction to global code
+optimization from Chapter 9. The second compiler course covers Chapters 9
+through 12, plus the more advanced material on garbage collection from Chap_
+ter 7. Students use a locally developed, Java-based system called Joeq for
+implementing data-flow analysis algorithms.
+
+
+
+PREFACE
+
+
+Vll
+
+
+Prerequisites
+
+The reader should possess some "computer-science sophistication," including
+at least a second course on programming, and courses in data structures and
+discrete mathematics. Knowledge of several different programming languages
+is useful.
+
+
+Exercises
+
+The book contains extensive exercises, with some for almost every section. We
+indicate harder exercises or parts of exercises with an exclamation point. The
+hardest exercises have a double exclamation point.
+
+
+Gradiance On-Line Homeworks
+
+A feature of the new edition is that there is an accompanying set of on-line
+homeworks using a technology developed by Gradiance Corp. Instructors may
+assign these homeworks to their class, or students not enrolled in a class may
+enroll in an "omnibus class" that allows them to do the homeworks as a tutorial
+(without an instructor-created class). Gradiance questions look like ordinary
+questions, but your solutions are sampled. If you make an incorrect choice you
+are given specific advice or feedback to help you correct your solution. If your
+instructor permits, you are allowed to try again, until you get a perfect score.
+
+A subscription to the Gradiance service is offered with all new copies of this
+text sold in North America. For more information, visit the Addison-Wesley
+web site www.aw.com/gradiance or send email to computing@aw.com.
+
+
+Support on the World Wide Web
+
+The book"s home page is
+
+dragonbook.Stanford.edu
+
+Here, you will find errata as we learn of them, and backup materials. We hope
+to make available the notes for each offering of compiler-related courses as we
+teach them, including homeworks, solutions, and exams. We also plan to post
+descriptions of important compilers written by their implementers.
+
+
+Acknowledgements
+
+Cover art is by S. D. Ullman of Strange Tonic Productions.
+
+Jon Bentley gave us extensive comments on a number of chapters of an
+earlier draft of this book. Helpful comments and errata were received from:
+
+
+
+PREFACE
+
+
+viii
+
+
+Domenico Bianculli, Peter Bosch, Marcio Buss, Marc Eaddy, Stephen Edwards,
+Vibhav Garg, Kim Hazelwood, Gaurav Kc, Wei Li, Mike Smith, Art Stamness,
+Krysta Svore, Olivier Tardieu, and Jia Zeng. The help of all these people is
+gratefully acknowledged. Remaining errors are ours, of course.
+
+In addition, Monica would like to thank her colleagues on the SUIF com_
+piler team for an 18-year lesson on compiling: Gerald Aigner, Dzintars Avots,
+Saman Amarasinghe, Jennifer Anderson, Michael Carbin, Gerald Cheong, Amer
+Diwan, Robert French, Anwar Ghuloum, Mary Hall, John Hennessy, David
+Heine, Shih-Wei Liao,' Amy Lim, Benjamin Livshits, Michael Martin, Dror
+Maydan, Todd Mowry, Brian Murphy, Jeffrey Oplinger, Karen Pieper, Mar_
+tin Rinard, Olatunji Ruwase, Constantine Sapuntzakis, Patrick Sathyanathan,
+Michael Smith, Steven Tjiang, Chau-Wen Tseng, Christopher Unkel, John
+Whaley, Robert Wilson, Christopher Wilson, and Michael Wolf.
+
+A. V. A., Chatham NJ
+M. S. L., Menlo Park CA
+R. S., Far Hills NJ
+J. D. U., Stanford CA
+June, 2006
+
+
+
+Table of Contents
+
+
+1 Introduction 1
+
+1.1 Language Processors. 1
+
+1.1.1 Exercises for Section 1.1. 3
+
+1.2 The Structure of a Compiler. 4
+
+1.2.1 Lexical Analysis . 5
+
+1.2.2 Syntax Analysis . 8
+
+1.2.3 Semantic Analysis. 8
+
+1.2.4 Intermediate Code Generation . 9
+
+1.2.5 Code Optimization. 10
+
+1.2.6 Code Generation. 10
+
+1.2.7 Symbol-Table Management. 11
+
+1.2.8 The Grouping of Phases into Passes. 11
+
+1.2.9 Compiler-Construction Tools. 12
+
+1.3 The Evolution of Programming Languages. 12
+
+1.3.1 The Move to Higher-level Languages. 13
+
+1.3.2 Impacts on Compilers. 14
+
+1.3.3 Exercises for Section 1.3. 14
+
+1.4 The Science of Building a Compiler. 15
+
+1.4.1 Modeling in Compiler Design and Implementation .... 15
+
+1.4.2 The Science of Code Optimization. 15
+
+1.5 Applications of Compiler Technology. 17
+
+1.5.1 Implementation of High-Level Programming Languages . 17
+
+1.5.2 Optimizations for Computer Architectures. 19
+
+1.5.3 Design of New Computer Architectures . 21
+
+1.5.4 Program Translations.22
+
+1.5.5 Software Productivity Tools. 23
+
+1.6 Programming Language Basics. 25
+
+1.6.1 The Static/Dynamic Distinction . 25
+
+1.6.2 Environments and States . 26
+
+1.6.3 Static Scope and Block Structure. 28
+
+1.6.4 Explicit Access Control. 31
+
+1.6.5 Dynamic Scope. 31
+
+1.6.6 Parameter Passing Mechanisms.33
+
+
+IX
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+X
+
+
+TABLE OF CONTENTS
+
+
+1.6.7 Aliasing. 35
+
+1.6.8 Exercises for Section 1.6. 35
+
+1.7 Summary of Chapter 1.. 36
+
+1.8 References for Chapter 1. 38
+
+2 A Simple Syntax-Directed Translator 39
+
+2.1 Introduction.40
+
+2.2 Syntax Definition.42
+
+2.2.1 Definition of Grammars.42
+
+2.2.2 Derivations.44
+
+2.2.3 Parse Trees.45
+
+2.2.4 Ambiguity.47
+
+2.2.5 Associativity of Operators.48
+
+2.2.6 Precedence of Operators.48
+
+2.2.7 Exercises for Section 2.2.51
+
+2.3 Syntax-Directed Translation . ..52
+
+2.3.1 Postfix Notation.53
+
+2.3.2 Synthesized Attributes.54
+
+2.3.3 Simple Syntax-Directed Definitions.56
+
+2.3.4 Tree Traversals. 56
+
+2.3.5 Translation Schemes.57
+
+2.3.6 Exercises for Section 2.3.60
+
+2.4 Parsing .60
+
+2.4.1 Top-Down Parsing.61
+
+2.4.2 Predictive Parsing.64
+
+2.4.3 When to Use e-Productions.65
+
+2.4.4 Designing a Predictive Parser.66
+
+2.4.5 Left Recursion.67
+
+2.4.6 Exercises for Section 2.4.68
+
+2.5 A Translator for Simple Expressions. 68
+
+2.5.1 Abstract and Concrete Syntax .69
+
+2.5.2 Adapting the Translation Scheme. 70
+
+2.5.3 Procedures for the Nonterminals. 72
+
+2.5.4 Simplifying the Translator. 73
+
+2.5.5 The Complete Program. 74
+
+2.6 Lexical Analysis . 76
+
+2.6.1 Removal of White Space and Comments.77
+
+2.6.2 Reading Ahead. 78
+
+2.6.3 Constants.78
+
+2.6.4 Recognizing Keywords and Identifiers . 79
+
+2.6.5 A Lexical Analyzer.81
+
+2.6.6 Exercises for Section 2.6.84
+
+2.7 Symbol Tables .85
+
+2.7.1 Symbol Table Per Scope.86
+
+2.7.2 The Use of Symbol Tables.89
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+TABLE OF CONTENTS
+
+
+xi
+
+2.8 Intermediate Code Generation ..91
+
+2.8.1 Two Kinds of Intermediate Representations.91
+
+2.8.2 Construction of Syntax Trees.92
+
+2.8.3 Static Checking. 97
+
+2.8.4 Three-Address Code . .. 99
+
+2.8.5 Exercises for Section 2.8.105
+
+2.9 Summary of Chapter 2.105
+
+3 Lexical Analysis 109
+
+3.1 The Role of the Lexical Analyzer.109
+
+3.1.1 Lexical Analysis Versus Parsing.110
+
+3.1.2 Tokens, Patterns, and Lexemes.Ill
+
+3.1.3 Attributes for Tokens .112
+
+3.1.4 Lexical Errors.113
+
+3.1.5 Exercises for Section 3.1.114
+
+3.2 Input Buffering.115
+
+3.2.1 Buffer Pairs.115
+
+3.2.2 Sentinels.116
+
+3.3 Specification of Tokens.116
+
+3.3.1 Strings and Languages.117
+
+3.3.2 Operations on Languages.119
+
+3.3.3 Regular Expressions.120
+
+3.3.4 Regular Definitions.123
+
+3.3.5 Extensions of Regular Expressions.124
+
+3.3.6 Exercises for Section 3.3.125
+
+3.4 Recognition of Tokens.128
+
+3.4.1 Transition Diagrams.130
+
+3.4.2 Recognition of Reserved Words and Identifiers .132
+
+3.4.3 Completion of the Running Example.133
+
+3.4.4 Architecture of a Transition-Diagram-Based Lexical An_
+alyzer .134
+
+3.4.5 Exercises for Section 3.4.136
+
+3.5 The Lexical-Analyzer Generator Lex.140
+
+3.5.1 Use of Lex.140
+
+3.5.2 Structure of Lex Programs .141
+
+3.5.3 Conflict Resolution in Lex.144
+
+3.5.4 The Lookahead Operator. 144
+
+3.5.5 Exercises for Section 3.5.146
+
+3.6 Finite Automata.147
+
+3.6.1 Nondeterministic Finite Automata.147
+
+3.6.2 Transition Tables.148
+
+3.6.3 Acceptance of Input Strings by Automata.149
+
+3.6.4 Deterministic Finite Automata.149
+
+3.6.5 Exercises for Section 3.6.151
+
+3.7 From Regular Expressions to Automata.152
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+TABLE OF CONTENTS
+
+
+3.7.1 Conversion of an NFA to a DFA .152
+
+3.7.2 Simulation of an NFA.156
+
+3.7.3 Efficiency of NFA Simulation.157
+
+3.7.4 Construction of an NFA from a Regular Expression . . . 159
+
+3.7.5 Efficiency of String-Processing Algorithms.163
+
+3.7.6 Exercises for Section 3.7.166
+
+3.8 Design of a Lexical-Analyzer Generator .166
+
+3.8.1 The Structure of the Generated Analyzer.167
+
+3.8.2 Pattern Matching Based on NFA"s.168
+
+3.8.3 DFA"s for Lexical Analyzers.170
+
+3.8.4 Implementing the Lookahead Operator.171
+
+3.8.5 Exercises for Section 3.8.172
+
+3.9 Optimization of DFA-Based Pattern Matchers.173
+
+3.9.1 Important States of an NFA.173
+
+3.9.2 Functions Computed From the Syntax Tree.175
+
+3.9.3 Computing nullable , firstpos, and lastpos .176
+
+3.9.4 Computing followpos .177
+
+3.9.5 Converting a Regular Expression Directly to a DFA ... 179
+
+3.9.6 Minimizing the Number of States of a DFA.180
+
+3.9.7 State Minimization in Lexical Analyzers.184
+
+3.9.8 Trading Time for Space in DFA Simulation.185
+
+3.9.9 Exercises for Section 3.9.186
+
+3.10 Summary of Chapter 3.187
+
+3.11 References for Chapter 3.189
+
+4 Syntax Analysis 191
+
+4.1 Introduction.192
+
+4.1.1 The Role of the Parser.192
+
+4.1.2 Representative Grammars.193
+
+4.1.3 Syntax Error Handling.194
+
+4.1.4 Error-Recovery Strategies.195
+
+4.2 Context-Free Grammars.197
+
+4.2.1 The Formal Definition of a Context-Free Grammar . ... 197
+
+4.2.2 Notational Conventions.198
+
+4.2.3 Derivations.199
+
+4.2.4 Parse Trees and Derivations.201
+
+4.2.5 Ambiguity.203
+
+4.2.6 Verifying the Language Generated by a Grammar .... 204
+
+: 4.2.7 Context-Free Grammars Versus Regular Expressions ... 205
+
+4.2.8 Exercises for Section 4.2.206
+
+4.3 Writing a Grammar . 209
+
+4.3.1 Lexical Versus Syntactic Analysis.209
+
+4.3.2 Eliminating Ambiguity.210
+
+4.3.3 Elimination of Left Recursion.212
+
+4.3.4 Left Factoring .214
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+TABLE OF CONTENTS
+
+
+xm
+
+
+4.3.5 Non-Context-Free Language Constructs.215
+
+4.3.6 Exercises for Section 4.3.216
+
+4.4 Top-Down Parsing..217
+
+4.4.1 Recursive-Descent Parsing ..219
+
+4.4.2 FIRST and FOLLOW.220
+
+4.4.3 LL(1) Grammars.222
+
+4.4.4 Nonrecursive Predictive Parsing.226
+
+4.4.5 Error Recovery in Predictive Parsing.228
+
+4.4.6 Exercises for Section 4.4.231
+
+4.5 Bottom-Up Parsing.233
+
+4.5.1 Reductions.234
+
+4.5.2 Handle Pruning.235
+
+4.5.3 Shift-Reduce Parsing.236
+
+4.5.4 Conflicts During Shift-Reduce Parsing.238
+
+4.5.5 Exercises for Section 4.5.240
+
+4.6 Introduction to LR Parsing: Simple LR.241
+
+4.6.1 Why LR Parsers?.241
+
+4.6.2 Items and the LR(0) Automaton.242
+
+4.6.3 The LR-Parsing Algorithm.248
+
+4.6.4 Constructing SLR-Parsing Tables.252
+
+4.6.5 Viable Prefixes.256
+
+4.6.6 Exercises for Section 4.6.257
+
+4.7 More Powerful LR Parsers.259
+
+4.7.1 Canonical LR(1) Items.260
+
+4.7.2 Constructing LR(1) Sets of Items.261
+
+4.7.3 Canonical LR(1) Parsing Tables .265
+
+4.7.4 Constructing LALR Parsing Tables.266
+
+4.7.5 Efficient Construction of LALR Parsing Tables.270
+
+4.7.6 Compaction of LR Parsing Tables .275
+
+4.7.7 Exercises for Section 4.7.277
+
+4.8 Using Ambiguous Grammars .278
+
+4.8.1 Precedence and Associativity to Resolve Conflicts .... 279
+
+4.8.2 The "Dangling-Else" Ambiguity .281
+
+4.8.3 Error Recovery in LR Parsing.283
+
+4.8.4 Exercises for Section 4.8.285
+
+4.9 Parser Generators .287
+
+4.9.1 The Parser Generator Yacc.287
+
+4.9.2 Using Yacc with Ambiguous Grammars.291
+
+4.9.3 Creating Yacc Lexical Analyzers with Lex.294
+
+4.9.4 Error Recovery in Yacc .295
+
+4.9.5 Exercises for Section 4.9.297
+
+4.10 Summary of Chapter 4.297
+
+4.11 References for Chapter 4.300
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+xiv TABLE OF CONTENTS
+
+5 Syntax-Directed Translation 303
+
+5.1 Syntax-Directed Definitions. 304
+
+5.1.1 Inherited and Synthesized Attributes.304
+
+5.1.2 Evaluating an SDD at the Nodes of a Parse Tree.306
+
+5.1.3 Exercises for Section 5.1.309
+
+5.2 Evaluation Orders for SDD"s . 310
+
+5.2.1 Dependency Graphs. 310
+
+5.2.2 Ordering the Evaluation of Attributes.312
+
+5.2.3 S-Attributed Definitions.312
+
+5.2.4 L-Attributed Definitions.313
+
+5.2.5 Semantic Rules with Controlled Side Effects ..314
+
+5.2.6 Exercises for Section 5.2.317
+
+5.3 Applications of Syntax-Directed Translation.318
+
+5.3.1 Construction of Syntax Trees.318
+
+5.3.2 The Structure of a Type.321
+
+5.3.3 Exercises for Section 5.3.323
+
+5.4 Syntax-Directed Translation Schemes.324
+
+5.4.1 Postfix Translation Schemes.324
+
+5.4.2 Parser-Stack Implementation of Postfix SDT"s .325
+
+5.4.3 SDT"s With Actions Inside Productions.327
+
+5.4.4 Eliminating Left Recursion From SDT"s.328
+
+5.4.5 SDT"s for L-Attributed Definitions.331
+
+5.4.6 Exercises for Section 5.4.336
+
+5.5 Implementing L-Attributed SDD"s.337
+
+5.5.1 Translation During Recursive-Descent Parsing .338
+
+5.5.2 On-The-Fly Code Generation.340
+
+5.5.3 L-Attributed SDD"s and LL Parsing.343
+
+5.5.4 Bottom-Up Parsing of L-Attributed SDD"s .348
+
+5.5.5 Exercises for Section 5.5.352
+
+5.6 Summary of Chapter 5.353
+
+5.7 References for Chapter 5.354
+
+6 Intermediate-Code Generation 357
+
+6.1 Variants of Syntax Trees.358
+
+6.1.1 Directed Acyclic Graphs for Expressions.359
+
+6.1.2 The Value-Number Method for Constructing DAG"s . . . 360
+
+6.1.3 Exercises for Section 6.1.362
+
+6.2 Three-Address Code.363
+
+6.2.1 Addresses and Instructions .364
+
+6.2.2 Quadruples.366
+
+6.2.3 Triples.367
+
+6.2.4 Static Single-Assignment Form.369
+
+6.2.5 Exercises for Section 6.2.370
+
+6.3 Types and Declarations.370
+
+6.3.1 Type Expressions.371
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+TABLE OF CONTENTS
+
+
+xv
+
+
+6.3.2 Type Equivalence..372
+
+6.3.3 Declarations.373
+
+6.3.4 Storage Layout for Local Names .373
+
+6.3.5 Sequences of Declarations.376
+
+6.3.6 Fields in Records and Classes.376
+
+6.3.7 Exercises for Section 6.3.378
+
+6.4 Translation of Expressions. 378
+
+6.4.1 Operations Within Expressions.378
+
+6.4.2 Incremental Translation.380
+
+6.4.3 Addressing Array Elements.381
+
+6.4.4 Translation of Array References.383
+
+6.4.5 Exercises for Section 6.4. 384
+
+6.5 Type Checking.386
+
+6.5.1 Rules for Type Checking.387
+
+6.5.2 Type Conversions .388
+
+6.5.3 Overloading of Functions and Operators.390
+
+6.5.4 Type Inference and Polymorphic Functions.391
+
+6.5.5 An Algorithm for Unification.395
+
+6.5.6 Exercises for Section 6.5.398
+
+6.6 Control Flow..399
+
+6.6.1 Boolean Expressions.399
+
+6.6.2 Short-Circuit Code.400
+
+6.6.3 Flow-of-Control Statements.401
+
+6.6.4 Control-Flow Translation of Boolean Expressions.403
+
+6.6.5 Avoiding Redundant Gotos.405
+
+6.6.6 Boolean Values and Jumping Code.408
+
+6.6.7 Exercises for Section 6.6.408
+
+6.7 Backpatching.410
+
+6.7.1 One-Pass Code Generation Using Backpatching.410
+
+6.7.2 Backpatching for Boolean Expressions.411
+
+6.7.3 Flow-of-Control Statements.413
+
+6.7.4 Break-, Continue-, and Goto-Statements.416
+
+6.7.5 Exercises for Section 6.7.417
+
+6.8 Switch-Statements.418
+
+6.8.1 Translation of Switch-Statements.419
+
+6.8.2 Syntax-Directed Translation of Switch-Statements .... 420
+
+6.8.3 Exercises for Section 6.8.421
+
+6.9 Intermediate Code for Procedures.422
+
+6.10 Summary of Chapter 6.424
+
+6.11 References for Chapter 6. 425
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+XVI
+
+
+TABLE OF CONTENTS
+
+
+7 Run-Time Environments 427
+
+7.1 Storage Organization.427
+
+7.1.1 Static Versus Dynamic Storage Allocation.429
+
+7.2 Stack Allocation of Space.430
+
+7.2.1 Activation Trees.430
+
+7.2.2 Activation Records.433
+
+7.2.3 Calling Sequences .436
+
+7.2.4 Variable-Length Data on the Stack.438
+
+7.2.5 Exercises for Section 7.2.440
+
+7.3 Access to Nonlocal Data on the Stack.441
+
+7.3.1 Data Access Without Nested Procedures.442
+
+7.3.2 Issues With Nested Procedures.442
+
+7.3.3 A Language With Nested Procedure Declarations.443
+
+7.3.4 Nesting Depth .443
+
+7.3.5 Access Links .445
+
+7.3.6 Manipulating Access Links.447
+
+7.3.7 Access Links for Procedure Parameters .448
+
+7.3.8 Displays.449
+
+7.3.9 Exercises for Section 7.3.451
+
+7.4 Heap Management.452
+
+7.4.1 The Memory Manager.453
+
+7.4.2 The Memory Hierarchy of a Computer.454
+
+7.4.3 Locality in Programs.455
+
+7.4.4 Reducing Fragmentation.457
+
+7.4.5 Manual Deallocation Requests .460
+
+7.4.6 Exercises for Section 7.4.463
+
+7.5 Introduction to Garbage Collection.463
+
+7.5.1 Design Goals for Garbage Collectors.464
+
+7.5.2 Reachability.466
+
+7.5.3 Reference Counting Garbage Collectors.468
+
+7.5.4 Exercises for Section 7.5.470
+
+7.6 Introduction to Trace-Based Collection.470
+
+7.6.1 A Basic Mark-and-Sweep Collector.471
+
+7.6.2 Basic Abstraction .473
+
+7.6.3 Optimizing Mark-and-Sweep .475
+
+7.6.4 Mark-and-Compact Garbage Collectors.476
+
+7.6.5 Copying collectors.478
+
+7.6.6 Comparing Costs.482
+
+7.6.7 Exercises for Section 7.6.482
+
+7.7 Short-Pause Garbage Collection.483
+
+7.7.1 Incremental Garbage Collection.483
+
+7.7.2 Incremental Reachability Analysis.485
+
+7.7.3 Partial-Collection Basics.487
+
+7.7.4 Generational Garbage Collection.488
+
+7.7.5 The Train Algorithm.490
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+TABLE OF CONTENTS
+
+
+xvii
+
+7.7.6 Exercises for Section 7.7.493
+
+7.8 Advanced Topics in Garbage Collection.494
+
+7.8.1 Parallel and Concurrent Garbage Collection.495
+
+7.8.2 Partial Object Relocation.497
+
+7.8.3 Conservative Collection for Unsafe Languages.498
+
+7.8.4 Weak References.498
+
+7.8.5 Exercises for Section 7.8.499
+
+7.9 Summary of Chapter 7.500
+
+7.10 References for Chapter 7.502
+
+8 Code Generation 505
+
+8.1 Issues in the Design of a Code Generator .506
+
+8.1.1 Input to the Code Generator.507
+
+8.1.2 The Target Program.507
+
+8.1.3 Instruction Selection.508
+
+8.1.4 Register Allocation.510
+
+8.1.5 Evaluation Order.511
+
+8.2 The Target Language .512
+
+8.2.1 A Simple Target Machine Model.512
+
+8.2.2 Program and Instruction Costs.515
+
+8.2.3 Exercises for Section 8.2.516
+
+8.3 Addresses in the Target Code.518
+
+8.3.1 Static Allocation.518
+
+8.3.2 Stack Allocation.520
+
+8.3.3 Run-Time Addresses for Names.522
+
+8.3.4 Exercises for Section 8.3.524
+
+8.4 Basic Blocks and Flow Graphs .525
+
+8.4.1 Basic Blocks .526
+
+8.4.2 Next-Use Information.528
+
+8.4.3 Flow Graphs.529
+
+8.4.4 Representation of Flow Graphs.530
+
+8.4.5 Loops.531
+
+8.4.6 Exercises for Section 8.4.531
+
+8.5 Optimization of Basic Blocks.533
+
+8.5.1 The DAG Representation of Basic Blocks.533
+
+8.5.2 Finding Local Common Subexpressions.534
+
+8.5.3 Dead Code Elimination.535
+
+8.5.4 The Use of Algebraic Identities.536
+
+8.5.5 Representation of Array References.537
+
+8.5.6 Pointer Assignments and Procedure Calls.539
+
+8.5.7 Reassembling Basic Blocks From DAG"s.539
+
+8.5.8 Exercises for Section 8.5.541
+
+8.6 A Simple Code Generator.542
+
+8.6.1 Register and Address Descriptors.543
+
+8.6.2 The Code-Generation Algorithm.544
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+xvm TABLE OF CONTENTS
+
+8.6.3 Design of the Function getReg .. 547
+
+8 . 6 . .548
+
+8.7 Peephole Optimization. 549
+
+8.7.1 Eliminating Redundant Loads and Stores.550
+
+8.7.2 Eliminating Unreachable Code.550
+
+8.7.3 Flow-of-Control Optimizations.551
+
+8.7.4 Algebraic Simplification and Reduction in Strength .... 552
+
+8.7.5 Use of Machine Idioms.552
+
+8.7. Exercises for Section 8.7.553
+
+8.8 Register Allocation and Assignment .553
+
+8.8.1 Global Register Allocation. 553
+
+8.8.2 Usage Counts.554
+
+8.8.3 Register Assignment for Outer Loops .556
+
+8.8.4 Register Allocation by Graph Coloring.556
+
+8.8.5 Exercises for Section 8.8 .557
+
+8.9 Instruction Selection by Tree Rewriting .558
+
+8.9.1 Tree-Translation Schemes.558
+
+8.9.2 Code Generation by Tiling an Input Tree.560
+
+8.9.3 Pattern Matching by Parsing.563
+
+8.9.4 Routines for Semantic Checking .565
+
+8.9.5 General Tree Matching.565
+
+8.9.6 Exercises for Section 8.9. 567
+
+8.10 Optimal Code Generation for Expressions.567
+
+8.10.1 Ershov Numbers.567
+
+8.10.2 Generating Code From Labeled Expression Trees.568
+
+8.10.3 Evaluating Expressions with an Insufficient Supply of Reg_
+isters . 570
+
+8.10.4 Exercises for Section 8.10.572
+
+8.11 Dynamic Programming Code-Generation.573
+
+8.11.1 Contiguous Evaluation.574
+
+8.11.2 The Dynamic Programming Algorithm.575
+
+8.11.3 Exercises for Section 8.11.577
+
+8.12 Summary of Chapter 8 .578
+
+8.13 References for Chapter 8 .579
+
+9 Machine-Independent Optimizations 583
+
+9.1 The Principal Sources of Optimization.584
+
+9.1.1 Causes of Redundancy.584
+
+9.1.2 A Running Example: Quicksort.585
+
+9.1.3 Semantics-Preserving Transformations.586
+
+9.1.4 Global Common Subexpressions .588
+
+9.1.5 Copy Propagation.590
+
+9.1.6 Dead-Code Elimination.591
+
+9.1.7 Code Motion.592
+
+9.1.8 Induction Variables and Reduction in Strength.592
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+TABLE OF CONTENTS xix
+
+9.1.9 Exercises for Section 9.1.596
+
+9.2 Introduction to Data-Flow Analysis .597
+
+9.2.1 The Data-Flow Abstraction.597
+
+9.2.2 The Data-Flow Analysis Schema.599
+
+9.2.3 Data-Flow Schemas on Basic Blocks.600
+
+9.2.4 Reaching Definitions.601
+
+9.2.5 Live-Variable Analysis.608
+
+9.2.6 Available Expressions.610
+
+9.2.7 Summary.614
+
+9.2.8 Exercises for Section 9.2.615
+
+9.3 Foundations of Data-Flow Analysis.618
+
+9.3.1 Semilattices.618
+
+9.3.2 Transfer Functions.623
+
+9.3.3 The Iterative Algorithm for General Frameworks.626
+
+9.3.4 Meaning of a Data-Flow Solution.628
+
+9.3.5 Exercises for Section 9.3.631
+
+9.4 Constant Propagation.632
+
+9.4.1 Data-Flow Values for the Constant-Propagation Frame_
+work .633
+
+9.4.2 The Meet for the Constant-Propagation Framework . . . 633
+
+9.4.3 Transfer Functions for the Constant-Propagation Frame_
+work .634
+
+9.4.4 Monotonicity of the Constant-Propagation Framework . . 635
+
+9.4.5 Nondistributivity of the Constant-Propagation Framework 635
+
+9.4.6 Interpretation of the Results .637
+
+9.4.7 Exercises for Section 9.4.637
+
+9.5 Partial-Redundancy Elimination . ..639
+
+9.5.1 The Sources of Redundancy.639
+
+9.5.2 Can All Redundancy Be Eliminated?.642
+
+9.5.3 The Lazy-Code-Motion Problem.644
+
+9.5.4 Anticipation of Expressions.645
+
+9.5.5 The Lazy-Code-Motion Algorithm.646
+
+9.5.6 Exercises for Section 9.5.655
+
+9.6 Loops in Flow Graphs.655
+
+9.6.1 Dominators.656
+
+9.6.2 Depth-First Ordering ..660
+
+9.6.3 Edges in a Depth-First Spanning Tree.661
+
+9.6.4 Back Edges and Reducibility.662
+
+9.6.5 Depth of a Flow Graph .665
+
+9.6.6 Natural Loops .665
+
+9.6.7 Speed of Convergence of Iterative Data-Flow Algorithms . 667
+
+9.6.8 Exercises for Section 9.6.669
+
+9.7 Region-Based Analysis.672
+
+9.7.1 Regions.672
+
+9.7.2 Region Hierarchies for Reducible Flow Graphs .673
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+XX
+
+
+TABLE OF CONTENTS
+
+
+9.7.3 Overview of a Region-Based Analysis .676
+
+9.7.4 Necessary Assumptions About Transfer Functions .... 678
+
+9.7.5 An Algorithm for Region-Based Analysis .680
+
+9.7.6 Handling Nonreducible Flow Graphs.684
+
+9.7.7 Exercises for Section 9.7.686
+
+9.8 Symbolic Analysis.686
+
+9.8.1 Affine Expressions of Reference Variables.687
+
+9.8.2 Data-Flow Problem Formulation.689
+
+9.8.3 Region-Based Symbolic Analysis.694
+
+9.8.4 Exercises for Section 9.8.699
+
+9.9 Summary of Chapter 9.700
+
+9.10 References for Chapter 9.703
+
+10 Instruction-Level Parallelism 707
+
+10.1 Processor Architectures .708
+
+10.1.1 Instruction Pipelines and Branch Delays.708
+
+10.1.2 Pipelined Execution.709
+
+10.1.3 Multiple Instruction Issue.710
+
+10.2 Code-Scheduling Constraints.710
+
+10.2.1 Data Dependence.711
+
+10.2.2 Finding Dependences Among Memory Accesses.712
+
+10.2.3 Tradeoff Between Register Usage and Parallelism.713
+
+10.2.4 Phase Ordering Between Register Allocation and Code
+
+Scheduling .716
+
+10.2.5 Control Dependence.716
+
+10.2.6 Speculative Execution Support.717
+
+10.2.7 A Basic Machine Model.719
+
+10.2.8 Exercises for Section 10.2.720
+
+10.3 Basic-Block Scheduling.721
+
+10.3.1 Data-Dependence Graphs.722
+
+10.3.2 List Scheduling of Basic Blocks.723
+
+10.3.3 Prioritized Topological Orders .725
+
+10.3.4 Exercises for Section 10.3.726
+
+10.4 Global Code Scheduling.727
+
+10.4.1 Primitive Code Motion .728
+
+10.4.2 Upward Code Motion.730
+
+10.4.3 Downward Code Motion.731
+
+10.4.4 Updating Data Dependences .732
+
+10.4.5 Global Scheduling Algorithms.732
+
+10.4.6 Advanced Code Motion Techniques.736
+
+10.4.7 Interaction with Dynamic Schedulers.737
+
+10.4.8 Exercises for Section 10.4.737
+
+10.5 Software Pipelining.738
+
+10.5.1 Introduction .738
+
+10.5.2 Software Pipelining of Loops .740
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+TABLE OF CONTENTS xxi
+
+10.5.3 Register Allocation and Code Generation.743
+
+10.5.4 Do-Across Loops.743
+
+10.5.5 Goals and Constraints of Software Pipelining.745
+
+10.5.6 A Software-Pipelining Algorithm.749
+
+10.5.7 Scheduling Acyclic Data-Dependence Graphs.749
+
+10.5.8 Scheduling Cyclic Dependence Graphs.751
+
+10.5.9 Improvements to the Pipelining Algorithms.758
+
+10.5.10Modular Variable Expansion .758
+
+10.5.11 Conditional Statements.761
+
+10.5.12 Hardware Support for Software Pipelining.762
+
+10.5.13Exercises for Section 10.5.763
+
+10.6 Summary of Chapter 10.765
+
+10.7 References for Chapter 10.766
+
+11 Optimizing for Parallelism and Locality 769
+
+11.1 Basic Concepts.771
+
+11.1.1 Multiprocessors.772
+
+11.1.2 Parallelism in Applications .773
+
+11.1.3 Loop-Level Parallelism.775
+
+11.1.4 Data Locality.777
+
+11.1.5 Introduction to Affine Transform Theory .778
+
+11.2 Matrix Multiply: An In-Depth Example.782
+
+11.2.1 The Matrix-Multiplication Algorithm .782
+
+11.2.2 Optimizations.785
+
+11.2.3 Cache Interference.788
+
+11.2.4 Exercises for Section 11.2.788
+
+11.3 Iteration Spaces.788
+
+11.3.1 Constructing Iteration Spaces from Loop Nests.788
+
+11.3.2 Execution Order for Loop Nests .791
+
+11.3.3 Matrix Formulation of Inequalities.791
+
+11.3.4 Incorporating Symbolic Constants.793
+
+11.3.5 Controlling the Order of Execution.793
+
+11.3.6 Changing Axes.798
+
+11.3.7 Exercises for Section 11.3.799
+
+11.4 Affine Array Indexes. 801
+
+11.4.1 Affine Accesses.802
+
+11.4.2 Affine and Nonaffine Accesses in Practice. 803
+
+11.4.3 Exercises for Section 11.4.804
+
+11.5 Data Reuse.804
+
+11.5.1 Types of Reuse.805
+
+11.5.2 Self Reuse.806
+
+11.5.3 Self-Spatial Reuse . 809
+
+11.5.4 Group Reuse.811
+
+11.5.5 Exercises for Section 11.5. 814
+
+11.6 Array Data-Dependence Analysis. 815
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+xxii TABLE OF CONTENTS
+
+11.6.1 Definition of Data Dependence of Array Accesses.816
+
+11.6.2 Integer Linear Programming .817
+
+11.6.3 The GCD Test.818
+
+11.6.4 Heuristics for Solving Integer Linear Programs.820
+
+11.6.5 Solving General Integer Linear Programs .823
+
+11.6.6 Summary.825
+
+11.6.7 Exercises for Section 11.6.826
+
+11.7 Finding Synchronization-Free Parallelism .828
+
+11.7.1 An Introductory Example.828
+
+11.7.2 Affine Space Partitions.830
+
+11.7.3 Space-Partition Constraints.831
+
+11.7.4 Solving Space-Partition Constraints .835
+
+11.7.5 A Simple Code-Generation Algorithm.838
+
+11.7.6 Eliminating Empty Iterations.841
+
+11.7.7 Eliminating Tests from Innermost Loops.844
+
+11.7.8 Source-Code Transforms.846
+
+11.7.9 Exercises for Section 11.7.851
+
+11.8 Synchronization Between Parallel Loops.853
+
+11.8.1 A Constant Number of Synchronizations.853
+
+11.8.2 Program-Dependence Graphs.854
+
+11.8.3 Hierarchical Time .857
+
+11.8.4 The Parallelization Algorithm.859
+
+11.8.5 Exercises for Section 11.8.860
+
+11.9 Pipelining.861
+
+11.9.1 What is Pipelining? .861
+
+11.9.2 Successive Over-Relaxation (SOR): An Example.863
+
+11.9.3 Fully Permutable Loops.864
+
+11.9.4 Pipelining Fully Permutable Loops.864
+
+11.9.5 General Theory.867
+
+11.9.6 Time-Partition Constraints.868
+
+11.9.7 Solving Time-Partition Constraints by Farkas" Lemma _ _ 872
+
+11.9.8 Code Transformations.875
+
+11.9.9 Parallelism With Minimum Synchronization.880
+
+11.9.10Exercises for Section 11.9.882
+
+11.10 Locality Optimizations.884
+
+ll.lO.lTemporal Locality of Computed Data.885
+
+11.10.2Array Contraction.885
+
+11.10.3Partition Interleaving .887
+
+11.10.4Putting it All Together .890
+
+11.10.5 Exercises for Section 11.10.892
+
+11.11 Other Uses of Affine Transforms.893
+
+11.11.1 Distributed memory machines.894
+
+11.11.2Multi-Instruction-Issue Processors.895
+
+11.11.3 Vector and SIMD Instructions .895
+
+11.11.4 Prefetching.896
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+TABLE OF CONTENTS xxiii
+
+11.12 Summary of Chapter 11.897
+
+11.13 References for Chapter 11.899
+
+12 Interprocedural Analysis 903
+
+12.1 Basic Concepts.904
+
+12.1.1 Call Graphs.904
+
+12.1.2 Context Sensitivity.906
+
+12.1.3 Call Strings.908
+
+12.1.4 Cloning-Based Context-Sensitive Analysis.910
+
+12.1.5 Summary-Based Context-Sensitive Analysis.911
+
+12.1.6 Exercises for Section 12.1.914
+
+12.2 Why Interprocedural Analysis?.916
+
+12.2.1 Virtual Method Invocation .916
+
+12.2.2 Pointer Alias Analysis.917
+
+12.2.3 Parallelization .917
+
+12.2.4 Detection of Software Errors and Vulnerabilities .917
+
+12.2.5 SQL Injection.918
+
+12.2.6 Buffer Overflow.920
+
+12.3 A Logical Representation of Data Flow.921
+
+12.3.1 Introduction to Datalog.921
+
+12.3.2 Datalog Rules.922
+
+12.3.3 Intensional and Extensional Predicates.924
+
+12.3.4 Execution of Datalog Programs.927
+
+12.3.5 Incremental Evaluation of Datalog Programs.928
+
+12.3.6 Problematic Datalog Rules .930
+
+12.3.7 Exercises for Section 12.3.932
+
+12.4 A Simple Pointer-Analysis Algorithm.933
+
+12.4.1 Why is Pointer Analysis Difficult.934
+
+12.4.2 A Model for Pointers and References.935
+
+12.4.3 Flow Insensitivity .936
+
+12.4.4 The Formulation in Datalog.937
+
+12.4.5 Using Type Information.938
+
+12.4.6 Exercises for Section 12.4.939
+
+12.5 Context-Insensitive Interprocedural Analysis.941
+
+12.5.1 Effects of a Method Invocation ..941
+
+12.5.2 Call Graph Discovery in Datalog.943
+
+12.5.3 Dynamic Loading and Reflection.944
+
+12.5.4 Exercises for Section 12.5.945
+
+12.6 Context-Sensitive Pointer Analysis.945
+
+12.6.1 Contexts and Call Strings ..946
+
+12.6.2 Adding Context to Datalog Rules.949
+
+12.6.3 Additional Observations About Sensitivity.949
+
+12.6.4 Exercises for Section 12.6.950
+
+12.7 Datalog Implementation by BDD"s.951
+
+12.7.1 Binary Decision Diagrams.951
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+xxiv TABLE OF CONTENTS
+
+12.7.2 Transformations on BDD"s .953
+
+12.7.3 Representing Relations by BDD"s.954
+
+12.7.4 Relational Operations as BDD Operations.954
+
+12.7.5 Using BDD"s for Points-to Analysis .957
+
+12.7.6 Exercises for Section 12.7.958
+
+12.8 Summary of Chapter 12.958
+
+12.9 References for Chapter 12.961
+
+A A Complete Front End 965
+
+A.l The Source Language .965
+
+A.2 Main.966
+
+A.3 Lexical Analyzer.967
+
+A.4 Symbol Tables and Types.970
+
+A.5 Intermediate Code for Expressions.971
+
+A.6 Jumping Code for Boolean Expressions .974
+
+A.7 Intermediate Code for Statements .978
+
+A.8 Parser.981
+
+A.9 Creating the Front End .986
+
+B Finding Linearly Independent Solutions 989
+
+Index 993
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Chapter 1
+
+Introduction
+
+
+Programming languages are notations for describing computations to people
+and to machines. The world as we know it depends on programming languages,
+because all the software running on all the computers was written in some
+programming language. But, before a program can be run, it first must be
+translated into a form in which it can be executed by a computer.
+
+The software systems that do this translation are called compilers.
+
+This book is about how to design and implement compilers. We shall dis_
+cover that a few basic ideas can be used to construct translators for a wide
+variety of languages and machines. Besides compilers, the principles and tech_
+niques for compiler design are applicable to so many other domains that they
+are likely to be reused many times in the career of a computer scientist. The
+study of compiler writing touches upon programming languages, machine ar_
+chitecture, language theory, algorithms, and software engineering.
+
+In this preliminary chapter, we introduce the different forms of language
+translators, give a high level overview of the structure of a typical compiler,
+and discuss the trends in programming languages and machine architecture
+that are shaping compilers. We include some observations on the relationship
+between compiler design and computer-science theory and an outline of the
+applications of compiler technology that go beyond compilation. We end with
+a brief outline of key programming-language concepts that will be needed for
+our study of compilers.
+
+
+1.1 Language Processors
+
+Simply stated, a compiler is a program that can read a program in one lan_
+guage - the source language - and translate it into an equivalent program in
+another language - the target language; see Fig. 1.1. An important role of the
+compiler is to report any errors in the source program that it detects during
+the translation process.
+
+
+1
+
+
+
+CHAPTER 1. INTRODUCTION
+
+
+source program
+
+r
+
+Compiler
+
+f
+
+target program
+Figure 1.1: A compiler
+
+
+If the target program is an executable machine-language program, it
+then be called by the user to process inputs and produce outputs; see Fig.
+
+
+input
+
+
+
+output
+
+
+can
+
+1 . 2 .
+
+
+Figure 1.2: Running the target program
+
+
+An interpreter is another common kind of language processor. Instead of
+producing a target program as a translation, an interpreter appears to directly
+execute the operations specified in the source program on inputs supplied by
+the user, as shown in Fig. 1.3.
+
+
+source program
+input
+
+
+Interpreter
+
+
+output
+
+
+Figure 1.3: An interpreter
+
+The machine-language target program produced by a compiler is usually
+much faster than an interpreter at mapping inputs to outputs . An interpreter,
+however, can usually give better error diagnostics than a compiler, because it
+executes the source program statement by statement.
+
+Example 1.1 : Java language processors combine compilation and interpreta_
+tion, as shown in Fig. 1.4. A Java source program may first be compiled into
+an intermediate form called bytecodes. The bytecodes are then interpreted by a
+virtual machine. A benefit of this arrangement is that bytecodes compiled on
+one machine can be interpreted on another machine, perhaps across a network.
+
+In order to achieve faster processing of inputs to outputs, some Java compil_
+ers, called just-in-time compilers, translate the bytecodes into machine language
+immediately before they run the intermediate program to process the input. _
+
+
+
+
+
+
+1.1. LANGUAGE PROCESSORS
+
+
+3
+
+
+source program
+
+i
+
+Translator
+
+I
+
+intermediate program
+input
+
+Figure 1.4: A hybrid compiler
+
+
+Virtual
+
+Machine
+
+
+output
+
+
+In addition to a compiler, several other programs may be required to create
+an executable target program, as shown in Fig. 1.5. A source program may be
+divided into modules stored in separate files. The task of collecting the source
+program is sometimes entrusted to a separate program, called a preprocessor.
+The preprocessor may also expand shorthands, called macros, into source lan_
+guage statements.
+
+The modified source program is then fed to a compiler. The compiler may
+produce an assembly-language program as its output, because assembly lan_
+guage is easier to produce as output and is easier to debug. The assembly
+language is then processed by a program called an assembler that produces
+relocatable machine code as its output.
+
+Large programs are often compiled in pieces, so the relocatable machine
+code may have to be linked together with other relocatable object files and
+library files into the code that actually runs on the machine. The linker resolves
+external memory addresses, where the code in one file may refer to a location
+in another file. The loader then puts together all of the executable object files
+into memory for execution.
+
+1.1.1 Exercises for Section 1.1
+
+Exercise 1.1.1 : What is the difference between a compiler and an interpreter?
+
+Exercise 1.1.2 : What are the advantages of (a) a compiler over an interpreter
+(b) an interpreter over a compiler?
+
+Exercise 1.1.3 : What advantages are there to a language-processing system in
+which the compiler produces assembly language rather than machine language?
+
+Exercise 1.1.4: A compiler that translates a high-level language into another
+high-level language is called a source-to-source translator. What advantages are
+there to using C as a target language for a compiler?
+
+Exercise 1.1.5: Describe some of the tasks that an assembler needs to per_
+form.
+
+
+
+
+
+4
+
+
+CHAPTER 1. INTRODUCTION
+
+
+source program
+
+
+
+library files
+relocatable object files
+
+
+target machine code
+
+Figure 1.5: A language-processing system
+
+
+1.2 The Structure of a Compiler
+
+Up to this point we have treated a compiler as a single box that maps a source
+program into a semantically equivalent target program. If we open up this box
+a little, we see that there are two parts to this mapping: analysis and synthesis.
+
+The analysis part breaks up the source program into constituent pieces and
+imposes a grammatical structure on them. It then uses this structure to cre_
+ate an intermediate representation of the source program. If the analysis part
+detects that the source program is either syntactically ill formed or semanti_
+cally unsound, then it must provide informative messages, so the user can take
+corrective action. The analysis part also collects information about the source
+program and stores it in a data structure called a symbol table, which is passed
+along with the intermediate representation to the synthesis part.
+
+The synthesis part constructs the desired target program from the interme_
+diate representation and the information in the symbol table. The analysis part
+is often called the front end of the compiler; the synthesis part is the back end.
+
+If we examine the compilation process in more detail, we see that it operates
+as a sequence of phases , each of which transforms one representation of the
+source program to another. A typical decomposition of a compiler into phases
+is shown in Fig. 1.6. In practice, several phases may be grouped together,
+and the intermediate representations between the grouped phases need not be
+constructed explicitly. The symbol table, which stores information about the
+
+
+
+
+
+
+
+1.2. THE STRUCTURE OF A COMPILER
+
+
+5
+
+
+character stream
+
+
+
+target-machine code
+
+
+Figure 1.6: Phases of a compiler
+
+
+entire source program, is used by all phases of the compiler.
+
+Some compilers have a machine-independent optimization phase between
+the front end and the back end. The purpose of this optimization phase is to
+perform transformations on the intermediate representation, so that the back
+end can produce a better target program than it would have otherwise pro_
+duced from an unoptimized intermediate representation. Since optimization is
+optional, one or the other of the two optimization phases shown in Fig. 1.6 may
+be missing.
+
+1.2.1 Lexical Analysis
+
+The first phase of a compiler is called lexical analysis or scanning. The lex_
+ical analyzer reads the stream of characters making up the source program
+
+
+
+
+
+
+
+
+
+
+
+6
+
+
+CHAPTER 1. INTRODUCTION
+
+
+and groups the characters into meaningful sequences called lexemes. For each
+lexeme, the lexical analyzer produces as output a token of the form
+
+{ token-name , attribute-value)
+
+that it passes on to the subsequent phase, syntax analysis. In the token, the
+first component token-name is an abstract symbol that is used during syntax
+analysis, and the second component attribute-value points to an entry in the
+symbol table for this token. Information from the symbol-table entry is needed
+for semantic analysis and code generation.
+
+For example, suppose a source program contains the assignment statement
+
+position = initial + rate * 60 (1.1)
+
+The characters in this assignment could be grouped into the following lexemes
+and mapped into the following tokens passed on to the syntax analyzer:
+
+1. position is a lexeme that would be mapped into a token (id, 1), where id
+is an abstract symbol standing for identifier and 1 points to the symbol-
+table entry for position. The symbol-table entry for an identifier holds
+information about the identifier, such as its name and type.
+
+2. The assignment symbol = is a lexeme that is mapped into the token (=).
+Since this token needs no attribute-value, we have omitted the second
+component. We could have used any abstract symbol such as assign for
+the token-name, but for notational convenience we have chosen to use the
+lexeme itself as the name of the abstract symbol.
+
+3. initial is a lexeme that is mapped into the token (id, 2), where 2 points
+to the symbol-table entry for initial.
+
+4. + is a lexeme that is mapped into the token (+).
+
+5. rate is a lexeme that is mapped into the token (id, 3), where 3 points to
+the symbol-table entry for rate.
+
+6. * is a lexeme that is mapped into the token (*).
+
+7. 60 is a lexeme that is mapped into the token (60). 1
+
+Blanks separating the lexemes would be discarded by the lexical analyzer.
+
+Figure 1.7 shows the representation of the assignment statement (1.1) after
+lexical analysis as the sequence of tokens
+
+(id, 1) (=) (id, 2) (+) (id, 3) (*> (60) (1.2)
+
+In this representation, the token names =, +, and * are abstract symbols for
+the assignment, addition, and multiplication operators, respectively.
+
+technically speaking, for the lexeme 60 we should make up a token like (number, 4),
+where 4 points to the symbol table for the internal representation of integer 60 but we shall
+defer the discussion of tokens for numbers until Chapter 2. Chapter 3 discusses techniques
+for building lexical analyzers.
+
+
+
+1.2. THE STRUCTURE OF A COMPILER
+
+
+7
+
+
+position = initial + rate * 60
+
+
+
+<id,l> <=} (id, 2) {+) {id, 3} {*} (60)
+
+
+
+f_60
+
+
+Intermediate Code Generator
+
+t
+
+tl = inttofloat(60)
+t2 = id3 * tl
+t3 = id2 + t2
+idl = t3
+
+
+
+tl = id3 * 60.0
+
+idl = id2 + tl
+
+
+
+LDF R2, id3
+
+
+MULF R2, R2, #60.0
+LDF Rl, id2
+ADDF Rl, Rl, R2
+STF idl, Rl
+
+Figure 1.7: Translation of an assignment statement
+
+
+
+
+
+
+
+
+
+
+CHAPTER 1. INTRODUCTION
+
+
+1.2.2 Syntax Analysis
+
+The second phase of the compiler is syntax analysis or parsing. The parser uses
+the first components of the tokens produced by the lexical analyzer to create
+a tree-like intermediate representation that depicts the grammatical structure
+of the token stream. A typical representation is a syntax tree in which each
+interior node represents an operation and the children of the node represent the
+arguments of the operation. A syntax tree for the token stream (1.2) is shown
+as the output of the syntactic analyzer in Fig. 1.7.
+
+This tree shows the order in which the operations in the assignment
+
+position = initial + rate * 60
+
+are to be performed. The tree has an interior node labeled * with (id, 3) as
+its left child and the integer 60 as its right child. The node (id, 3) represents
+the identifier rate. The node labeled * makes it explicit that we must first
+multiply the value of rate by 60. The node labeled + indicates that we must
+add the result of this multiplication to the value of initial. The root of the
+tree, labeled =, indicates that we must store the result of this addition into the
+location for the identifier position. This ordering of operations is consistent
+with the usual conventions of arithmetic which tell us that multiplication has
+higher precedence than addition, and hence that the multiplication is to be
+performed before the addition.
+
+The subsequent phases of the compiler use the grammatical structure to help
+analyze the source program and generate the target program. In Chapter 4
+we shall use context-free grammars to specify the grammatical structure of
+programming languages and discuss algorithms for constructing efficient syntax
+analyzers automatically from certain classes of grammars. In Chapters 2 and 5
+we shall see that syntax-directed definitions can help specify the translation of
+programming language constructs.
+
+1.2.3 Semantic Analysis
+
+The semantic analyzer uses the syntax tree and the information in the symbol
+table to check the source program for semantic consistency with the language
+definition. It also gathers type information and saves it in either the syntax tree
+or the symbol table, for subsequent use during intermediate-code generation.
+
+An important part of semantic analysis is type checking, where the compiler
+checks that each operator has matching operands. For example, many program_
+ming language definitions require an array index to be an integer; the compiler
+must report an error if a floating-point number is used to index an array.
+
+The language specification may permit some type conversions called coer_
+cions. For example, a binary arithmetic operator may be applied to either a
+pair of integers or to a pair of floating-point numbers. If the operator is applied
+to a floating-point number and an integer, the compiler may convert or coerce
+the integer into a floating-point number.
+
+
+
+1.2. THE STRUCTURE OF A COMPILER
+
+
+9
+
+
+Such a coercion appears in Fig. 1.7. Suppose that position, initial, and
+rate have been declared to be floating-point numbers, and that the lexeme 60
+by itself forms an integer. The type checker in the semantic analyzer in Fig. 1.7
+discovers that the operator * is applied to a floating-point number rate and
+an integer 60. In this case, the integer may be converted into a floating-point
+number. In Fig. 1.7, notice that the output of the semantic analyzer has an
+extra node for the operator inttofloat, which explicitly converts its integer
+argument into a floating-point number. Type checking and semantic analysis
+are discussed in Chapter 6.
+
+
+1.2.4 Intermediate Code Generation
+
+In the process of translating a source program into target code, a compiler may
+construct one or more intermediate representations, which can have a variety
+of forms. Syntax trees are a form of intermediate representation; they are
+commonly used during syntax and semantic analysis.
+
+After syntax and semantic analysis of the source program, many compil_
+ers generate an explicit low-level or machine-like intermediate representation,
+which we can think of as a program for an abstract machine. This intermedi_
+ate representation should have two important properties: it should be easy to
+produce and it should be easy to translate into the target machine.
+
+In Chapter 6, we consider an intermediate form called three-address code,
+which consists of a sequence of assembly-like instructions with three operands
+per instruction. Each operand can act like a register. The output of the inter_
+mediate code generator in Fig. 1.7 consists of the three-address code sequence
+
+
+tl = inttofloat(60)
+t2 = id3 * tl
+t3 = id2 + t2
+idl = t3
+
+
+(1.3)
+
+
+There are several points worth noting about three-address instructions.
+First, each three-address assignment instruction has at most one operator on the
+right side. Thus, these instructions fix the order in which operations are to be
+done; the multiplication precedes the addition in the source program (1.1). Sec_
+ond, the compiler must generate a temporary name to hold the value computed
+by a three-address instruction. Third, some "three-address instructions" like
+the first and last in the sequence (1.3), above, have fewer than three operands.
+
+In Chapter 6, we cover the principal intermediate representations used in
+compilers. Chapters 5 introduces techniques for syntax-directed translation
+that are applied in Chapter 6 to type checking and intermediate-code generation
+for typical programming language constructs such as expressions, flow-of-control
+constructs, and procedure calls.
+
+
+
+10
+
+
+CHAPTER 1. INTRODUCTION
+
+
+1.2.5 Code Optimization
+
+The machine-independent code-optimization phase attempts to improve the
+intermediate code so that better target code will result. Usually better means
+faster, but other objectives may be desired, such as shorter code, or target code
+that consumes less power. For example, a straightforward algorithm generates
+the intermediate code (1.3), using an instruction for each operator in the tree
+representation that comes from the semantic analyzer.
+
+A simple intermediate code generation algorithm followed by code optimiza_
+tion is a reasonable way to generate good target code. The optimizer can deduce
+that the conversion of 60 from integer to floating point can be done once and for
+all at compile time, so the inttofloat operation can be eliminated by replacing
+the integer 60 by the floating-point number 60.0. Moreover, t3 is used only
+once to transmit its value to idl so the optimizer can transform (1.3) into the
+shorter sequence
+
+
+tl = id3 *60.0 . .
+
+idl = id2 + tl (1 ' 4 ^
+
+There is a great variation in the amount of code optimization different com_
+pilers perform. In those that do the most, the so-called "optimizing compilers,"
+a significant amount of time is spent on this phase. There are simple opti_
+mizations that significantly improve the running time of the target program
+without slowing down compilation too much. The chapters from 8 on discuss
+machine-independent and machine-dependent optimizations in detail.
+
+1.2.6 Code Generation
+
+The code generator takes as input an intermediate representation of the source
+program and maps it into the target language. If the target language is machine
+code, registers Or memory locations are selected for each of the variables used by
+the program. Then, the intermediate instructions are translated into sequences
+of machine instructions that perform the same task. A crucial aspect of code
+generation is the judicious assignment of registers to hold variables.
+
+For example, using registers R1 and R2, the intermediate code in (1.4) might
+get translated into the machine code
+
+
+LDF
+
+R2,
+
+id3
+
+
+MULF
+
+R2,
+
+R2,
+
+#60.0
+
+LDF
+
+Rl,
+
+id2
+
+
+ADDF
+
+Rl,
+
+Rl,
+
+R2
+
+STF
+
+idl,
+
+Rl
+
+
+
+The first operand of each instruction specifies a destination. The F in each
+instruction tells us that it deals with floating-point numbers. The code in
+
+
+
+1.2. THE STRUCTURE OF A COMPILER
+
+
+11
+
+
+(1.5) loads the contents of address id3 into register R2, then multiplies it with
+floating-point constant 60.0. The # signifies that 60.0 is to be treated as an
+immediate constant. The third instruction moves id2 into register R1 and the
+fourth adds to it the value previously computed in register R2. Finally, the value
+in register R1 is stored into the address of idl, so the code correctly implements
+the assignment statement (1.1). Chapter 8 covers code generation.
+
+This discussion of code generation has ignored the important issue of stor_
+age allocation for the identifiers in the source program. As we shall see in
+Chapter 7, the organization of storage at run-time depends on the language be_
+ing compiled. Storage-allocation decisions are made either during intermediate
+code generation or during code generation.
+
+
+1.2.7 Symbol-Table Management
+
+An essential function of a compiler is to record the variable names used in the
+source program and collect information about various attributes of each name.
+These attributes may provide information about the storage allocated for a
+name, its type, its scope (where in the program its value may be used), and
+in the case of procedure names, such things as the number and types of its
+arguments, the method of passing each argument (for example, by value or by
+reference), and the type returned.
+
+The symbol table is a data structure containing a record for each variable
+name, with fields for the attributes of the name. The data structure should be
+designed to allow the compiler to find the record for each name quickly and to
+store or retrieve data from that record quickly. Symbol tables are discussed in
+Chapter 2.
+
+
+1.2.8 The Grouping of Phases into Passes
+
+The discussion of phases deals with the logical organization of a compiler. In
+an implementation, activities from several phases may be grouped together
+into a pass that reads an input file and writes an output file. For example,
+the front-end phases of lexical analysis, syntax analysis, semantic analysis, and
+intermediate code generation might be grouped together into one pass. Code
+optimization might be an optional pass. Then there could be a back-end pass
+consisting of code generation for a particular target machine.
+
+Some compiler collections have been created around carefully designed in_
+termediate representations that allow the front end for a particular language to
+interface with the back end for a certain target machine. With these collections,
+we can produce compilers for different source languages for one target machine
+by combining different front ends with the back end for that target machine.
+Similarly, we can produce compilers for different target machines, by combining
+a front end with back ends for different target machines.
+
+
+
+12
+
+
+CHAPTER 1. INTRODUCTION
+
+
+1.2.9 Compiler-Construction Tools
+
+The compiler writer, like any software developer, can profitably use modern
+software development environments containing tools such as language editors,
+debuggers, version managers, profilers, test harnesses, and so on. In addition
+to these general software-development tools, other more specialized tools have
+been created to help implement various phases of a compiler.
+
+These tools use specialized languages for specifying and implementing spe_
+cific components, and many use quite sophisticated algorithms. The most suc_
+cessful tools are those that hide the details of the generation algorithm and
+produce components that can be easily integrated into the remainder of the
+compiler. Some commonly used compiler-construction tools include
+
+1. Parser generators that automatically produce syntax analyzers from a
+grammatical description of a programming language.
+
+2. Scanner generators that produce lexical analyzers from a regular-expres_
+sion description of the tokens of a language.
+
+3. Syntax-directed translation engines that produce collections of routines
+for walking a parse tree and generating intermediate code.
+
+4. Code-generator generators that produce a code generator from a collection
+of rules for translating each operation of the intermediate language into
+the machine language for a target machine.
+
+5. Data-flow analysis engines that facilitate the gathering of information
+about how values are transmitted from one part of a program to each
+other part. Data-flow analysis is a key part of code optimization.
+
+6. Compiler-construction toolkits that provide an integrated set of routines
+for constructing various phases of a compiler.
+
+We shall describe many of these tools throughout this book.
+
+
+1.3 The Evolution of Programming Languages
+
+The first electronic computers appeared in the 1940"s and were programmed in
+machine language by sequences of 0"s and l"s that explicitly told the computer
+what operations to execute and in what order. The operations themselves
+were very low level: move data from one location to another, add the contents
+of two registers, compare two values, and so on. Needless to say, this kind
+of programming was slow, tedious, and error prone. And once written, the
+programs were hard to understand and modify.
+
+
+
+1.3. THE EVOLUTION OF PROGRAMMING LANGUAGES
+
+
+13
+
+
+1.3.1 The Move to Higher-level Languages
+
+The first step towards more people-friendly programming languages was the
+development of mnemonic assembly languages in the early 1950"s. Initially,
+the instructions in an assembly language were just mnemonic representations
+of machine instructions. Later, macro instructions were added to assembly
+languages so that a programmer could define parameterized shorthands for
+frequently used sequences of machine instructions.
+
+A major step towards higher-level languages was made in the latter half of
+the 1950"s with the development of Fortran for scientific computation, Cobol
+for business data processing, and Lisp for symbolic computation. The philos_
+ophy behind these languages was to create higher-level notations with which
+programmers could more easily write numerical computations, business appli_
+cations, and symbolic programs. These languages were so successful that they
+are still in use today.
+
+In the following decades, many more languages were created with innovative
+features to help make programming easier, more natural, and more robust.
+Later in this chapter, we shall discuss some key features that are common to
+many modern programming languages.
+
+Today, there are thousands of programming languages. They can be classi_
+fied in a variety of ways. One classification is by generation. First-generation
+languages are the machine languages, second-generation the assembly languages,
+and third-generation the higher-level languages like Fortran, Cobol, Lisp, C,
+C++, C#, and Java. Fourth-generation languages are languages designed
+for specific applications like NOMAD for report generation, SQL for database
+queries, and Postscript for text formatting. The term fifth-generation language
+has been applied to logic- and constraint-based languages like Prolog and OPS5.
+
+Another classification of languages uses the term imperative for languages
+in which a program specifies how a computation is to be done and declarative
+for languages in which a program specifies what computation is to be done.
+Languages such as C, C++, C#, and Java are imperative languages. In imper_
+ative languages there is a notion of program state and statements that change
+the state. Functional languages such as ML and Haskell and constraint logic
+languages such as Prolog are often considered to be declarative languages.
+
+The term von Neumann language is applied to programming languages
+whose computational model is based on the von Neumann computer archi_
+tecture. Many of today"s languages, such as Fortran and C are von Neumann
+languages.
+
+An object-oriented language is one that supports object-oriented program_
+ming, a programming style in which a program consists of a collection of objects
+that interact with one another. Simula 67 and Smalltalk are the earliest major
+object-oriented languages. Languages such as C++, C#, Java, and Ruby are
+more recent object-oriented languages.
+
+Scripting languages are interpreted languages with high-level operators de_
+signed for "gluing together" computations. These computations were originally
+
+
+
+14
+
+
+CHAPTER 1. INTRODUCTION
+
+
+called "scripts." Awk, JavaScript, Perl, PHP, Python, Ruby, and Tel are pop_
+ular examples of scripting languages. Programs written in scripting languages
+are often much shorter than equivalent programs written in languages like C.
+
+1.3.2 Impacts on Compilers
+
+Since the design of programming languages and compilers are intimately related,
+the advances in programming languages placed new demands on compiler writ_
+ers. They had to devise algorithms and representations to translate and support
+the new language features. Since the 1940"s, computer architecture has evolved
+as well. Not only did the compiler writers have to track new language fea_
+tures, they also had to devise translation algorithms that would take maximal
+advantage of the new hardware capabilities.
+
+Compilers can help promote the use of high-level languages by minimizing
+the execution overhead of the programs written in these languages. Compilers
+are also critical in making high-performance computer architectures effective
+on users" applications. In fact, the performance of a computer system is so
+dependent on compiler technology that compilers are used as a tool in evaluating
+architectural concepts before a computer is built.
+
+Compiler writing is challenging. A compiler by itself is a large program.
+Moreover, many modern language-processing systems handle several source lan_
+guages and target machines within the same framework; that is, they serve as
+collections of compilers, possibly consisting of millions of lines of code. Con_
+sequently, good software-engineering techniques are essential for creating and
+evolving modern language processors.
+
+A compiler must translate correctly the potentially infinite set of programs
+that could be written in the source language. The problem of generating the
+optimal target code from a source program is undecidable in general; thus,
+compiler writers must evaluate tradeoffs about what problems to tackle and
+what heuristics to use to approach the problem of generating efficient code.
+
+A study of compilers is also a study of how theory meets practice, as we
+shall see in Section 1.4.
+
+The purpose of this text is to teach the methodology and fundamental ideas
+used in compiler design. It is not the intention of this text to teach all the
+algorithms and techniques that could be used for building a state-of-the-art
+language-processing system. However, readers of this text will acquire the basic
+knowledge and understanding to learn how to build a compiler relatively easily.
+
+1.3.3 Exercises for Section 1.3
+
+Exercise 1.3.1 : Indicate which of the following terms:
+
+a) imperative b) declarative c) von Neumann
+
+d) object-oriented e) functional f) third-generation
+
+g) fourth-generation h) scripting
+
+
+
+1.4. THE SCIENCE OF BUILDING A COMPILER
+
+
+15
+
+
+apply to which of the following languages:
+
+1) C 2) C++ 3) Cobol 4) Fortran 5) Java
+
+6) Lisp 7) ML 8) Perl 9) Python 10) VB.
+
+1.4 The Science of Building a Compiler
+
+Compiler design is full of beautiful examples where complicated real-world prob_
+lems are solved by abstracting the essence of the problem mathematically. These
+serve as excellent illustrations of how abstractions can be used to solve prob_
+lems: take a problem, formulate a mathematical abstraction that captures the
+key characteristics, and solve it using mathematical techniques. The problem
+formulation must be grounded in a solid understanding of the characteristics of
+computer programs, and the solution must be validated and refined empirically.
+
+A compiler must accept all source programs that conform to the specification
+of the language; the set of source programs is infinite and any program can be
+very large, consisting of possibly millions of lines of code. Any transformation
+performed by the compiler while translating a source program must preserve the
+meaning of the program being compiled. Compiler writers thus have influence
+over not just the compilers they create, but all the programs that their com_
+pilers compile. This leverage makes writing compilers particularly rewarding;
+however, it also makes compiler development challenging.
+
+1.4.1 Modeling in Compiler Design and Implementation
+
+The study of compilers is mainly a study of how we design the right mathe_
+matical models and choose the right algorithms, while balancing the need for
+generality and power against simplicity and efficiency.
+
+Some of most fundamental models are finite-state machines and regular
+expressions, which we shall meet in Chapter 3. These models are useful for de_
+scribing the lexical units of programs (keywords, identifiers, and such) and for
+describing the algorithms used by the compiler to recognize those units. Also
+among the most fundamental models are context-free grammars, used to de_
+scribe the syntactic structure of programming languages such as the nesting of
+parentheses or control constructs. We shall study grammars in Chapter 4. Sim_
+ilarly, trees are an important model for representing the structure of programs
+and their translation into object code, as we shall see in Chapter 5.
+
+1.4.2 The Science of Code Optimization
+
+The term "optimization" in compiler design refers to the attempts that a com_
+piler makes to produce code that is more efficient than the obvious code. "Op_
+timization" is thus a misnomer, since there is no way that the code produced
+by a compiler can be guaranteed to be as fast or faster than any other code
+that performs the same task.
+

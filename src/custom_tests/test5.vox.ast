@@ -1,0 +1,30 @@
+TOP_LVL VAR_DECLS:
+
+TOP_LVL FUN_DECLS:
+fun getMax(arr, n){
+  VAR_DECLS:
+    var max = arr[0.0];
+    var i;
+  STMTS:
+    for (i = 0.0;(Lc< i n);i = (A+ i 1.0)) {
+      VAR_DECLS:
+    
+      STMTS:
+        if (Lc> arr[i] max) {
+          VAR_DECLS:
+        
+          STMTS:
+            max = arr[i];
+        } endif
+    }
+    return max;
+}
+TOP_LVL STMTS:
+ERROR_STMT;
+ERROR_STMT;
+ERROR_STMT;
+ERROR_STMT;
+ERROR_STMT;
+ERROR_STMT;
+return min;
+ERROR_STMT;

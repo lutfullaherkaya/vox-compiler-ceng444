@@ -1,0 +1,17 @@
+var _;
+var b;
+var c;
+fun aaa(x) {
+  b = x;
+  c = x;
+  return x;
+}
+
+for (;;) {var iable}
+}// when the error rule catches the }, the for loop can't catch it, thus we need an extra '}' to close the for loop
+while (a = 0; a < a*a*a*a; a = a+a+a+a) {
+    var a = aaa(a + a);
+}
+for (a = 0; a < a*a*a*a; a = a+a+a+a) {
+    var a = aaa(a + a);
+}
