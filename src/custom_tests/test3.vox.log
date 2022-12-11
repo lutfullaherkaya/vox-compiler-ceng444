@@ -10,4 +10,6 @@ Identifier(name='a', lineno=15, index=301)
 Identifier(name='a', lineno=15, index=303)
 Identifier(name='a', lineno=15, index=305)
 Identifier(name='a', lineno=15, index=307)
+Identifier(name='a', lineno=16, index=328)
+Identifier(name='a', lineno=16, index=332)
 Multiple var declarations:

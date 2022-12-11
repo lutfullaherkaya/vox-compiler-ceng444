@@ -133,7 +133,7 @@ class UnDeclVarVisitor(ASTNodeVisitor):
     def visit_FunDecl(self, fundecl: FunDecl):
         un_declared_vars = []
         self.current_scope.add(fundecl.identifier)
-
+        # todo: func parameters and func body should not be in different scopes, right now they are
         with Scope(self.current_scope, fundecl.params) as func_scope:
             self.current_scope = func_scope
             un_declared_vars += self.visit(fundecl.body)
@@ -246,28 +246,19 @@ class UnDeclVarVisitor(ASTNodeVisitor):
 
 class MultiVarDeclVisitor(ASTNodeVisitor):
     @staticmethod
-    def get_and_error_multiple_var_decls(var_decls: Union[List[VarDecl], List[Identifier]]) -> List[Identifier]:
+    def get_and_error_multiple_var_decls(var_decls: List[Union[VarDecl, Identifier]]) -> List[Identifier]:
         identifier_set = {}  # name -> Identifier
         result = []
-        is_identifier_list = False
-        if len(var_decls) > 0 and isinstance(var_decls[0], Identifier):
-            is_identifier_list = True
-
         for var_decl in var_decls:
-            if is_identifier_list:
-                identifier = var_decl
-            else:
+            if isinstance(var_decl, VarDecl):
                 identifier = var_decl.identifier
+            else:
+                identifier = var_decl
 
             if identifier.name in identifier_set:
-                if is_identifier_list:
-                    semantic_error(f'Parameter "{identifier.name}" already declared in parameter list at'
-                                   f' {get_location_str(identifier_set[identifier.name].lineno)}.',
-                                   identifier.lineno)
-                else:
-                    semantic_error(f'Identifier "{identifier.name}" already declared in scope at'
-                                   f' {get_location_str(identifier_set[identifier.name].lineno)}.',
-                                   identifier.lineno)
+                semantic_error(f'Identifier "{identifier.name}" already declared in scope at'
+                               f' {get_location_str(identifier_set[identifier.name].lineno)}.',
+                               identifier.lineno)
                 result.append(identifier)
             else:
                 identifier_set[identifier.name] = identifier
@@ -291,7 +282,12 @@ class MultiVarDeclVisitor(ASTNodeVisitor):
         return []
 
     def visit_FunDecl(self, fundecl: FunDecl):
-        return self.visit(fundecl.body) + self.get_and_error_multiple_var_decls(fundecl.params)
+        block = fundecl.body
+        multiple_var_decls = self.get_and_error_multiple_var_decls(fundecl.params + block.var_decls)
+        for stmt in block.statements:
+            visited_var_decls = self.visit(stmt)
+            multiple_var_decls += visited_var_decls
+        return multiple_var_decls
 
     def visit_Assign(self, assign: Assign):
         return []

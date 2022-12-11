@@ -1,5 +1,6 @@
 Undeclared vars:
 
 Multiple var declarations:
-Identifier(name='a', lineno=6, index=23473)
-Identifier(name='a', lineno=6, index=23473)
+Identifier(name='a', lineno=6, index=23475)
+Identifier(name='a', lineno=6, index=23477)
+Identifier(name='f', lineno=7, index=23493)

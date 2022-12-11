@@ -325,10 +325,11 @@ class Parser(sly.Parser):
     def parameters(self, p):
         return p.ids_non_empty_w_commas
 
-    @_('ids_non_empty_w_commas "," ID')
+    @_('ID "," ids_non_empty_w_commas')
     def ids_non_empty_w_commas(self, p):
-        p[0].append(ast_tools.Identifier(p.ID, p.lineno, p.index))
-        return p[0]
+        # right recursion is neccesary for getting the index of identifiers
+        # but right recursion is inefficient since it creates a new array for each identifier
+        return [ast_tools.Identifier(p.ID, p.lineno, p.index)] + p.ids_non_empty_w_commas
 
     @_('ID')
     def ids_non_empty_w_commas(self, p):
