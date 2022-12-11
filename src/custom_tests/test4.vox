@@ -3,6 +3,8 @@ var aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 fun modulo(number, i) {
     return number - (number / i);
 }
+fun g(a,a,a) {}
+fun f(f) {var f;}
 
 //* function to check if a number is prime or not*/
 fun isPrime(number) {

@@ -1,0 +1,7 @@
+Undeclared vars:
+Identifier(name='e', lineno=9, index=71)
+Identifier(name='x', lineno=10, index=86)
+Identifier(name='x', lineno=27, index=289)
+Multiple var declarations:
+Identifier(name='b', lineno=4, index=21)
+Identifier(name='x', lineno=31, index=348)

@@ -7,6 +7,18 @@ fun modulo(number, i){
   STMTS:
     return (A- number (A/ number i));
 }
+fun g(a, a, a){
+  VAR_DECLS:
+
+  STMTS:
+
+}
+fun f(f){
+  VAR_DECLS:
+    var f;
+  STMTS:
+
+}
 fun isPrime(number){
   VAR_DECLS:
     var isPrime = False;
