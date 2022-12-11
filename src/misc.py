@@ -240,7 +240,8 @@ class UnDeclVarVisitor(ASTNodeVisitor):
     def visit_Call(self, call: Call):
         un_declared_vars = []
         if self.get_error_if_func_not_declared(call.callee) is None:
-            un_declared_vars.append(call.callee)
+            # un_declared_vars.append(call.callee)
+            pass
         for arg in call.arguments:
             un_declared_vars += self.visit(arg)
         return un_declared_vars

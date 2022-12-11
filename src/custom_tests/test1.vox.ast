@@ -1,6 +1,7 @@
 TOP_LVL VAR_DECLS:
-
+var c = b();
 TOP_LVL FUN_DECLS:
 
 TOP_LVL STMTS:
 ERROR_STMT;
+a = a();

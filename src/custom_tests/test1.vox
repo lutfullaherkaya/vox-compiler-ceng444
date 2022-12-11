@@ -1,2 +1,6 @@
+var c = b(); // calls the function b
+
 print 'Hello, World!' # prints hello world
 ;
+
+a = a(); // calls the function a
