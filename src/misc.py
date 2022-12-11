@@ -46,12 +46,10 @@ def multiple_var_declarations(intermediate) -> List[Identifier]:
 
 
 class Scope:
-    # last symbol is the one in the current scope
-    symbol_table: Dict[str, "Symbol"] = {}
-    parent: Optional['Scope']
-
     def __init__(self, parent: Optional['Scope'] = None, symbols: Optional[List[Identifier]] = None):
-        self.parent = parent
+        self.parent: Optional['Scope'] = parent
+        # last symbol is the one in the current scope
+        self.symbol_table: Dict[str, "Symbol"] = {}
         if symbols is not None:
             for symbol in symbols:
                 self.add(symbol)
@@ -96,13 +94,18 @@ class Symbol:
 
 
 class UnDeclVarVisitor(ASTNodeVisitor):
-    current_scope: Optional[Scope] = None
+    def __init__(self):
+        super().__init__()
+        self.current_scope: Optional[Scope] = None
+        self.global_fun_decls = {}
 
     def visit_SLiteral(self, sliteral: SLiteral):
         return []
 
     def visit_Program(self, program: Program):
         un_declared_vars = []
+        for fundecl in program.fun_decls:
+            self.global_fun_decls[fundecl.identifier.name] = fundecl
         with Scope() as scope:
             self.current_scope = scope
             for var_decl in program.var_decls:
@@ -132,7 +135,6 @@ class UnDeclVarVisitor(ASTNodeVisitor):
 
     def visit_FunDecl(self, fundecl: FunDecl):
         un_declared_vars = []
-        self.current_scope.add(fundecl.identifier)
         # todo: func parameters and func body should not be in different scopes, right now they are
         with Scope(self.current_scope, fundecl.params) as func_scope:
             self.current_scope = func_scope
@@ -237,11 +239,18 @@ class UnDeclVarVisitor(ASTNodeVisitor):
 
     def visit_Call(self, call: Call):
         un_declared_vars = []
-        if self.current_scope.get_error_if_not_declared(call.callee) is None:
+        if self.get_error_if_func_not_declared(call.callee) is None:
             un_declared_vars.append(call.callee)
         for arg in call.arguments:
             un_declared_vars += self.visit(arg)
         return un_declared_vars
+
+    def get_error_if_func_not_declared(self, callee: Identifier):
+        if callee.name not in self.global_fun_decls:
+            semantic_error(f"Function identifier '{callee.name}' referenced without being declared.",
+                           callee.lineno)
+            return None
+        return self.global_fun_decls[callee.name]
 
 
 class MultiVarDeclVisitor(ASTNodeVisitor):
