@@ -256,19 +256,28 @@ class UnDeclVarVisitor(ASTNodeVisitor):
 
 class MultiVarDeclVisitor(ASTNodeVisitor):
     @staticmethod
-    def get_and_error_multiple_var_decls(var_decls: List[Union[VarDecl, Identifier]]) -> List[Identifier]:
+    def get_and_error_multiple_var_decls(var_decls: Union[List[VarDecl], List[Identifier]]) -> List[Identifier]:
         identifier_set = {}  # name -> Identifier
         result = []
+        is_identifier_list = False
+        if len(var_decls) > 0 and isinstance(var_decls[0], Identifier):
+            is_identifier_list = True
+
         for var_decl in var_decls:
-            if isinstance(var_decl, VarDecl):
-                identifier = var_decl.identifier
-            else:
+            if is_identifier_list:
                 identifier = var_decl
+            else:
+                identifier = var_decl.identifier
 
             if identifier.name in identifier_set:
-                semantic_error(f'Identifier "{identifier.name}" already declared in scope at'
-                               f' {get_location_str(identifier_set[identifier.name].lineno)}.',
-                               identifier.lineno)
+                if is_identifier_list:
+                    semantic_error(f'Parameter "{identifier.name}" already declared in parameter list at'
+                                   f' {get_location_str(identifier_set[identifier.name].lineno)}.',
+                                   identifier.lineno)
+                else:
+                    semantic_error(f'Identifier "{identifier.name}" already declared in scope at'
+                                   f' {get_location_str(identifier_set[identifier.name].lineno)}.',
+                                   identifier.lineno)
                 result.append(identifier)
             else:
                 identifier_set[identifier.name] = identifier
@@ -292,12 +301,7 @@ class MultiVarDeclVisitor(ASTNodeVisitor):
         return []
 
     def visit_FunDecl(self, fundecl: FunDecl):
-        block = fundecl.body
-        multiple_var_decls = self.get_and_error_multiple_var_decls(fundecl.params + block.var_decls)
-        for stmt in block.statements:
-            visited_var_decls = self.visit(stmt)
-            multiple_var_decls += visited_var_decls
-        return multiple_var_decls
+        return self.visit(fundecl.body) + self.get_and_error_multiple_var_decls(fundecl.params)
 
     def visit_Assign(self, assign: Assign):
         return []
