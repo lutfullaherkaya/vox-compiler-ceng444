@@ -119,13 +119,14 @@ class UnDeclVarVisitor(ASTNodeVisitor):
 
     def visit_VarDecl(self, vardecl: VarDecl):
         un_declared_vars = []
-        self.current_scope.add(vardecl.identifier)
+
         if vardecl.initializer is not None:
             if type(vardecl.initializer) == list:
                 for elem in vardecl.initializer:
                     un_declared_vars += self.visit(elem)
             else:
                 un_declared_vars += self.visit(vardecl.initializer)
+        self.current_scope.add(vardecl.identifier)
 
         return un_declared_vars
 
