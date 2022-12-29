@@ -83,7 +83,7 @@ Rule 79    function -> ID ( ) block
 Rule 80    function -> ID ( parameters ) block
 Rule 81    parameters -> ids_non_empty_w_commas
 Rule 82    ids_non_empty_w_commas -> ID
-Rule 83    ids_non_empty_w_commas -> ids_non_empty_w_commas , ID
+Rule 83    ids_non_empty_w_commas -> ID , ids_non_empty_w_commas
 Rule 84    call -> ID ( )
 Rule 85    call -> ID ( arguments )
 
@@ -1551,7 +1551,7 @@ state 60
     (80) function -> ID ( . parameters ) block
     (81) parameters -> . ids_non_empty_w_commas
     (82) ids_non_empty_w_commas -> . ID
-    (83) ids_non_empty_w_commas -> . ids_non_empty_w_commas , ID
+    (83) ids_non_empty_w_commas -> . ID , ids_non_empty_w_commas
     )               shift and go to state 95
     ID              shift and go to state 94
 
@@ -2334,8 +2334,9 @@ state 93
 state 94
 
     (82) ids_non_empty_w_commas -> ID .
-    ,               reduce using rule 82 (ids_non_empty_w_commas -> ID .)
+    (83) ids_non_empty_w_commas -> ID . , ids_non_empty_w_commas
     )               reduce using rule 82 (ids_non_empty_w_commas -> ID .)
+    ,               shift and go to state 125
 
 
 state 95
@@ -2344,20 +2345,18 @@ state 95
     (41) block -> . { var_decls statements }
     {               shift and go to state 70
 
-    block                          shift and go to state 125
+    block                          shift and go to state 126
 
 state 96
 
     (80) function -> ID ( parameters . ) block
-    )               shift and go to state 126
+    )               shift and go to state 127
 
 
 state 97
 
     (81) parameters -> ids_non_empty_w_commas .
-    (83) ids_non_empty_w_commas -> ids_non_empty_w_commas . , ID
     )               reduce using rule 81 (parameters -> ids_non_empty_w_commas .)
-    ,               shift and go to state 127
 
 
 state 98
@@ -2960,6 +2959,15 @@ state 124
 
 state 125
 
+    (83) ids_non_empty_w_commas -> ID , . ids_non_empty_w_commas
+    (82) ids_non_empty_w_commas -> . ID
+    (83) ids_non_empty_w_commas -> . ID , ids_non_empty_w_commas
+    ID              shift and go to state 94
+
+    ids_non_empty_w_commas         shift and go to state 138
+
+state 126
+
     (79) function -> ID ( ) block .
     FUN             reduce using rule 79 (function -> ID ( ) block .)
     error           reduce using rule 79 (function -> ID ( ) block .)
@@ -2972,19 +2980,13 @@ state 125
     $end            reduce using rule 79 (function -> ID ( ) block .)
 
 
-state 126
+state 127
 
     (80) function -> ID ( parameters ) . block
     (41) block -> . { var_decls statements }
     {               shift and go to state 70
 
-    block                          shift and go to state 138
-
-state 127
-
-    (83) ids_non_empty_w_commas -> ids_non_empty_w_commas , . ID
-    ID              shift and go to state 139
-
+    block                          shift and go to state 139
 
 state 128
 
@@ -3259,6 +3261,12 @@ state 137
 
 state 138
 
+    (83) ids_non_empty_w_commas -> ID , ids_non_empty_w_commas .
+    )               reduce using rule 83 (ids_non_empty_w_commas -> ID , ids_non_empty_w_commas .)
+
+
+state 139
+
     (80) function -> ID ( parameters ) block .
     FUN             reduce using rule 80 (function -> ID ( parameters ) block .)
     error           reduce using rule 80 (function -> ID ( parameters ) block .)
@@ -3269,13 +3277,6 @@ state 138
     PRINT           reduce using rule 80 (function -> ID ( parameters ) block .)
     ID              reduce using rule 80 (function -> ID ( parameters ) block .)
     $end            reduce using rule 80 (function -> ID ( parameters ) block .)
-
-
-state 139
-
-    (83) ids_non_empty_w_commas -> ids_non_empty_w_commas , ID .
-    ,               reduce using rule 83 (ids_non_empty_w_commas -> ids_non_empty_w_commas , ID .)
-    )               reduce using rule 83 (ids_non_empty_w_commas -> ids_non_empty_w_commas , ID .)
 
 
 state 140

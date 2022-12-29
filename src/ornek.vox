@@ -1,1 +1,1 @@
-for (;;) {var this_is_an_infinite_loop_without_semicolon_at_the_end}}
+var a = 5;

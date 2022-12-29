@@ -1,0 +1,81 @@
+Installation Guide for RISC-V Tools:
+
+1. Dependencies:
+
+sudo apt install device-tree-compiler git wget tar build-essential libglib2.0-dev libfdt-dev libpixman-1-dev zlib1g-dev ninja-build python3 autoconf automake autotools-dev curl python3 libmpc-dev libmpfr-dev libgmp-dev gawk build-essential bison flex texinfo gperf libtool patchutils bc zlib1g-dev libexpat-dev
+
+2. Environment Variables:
+Add these to ~/.bashrc:
+
+export RISCV="/opt/riscv/"
+export PATH="${PATH}:${RISCV}bin/:${RISCV}riscv64-unknown-linux-gnu/bin/"
+
+2. Spike Simulator:
+
+git clone https://github.com/riscv-software-src/riscv-isa-sim
+mkdir riscv-isa-sim/build
+cd riscv-isa-sim/build
+../configure --prefix=$RISCV
+make
+[sudo] make install
+
+3. GNU Toolchain for riscv programs configured for linux kernels - takes a very long time!:
+
+git clone https://github.com/riscv-collab/riscv-gnu-toolchain
+mkdir riscv-gnu-toolchain/build
+cd riscv-gnu-toolchain/build
+../configure --prefix=$RISCV
+make linux
+
+4. Proxy Linux Kernel:
+
+git clone https://github.com/riscv-software-src/riscv-pk
+mkdir riscv-pk/build
+cd riscv-pk/build
+../configure --prefix=$RISCV --host=riscv64-unknown-linux-gnu
+make
+[sudo] make install
+
+5. QEMU (emulator for riscv64 user-level programs for linux):
+
+wget https://download.qemu.org/qemu-7.2.0-rc4.tar.xz
+tar -xf qemu-7.2.0-rc4.tar.xz
+mkdir qemu-7.2.0-rc4/build
+cd mkdir qemu-7.2.0-rc4/build
+../configure --target-list=riscv64-linux-user
+make
+[sudo] make install
+
+6. Test your installation - Compile a basic vector program:
+Programs have to be statically linked to run in both QEMU and Spike-pk combination. You also need to specify that you will use instructions of the V extension.
+
+riscv64-unknown-linux-gnu-gcc -march=rv64gcv -static hello.c strveccpy.s -o hello
+
+7. Try running it on spike-pk combination:
+You also need to specify that you will use instructions of the V extension.
+
+spike --isa=RV64IMAFDCV $(which pk) hello
+
+You can also use the extremely through low-level debugger:
+spike --isa=RV64IMAFDCV -d $(which pk) hello
+
+You can check the commands from the github page. Don't fret if you see weird instructions and traps. Spike even shows what the kernel is doing with the privileged instructions!
+
+8. Try running it on QEMU:
+You need to specify that you are going to use a cpu that supports the V extension.
+
+qemu-riscv64 -cpu rv64,v=true,zba=true,vlen=128,vext_spec=v1.0 hello
+
+9. Try running it on QEMU and remote debugging with gdb at the same time from port 1234:
+
+qemu-riscv64 -g 1234 -cpu rv64,v=true,zba=true,vlen=128,vext_spec=v1.0 hello
+
+From another terminal:
+riscv64-unknown-linux-gnu-gdb hello
+(gdb) target remote :1234
+(gdb)break *strveccpy
+(gdb)continue
+(gdb)disas
+(gdb)try inspecting some registers here: $sp, $a0, $a1, $v1 ...
+(gdb)stepi, and other stuff...
+(gdb)quit

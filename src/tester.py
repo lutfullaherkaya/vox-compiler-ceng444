@@ -4,10 +4,11 @@ import argparse
 import pickle
 from misc import *
 from lexer import Lexer
+from compiler import Compiler
 
 arg_parser = argparse.ArgumentParser()
 
-arg_parser.add_argument('test_type', choices=['scan', 'parse', 'analyze'])
+arg_parser.add_argument('test_type', choices=['scan', 'parse', 'analyze', 'compile'])
 arg_parser.add_argument('filename', type=str)
 arg_parser.add_argument('--save', action='store_true')
 
@@ -35,6 +36,15 @@ elif args.test_type == 'parse':
             pickle.dump(ast, f)
         with open(args.filename+'.ast', 'w') as f:
             f.write(ast_str)
+
+elif args.test_type == 'compile':
+
+    intermediate = process(source)
+    ast = generate_ast(intermediate)
+    compiler = Compiler(ast)
+    compiler.compile().save_ass(args.filename + '.s')
+    # todo: should we also assemble the code?
+
 
 else:
     intermediate = process(source)

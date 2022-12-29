@@ -2,8 +2,6 @@ Undeclared vars:
 Identifier(name='x', lineno=13, index=342)
 Identifier(name='y', lineno=13, index=346)
 Identifier(name='l', lineno=13, index=352)
-Identifier(name='x', lineno=13, index=360)
-Identifier(name='f', lineno=13, index=393)
 Identifier(name='x', lineno=13, index=406)
 Multiple var declarations:
 Identifier(name='b', lineno=7, index=182)

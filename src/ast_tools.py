@@ -63,8 +63,8 @@ class VarDecl(Decl):
     '''variable declaration. the initilializer attribute is None if the variable is not initialized to any value,
     it is a list if the variable is initialized as a vector, and and Expr if it is initialized as a non-vector.'''
     identifier: Identifier
-    initializer: Union[Expr, List[Expr], None]
 
+    initializer: Union[Expr, List[Expr], None]
 
 @dataclass(frozen=True)
 class FunDecl(Decl):
