@@ -16,6 +16,9 @@ class AssemblyYapici:
             'param': self.param_dan_asm_ye,
             'copy': self.copy_den_asm_ye,
             '+': self.dortislem_den_asm_ye,
+            '-': self.dortislem_den_asm_ye,
+            '*': self.dortislem_den_asm_ye,
+            '/': self.dortislem_den_asm_ye,
         }
 
     def aradilden_asm(self, komut):
