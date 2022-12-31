@@ -12,13 +12,14 @@ class AssemblyYapici:
         self.relative_addr_table = relative_addr_table
         self.sp_extra_offset = 0
         self.aradil_sozlugu = {
-            'call': self.call_to_asm,
+            'call': self.call_den_asm_ye,
             'param': self.param_dan_asm_ye,
             'copy': self.copy_den_asm_ye,
             '+': self.dortislem_den_asm_ye,
             '-': self.dortislem_den_asm_ye,
             '*': self.dortislem_den_asm_ye,
             '/': self.dortislem_den_asm_ye,
+
         }
 
     def aradilden_asm(self, komut):
@@ -36,7 +37,7 @@ class AssemblyYapici:
                         f'  li t0, {komut[1]}',
                         f'  sd t0, 8(sp)'])
         else:
-            # todo: vektor icin
+            # todo: vektor ve icin
             type_addr = self._type_addr(komut[1])
             value_addr = self._value_addr(komut[1])
             asm.extend([f'  ld t0, {type_addr}',
@@ -47,7 +48,7 @@ class AssemblyYapici:
         return '\n'.join(asm) + '\n'
 
     # todo
-    def call_to_asm(self, komut):
+    def call_den_asm_ye(self, komut):
         asm = ['  mv a1, sp',
                f'  li a0, {komut[3]}',
                f'  call {komut[2]}',
@@ -129,6 +130,8 @@ class Compiler:
         stack_size = len(places) * 16 + 8
         relative_addr_table = {place: addr for (place, addr) in zip(places, range(0, stack_size - 8, 16))}
         on_soz = [
+            f'#include "lib_bracket.h"',
+            f'  ',
             f'  .global main',
             f'  .text',
             f'  .align 2',

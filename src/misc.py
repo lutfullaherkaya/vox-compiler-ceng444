@@ -454,7 +454,9 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
             self.current_scope = block_scope.parent
 
     def visit_Print(self, printt: Print):
-        self.visit(printt.expr)
+        self._ara_dile_ekle([['param', self.visit(printt.expr)],
+                             ['call', None, '__br_print__', 1]])
+
 
     def visit_IfElse(self, ifelse: IfElse):
         self.visit(ifelse.condition)
@@ -480,7 +482,7 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
         self.visit(getvector.vector_index)
 
     def visit_Variable(self, variable: Variable):
-        pass
+        return variable.identifier.name;
 
     def visit_LNot(self, lnot: LNot):
         self.visit(lnot.right)
