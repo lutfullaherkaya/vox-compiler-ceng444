@@ -15,6 +15,10 @@ class AssemblyYapici:
             'call': self.call_den_asm_ye,
             'param': self.param_dan_asm_ye,
             'copy': self.copy_den_asm_ye,
+            'branch': self.branch_den_asm_ye,
+            'branch_if_true': self.branch_if_true_den_asm_ye,
+            'branch_if_false': self.branch_if_false_den_asm_ye,
+            'label': self.label_den_asm_ye,
             '+': self.dortislem_den_asm_ye,
             '-': self.dortislem_den_asm_ye,
             '*': self.dortislem_den_asm_ye,
@@ -99,6 +103,24 @@ class AssemblyYapici:
                    f'  ld t0, {value_addr_from}',
                    f'  sd t0, {value_addr}']
 
+        return '\n'.join(asm) + '\n'
+
+    def branch_den_asm_ye(self, komut):
+        return f'  j {komut[1]}\n'
+
+    def label_den_asm_ye(self, komut):
+        return f'{komut[1]}:\n'
+
+    def branch_if_true_den_asm_ye(self, komut):
+        cond_value_addr = self._value_addr(komut[1])
+        asm = [f'  ld t0, {cond_value_addr}',
+               f'  bne t0, zero, {komut[2]}']
+        return '\n'.join(asm) + '\n'
+
+    def branch_if_false_den_asm_ye(self, komut):
+        cond_value_addr = self._value_addr(komut[1])
+        asm = [f'  ld t0, {cond_value_addr}',
+               f'  beq t0, zero, {komut[2]}']
         return '\n'.join(asm) + '\n'
 
     def dortislem_den_asm_ye(self, komut):
@@ -223,7 +245,7 @@ class Compiler:
             asm_yapici = AssemblyYapici(relative_addr_table)
 
             for komut in self.ara_dil_yapici_visitor.ara_dil_sozleri:
-                asm_dosyasi.write('            # ' + cu.komut_stringi_yap(komut) + '\n')
+                asm_dosyasi.write('    # ' + cu.komut_stringi_yap(komut) + '\n')
                 asm_dosyasi.write(asm_yapici.aradilden_asm(komut))
             for satir in son_soz:
                 asm_dosyasi.write(f'{satir}\n')

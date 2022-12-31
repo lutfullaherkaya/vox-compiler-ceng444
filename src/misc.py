@@ -379,6 +379,23 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
         self.global_fun_decls = {}
         self.ara_dil_sozleri = []
         self.program_symbol_table = None
+        self.label_counts = {
+            'if': 0,
+            'while': 0,
+            'for': 0,
+        }
+
+    def generate_endif_label(self):
+        self.label_counts['if'] += 1
+        return f'.l_endif{self.label_counts["if"]}'
+
+    def generate_endif_endelse_labels(self):
+        self.label_counts['if'] += 1
+        return f'.l_endif{self.label_counts["if"]}', f'.l_endelse{self.label_counts["if"]}'
+
+    def generate_while_label(self):
+        self.label_counts['while'] += 1
+        return f'.l_while{self.label_counts["while"]}'
 
     def visit_SLiteral(self, sliteral: SLiteral):
         # todo: implement
@@ -466,11 +483,19 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
                              ['call', None, '__br_print__', 1]])
 
     def visit_IfElse(self, ifelse: IfElse):
-        # todo: implement
-        self.visit(ifelse.condition)
+        endif_label, endelse_label = self.generate_endif_endelse_labels()
+        self._ara_dile_ekle([['branch_if_false', self.visit(ifelse.condition), endif_label]])
+
         self.visit(ifelse.if_branch)
+
+        if ifelse.else_branch is not None:
+            self._ara_dile_ekle([['branch', endelse_label]])
+
+        self._ara_dile_ekle([['label', endif_label]])
+
         if ifelse.else_branch is not None:
             self.visit(ifelse.else_branch)
+            self._ara_dile_ekle([['label', endelse_label]])
 
     def visit_LBinary(self, lbinary: LBinary):
         # todo: implement short circuit (if falan ekliycen)
@@ -531,5 +556,5 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
         ])
         return result_name
 
-    def _ara_dile_ekle(self, sozler):
+    def _ara_dile_ekle(self, sozler: Union[List]):
         self.ara_dil_sozleri.extend(sozler)
