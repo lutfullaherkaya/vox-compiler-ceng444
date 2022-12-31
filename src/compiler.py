@@ -86,22 +86,26 @@ class AssemblyYapici:
         type_addr = self._type_addr(komut[1])
         value_addr = self._value_addr(komut[1])
 
-        if type(komut[2]) == int:  # immediate
+        if len(komut) < 3:
             asm = [f'  sd zero, {type_addr}',
-                   f'  li t0, {komut[2]}',
-                   f'  sd t0, {value_addr}']
-        elif type(komut[2]) == bool:
-            asm = [f'  li t0, {self.type_values["bool"]}',
-                   f'  sd t0, {type_addr}',
-                   f'  li t0, {int(komut[2])}',
-                   f'  sd t0, {value_addr}']
-        else:  # değişken parametre için
-            type_addr_from = self._type_addr(komut[2])
-            value_addr_from = self._value_addr(komut[2])
-            asm = [f'  ld t0, {type_addr_from}',
-                   f'  sd t0, {type_addr}',
-                   f'  ld t0, {value_addr_from}',
-                   f'  sd t0, {value_addr}']
+                   f'  sd zero, {value_addr}']
+        else:
+            if type(komut[2]) == int:  # immediate
+                asm = [f'  sd zero, {type_addr}',
+                       f'  li t0, {komut[2]}',
+                       f'  sd t0, {value_addr}']
+            elif type(komut[2]) == bool:
+                asm = [f'  li t0, {self.type_values["bool"]}',
+                       f'  sd t0, {type_addr}',
+                       f'  li t0, {int(komut[2])}',
+                       f'  sd t0, {value_addr}']
+            else:  # değişken parametre için
+                type_addr_from = self._type_addr(komut[2])
+                value_addr_from = self._value_addr(komut[2])
+                asm = [f'  ld t0, {type_addr_from}',
+                       f'  sd t0, {type_addr}',
+                       f'  ld t0, {value_addr_from}',
+                       f'  sd t0, {value_addr}']
 
         return '\n'.join(asm) + '\n'
 

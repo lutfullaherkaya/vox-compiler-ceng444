@@ -390,6 +390,10 @@ class Labels:
         self.counts['while'] += 1
         return f'.l_while_body{self.counts["while"]}', f'.l_while_cond{self.counts["while"]}'
 
+    def create_for(self):
+        self.counts['for'] += 1
+        return f'.l_for_body{self.counts["for"]}', f'.l_for_cond{self.counts["for"]}'
+
     def create_and(self):
         self.counts['and'] += 1
         return f'.l_short_and{self.counts["and"]}', f'.l_and{self.counts["and"]}'
@@ -461,15 +465,28 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
         self.visit(setvector.expr)
 
     def visit_ForLoop(self, forloop: ForLoop):
-        # todo: implement
+        body_label, cond_label = self.labels.create_for()
         if forloop.initializer is not None:
             self.visit(forloop.initializer)
-        if forloop.condition is not None:
-            self.visit(forloop.condition)
+        self._ara_dile_ekle([['branch', cond_label],
+                             ['label', body_label]])
+        self.visit(forloop.body)
         if forloop.increment is not None:
             self.visit(forloop.increment)
+        self._ara_dile_ekle(['label', cond_label])
+        if forloop.condition is not None:
+            cond_name = self.visit(forloop.condition)
+            self._ara_dile_ekle(['branch_if_true', cond_name, body_label])
+        else:
+            self._ara_dile_ekle(['branch', body_label])
 
-        self.visit(forloop.body)
+
+
+
+
+
+
+
 
     def visit_Return(self, returnn: Return):
         # todo: implement
