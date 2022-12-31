@@ -245,7 +245,7 @@ class Compiler:
             asm_yapici = AssemblyYapici(relative_addr_table)
 
             for komut in self.ara_dil_yapici_visitor.ara_dil_sozleri:
-                asm_dosyasi.write('    # ' + cu.komut_stringi_yap(komut) + '\n')
+                asm_dosyasi.write('            # ' + cu.komut_stringi_yap(komut) + '\n')
                 asm_dosyasi.write(asm_yapici.aradilden_asm(komut))
             for satir in son_soz:
                 asm_dosyasi.write(f'{satir}\n')

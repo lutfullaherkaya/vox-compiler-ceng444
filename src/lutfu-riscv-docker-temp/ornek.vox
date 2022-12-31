@@ -1,16 +1,22 @@
-var a = true;
-
-if (2 + 2 <= 4) {
-    if (#a) {
-        print 1;
-    } else {
-        print 2;
-    }
-} else {
-    print 3;
+var a = 0;
+while (a < 5) {
+print a;
+a = a + 1;
 }
+//a = 2 + 1;
+//print a;
 
-print true or true;
+//if (2 + 2 <= 4) {
+//    if (#a) {
+//        print 1;
+//    } else {
+//        print 2;
+//    }
+//} else {
+//    print 3;
+//}
+
+//print true or true;
 //var t = true;
 //var f = false;
 //

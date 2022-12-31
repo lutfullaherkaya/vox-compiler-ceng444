@@ -388,7 +388,7 @@ class Labels:
 
     def create_while(self):
         self.counts['while'] += 1
-        return f'.l_while{self.counts["while"]}'
+        return f'.l_while_body{self.counts["while"]}', f'.l_while_cond{self.counts["while"]}'
 
     def create_and(self):
         self.counts['and'] += 1
@@ -452,7 +452,8 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
             self.current_scope = func_scope.parent
 
     def visit_Assign(self, assign: Assign):
-        self._ara_dile_ekle([['copy', assign.identifier.name, self.visit(assign.expr)]])
+        rhs_name = self.visit(assign.expr)
+        self._ara_dile_ekle(['copy', assign.identifier.name, rhs_name])
 
     def visit_SetVector(self, setvector: SetVector):
         # todo: implement
@@ -475,9 +476,13 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
         self.visit(returnn.expr)
 
     def visit_WhileLoop(self, whileloop: WhileLoop):
-        # todo: implement
-        self.visit(whileloop.condition)
+        body_label, cond_label = self.labels.create_while()
+        self._ara_dile_ekle([['branch', cond_label],
+                             ['label', body_label]])
         self.visit(whileloop.body)
+        self._ara_dile_ekle(['label', cond_label])
+        cond_name = self.visit(whileloop.condition)
+        self._ara_dile_ekle(['branch_if_true', cond_name, body_label])
 
     def visit_Block(self, block: Block):
         # todo: implement
@@ -585,12 +590,12 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
         left_name = self.visit(binary.left)
         right_name = self.visit(binary.right)
         self._ara_dile_ekle([
-            (binary.op, result_name, left_name, right_name)
+            [binary.op, result_name, left_name, right_name]
         ])
         return result_name
 
-    def _ara_dile_ekle(self, sozler: Union[List]):
-        if isinstance(sozler[0], list):
+    def _ara_dile_ekle(self, sozler):
+        if isinstance(sozler[0], list) or isinstance(sozler[0], tuple):
             self.ara_dil_sozleri.extend(sozler)
         elif isinstance(sozler[0], str):
             self.ara_dil_sozleri.append(sozler)
