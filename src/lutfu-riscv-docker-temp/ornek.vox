@@ -10,7 +10,7 @@ if (2 + 2 <= 4) {
     print 3;
 }
 
-
+print true or true;
 //var t = true;
 //var f = false;
 //

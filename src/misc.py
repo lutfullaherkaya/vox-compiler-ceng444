@@ -372,6 +372,33 @@ class MultiVarDeclVisitor(ASTNodeVisitor):
         return []
 
 
+class Labels:
+    def __init__(self):
+        self.counts = {
+            'ifelse': 0,
+            'while': 0,
+            'for': 0,
+            'and': 0,
+            'or': 0,
+        }
+
+    def create_endifelse(self):
+        self.counts['ifelse'] += 1
+        return f'.l_endif{self.counts["ifelse"]}', f'.l_endelse{self.counts["ifelse"]}'
+
+    def create_while(self):
+        self.counts['while'] += 1
+        return f'.l_while{self.counts["while"]}'
+
+    def create_and(self):
+        self.counts['and'] += 1
+        return f'.l_short_and{self.counts["and"]}', f'.l_and{self.counts["and"]}'
+
+    def create_or(self):
+        self.counts['or'] += 1
+        return f'.l_short_or{self.counts["or"]}', f'.l_or{self.counts["or"]}'
+
+
 class AraDilYapiciVisitor(ASTNodeVisitor):
     def __init__(self):
         super().__init__()
@@ -379,23 +406,7 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
         self.global_fun_decls = {}
         self.ara_dil_sozleri = []
         self.program_symbol_table = None
-        self.label_counts = {
-            'if': 0,
-            'while': 0,
-            'for': 0,
-        }
-
-    def generate_endif_label(self):
-        self.label_counts['if'] += 1
-        return f'.l_endif{self.label_counts["if"]}'
-
-    def generate_endif_endelse_labels(self):
-        self.label_counts['if'] += 1
-        return f'.l_endif{self.label_counts["if"]}', f'.l_endelse{self.label_counts["if"]}'
-
-    def generate_while_label(self):
-        self.label_counts['while'] += 1
-        return f'.l_while{self.label_counts["while"]}'
+        self.labels = Labels()
 
     def visit_SLiteral(self, sliteral: SLiteral):
         # todo: implement
@@ -483,7 +494,7 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
                              ['call', None, '__br_print__', 1]])
 
     def visit_IfElse(self, ifelse: IfElse):
-        endif_label, endelse_label = self.generate_endif_endelse_labels()
+        endif_label, endelse_label = self.labels.create_endifelse()
         self._ara_dile_ekle([['branch_if_false', self.visit(ifelse.condition), endif_label]])
 
         self.visit(ifelse.if_branch)
@@ -498,8 +509,30 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
             self._ara_dile_ekle([['label', endelse_label]])
 
     def visit_LBinary(self, lbinary: LBinary):
-        # todo: implement short circuit (if falan ekliycen)
-        return self.binary_op(lbinary)
+        result_name = self.current_scope.generate_tmp()
+        left_name = self.visit(lbinary.left)
+        if lbinary.op == 'and':
+            short_label, label = self.labels.create_and()
+            self._ara_dile_ekle(['branch_if_false', left_name, short_label])
+            right_name = self.visit(lbinary.right)
+            self._ara_dile_ekle([['branch_if_false', right_name, short_label],
+                                 ['copy', result_name, True],
+                                 ['branch', label],
+                                 ['label', short_label],
+                                 ['copy', result_name, False],
+                                 ['label', label]])
+        elif lbinary.op == 'or':
+            short_label, label = self.labels.create_or()
+            self._ara_dile_ekle(['branch_if_true', left_name, short_label])
+            right_name = self.visit(lbinary.right)
+            self._ara_dile_ekle([['branch_if_true', right_name, short_label],
+                                 ['copy', result_name, False],
+                                 ['branch', label],
+                                 ['label', short_label],
+                                 ['copy', result_name, True],
+                                 ['label', label]])
+
+        return result_name
 
     def visit_Comparison(self, comparison: Comparison):
         return self.binary_op(comparison)
@@ -557,4 +590,7 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
         return result_name
 
     def _ara_dile_ekle(self, sozler: Union[List]):
-        self.ara_dil_sozleri.extend(sozler)
+        if isinstance(sozler[0], list):
+            self.ara_dil_sozleri.extend(sozler)
+        elif isinstance(sozler[0], str):
+            self.ara_dil_sozleri.append(sozler)
