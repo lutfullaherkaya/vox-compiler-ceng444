@@ -381,26 +381,27 @@ class Labels:
             'and': 0,
             'or': 0,
         }
+        # .L for local label
 
     def create_endifelse(self):
         self.counts['ifelse'] += 1
-        return f'.l_endif{self.counts["ifelse"]}', f'.l_endelse{self.counts["ifelse"]}'
+        return f'.L_endif{self.counts["ifelse"]}', f'.L_endelse{self.counts["ifelse"]}'
 
     def create_while(self):
         self.counts['while'] += 1
-        return f'.l_while_body{self.counts["while"]}', f'.l_while_cond{self.counts["while"]}'
+        return f'.L_while_body{self.counts["while"]}', f'.L_while_cond{self.counts["while"]}'
 
     def create_for(self):
         self.counts['for'] += 1
-        return f'.l_for_body{self.counts["for"]}', f'.l_for_cond{self.counts["for"]}'
+        return f'.L_for_body{self.counts["for"]}', f'.L_for_cond{self.counts["for"]}'
 
     def create_and(self):
         self.counts['and'] += 1
-        return f'.l_short_and{self.counts["and"]}', f'.l_and{self.counts["and"]}'
+        return f'.L_short_and{self.counts["and"]}', f'.L_and{self.counts["and"]}'
 
     def create_or(self):
         self.counts['or'] += 1
-        return f'.l_short_or{self.counts["or"]}', f'.l_or{self.counts["or"]}'
+        return f'.L_short_or{self.counts["or"]}', f'.L_or{self.counts["or"]}'
 
 
 class AraDilYapiciVisitor(ASTNodeVisitor):
