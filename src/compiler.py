@@ -13,8 +13,9 @@ class AssemblyYapici:
         self.sp_extra_offset = 0
         self.aradil_sozlugu = {
             'call': self.call_to_asm,
-            'param': self.param_to_asm,
-            'copy': self.copy_den_asm_ye
+            'param': self.param_dan_asm_ye,
+            'copy': self.copy_den_asm_ye,
+            '+': self.dortislem_den_asm_ye,
         }
 
     def aradilden_asm(self, komut):
@@ -23,24 +24,26 @@ class AssemblyYapici:
         else:
             return f'ERROR! Unknown IL {komut}'
 
-    def param_to_asm(self, il_instr):
+    def param_dan_asm_ye(self, komut):
         self.sp_extra_offset += 16
         asm = ['  addi sp, sp, -16']
 
-        if type(il_instr[1]) == int:
-            asm.extend(['  sd zero, (sp)',
-                        f'  li t0, {il_instr[1]}',
+        if type(komut[1]) == int:
+            asm.extend([f'  sd zero, (sp)',
+                        f'  li t0, {komut[1]}',
                         f'  sd t0, 8(sp)'])
         else:
-            type_addr = self._type_addr(il_instr[1])
-            value_addr = self._value_addr(il_instr[1])
+            # todo: vektor icin
+            type_addr = self._type_addr(komut[1])
+            value_addr = self._value_addr(komut[1])
             asm.extend([f'  ld t0, {type_addr}',
-                        '  sd t0, (sp)',
+                        f'  sd t0, (sp)',
                         f'  ld t0, {value_addr}',
                         f'  sd t0, 8(sp)'])
 
         return '\n'.join(asm) + '\n'
 
+    # todo
     def call_to_asm(self, komut):
         asm = ['  mv a1, sp',
                f'  li a0, {komut[3]}',
@@ -66,6 +69,7 @@ class AssemblyYapici:
                    f'  li t0, {komut[2]}',
                    f'  sd t0, {value_addr}']
         else:
+            # todo: değişken parametre için
             type_addr_from = self._type_addr(komut[2])
             value_addr_from = self._value_addr(komut[2])
             asm = [f'  ld t0, {type_addr_from}',
@@ -73,6 +77,28 @@ class AssemblyYapici:
                    f'  ld t0, {value_addr_from}',
                    f'  sd t0, {value_addr}']
 
+        return '\n'.join(asm) + '\n'
+
+    def dortislem_den_asm_ye(self, komut):
+        result_type_addr = self._type_addr(komut[1])
+        result_value_addr = self._value_addr(komut[1])
+        # assuming type is 0 (int)
+        operand1_value_addr = self._value_addr(komut[2])
+        operand2_value_addr = self._value_addr(komut[3])
+
+        islemler = {
+            '+': 'add',
+            '-': 'sub',
+            '*': 'mul',
+            '/': 'div',
+        }
+        islem = islemler[komut[0]]
+
+        asm = [f'  sd zero, {result_type_addr}',
+               f'  ld t0, {operand1_value_addr}',
+               f'  ld t1, {operand2_value_addr}',
+               f'  {islem} t0, t0, t1',
+               f'  sd t0, {result_value_addr}']
         return '\n'.join(asm) + '\n'
 
     def _type_addr(self, place):
@@ -101,15 +127,14 @@ class Compiler:
         relative_addr_table = {place: addr for (place, addr) in zip(places, range(0, stack_size - 8, 16))}
         on_soz = [
             f'  .global main',
-            f'  ',
             f'  .text',
             f'  .align 2',
             f'main:',
             f'  addi sp, sp, -{stack_size}',
-            f'  sd ra, {stack_size - 8}(sp)'
+            f'  sd ra, {stack_size - 8}(sp)'  # caller saved oldugu icin stacke kaydediyoruz
         ]
         son_soz = [
-            f'  ld ra, {stack_size - 8}(sp)',
+            f'  ld ra, {stack_size - 8}(sp)',  # caller saved oldugu icin stackten cekiyoruz
             f'  addi sp, sp, {stack_size}',
             f'  mv a0, zero',
             f'  ret'
@@ -133,4 +158,3 @@ class Compiler:
             for i, arg in enumerate(komut):
                 if type(arg) == float:
                     komut[i] = int(arg)
-
