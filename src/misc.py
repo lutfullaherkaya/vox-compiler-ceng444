@@ -86,7 +86,7 @@ class Scope:
         return symbol
 
     def generate_tmp(self):
-        tmp = f'tmp{self.tmp_count}'
+        tmp = f'.tmp{self.tmp_count}'  # encoded with a dot to avoid name conflicts with real variables
         identifier = Identifier(tmp, -1, -1)
         self.tmp_count += 1
         self.add(identifier)
@@ -465,7 +465,6 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
         self._ara_dile_ekle([['param', self.visit(printt.expr)],
                              ['call', None, '__br_print__', 1]])
 
-
     def visit_IfElse(self, ifelse: IfElse):
         # todo: implement
         self.visit(ifelse.condition)
@@ -478,9 +477,7 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
         return self.binary_op(lbinary)
 
     def visit_Comparison(self, comparison: Comparison):
-        # todo: implement
-        self.visit(comparison.left)
-        self.visit(comparison.right)
+        return self.binary_op(comparison)
 
     def visit_LLiteral(self, lliteral: LLiteral):
         name = self.current_scope.generate_tmp()
@@ -499,15 +496,18 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
         return variable.identifier.name;
 
     def visit_LNot(self, lnot: LNot):
-        # todo: implement
-        self.visit(lnot.right)
+        result_name = self.current_scope.generate_tmp()
+        right_name = self.visit(lnot.right)
+        self._ara_dile_ekle([
+            ('!', result_name, right_name)
+        ])
+        return result_name
 
     def visit_ABinary(self, abinary: ABinary):
         return self.binary_op(abinary)
 
     def visit_AUMinus(self, auminus: AUMinus):
-        # todo: implement
-        self.visit(auminus.right)
+        return self.binary_op(ABinary('-', ALiteral(0), auminus.right))
 
     def visit_ALiteral(self, aliteral: ALiteral):
         # todo: optimisation: add seperate instructions for literals instead of putting them in a variable
@@ -522,7 +522,7 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
         for arg in call.arguments:
             self.visit(arg)
 
-    def binary_op(self, binary: Union[ABinary, LBinary]) -> str:
+    def binary_op(self, binary: Union[ABinary, LBinary, Comparison]) -> str:
         result_name = self.current_scope.generate_tmp()
         left_name = self.visit(binary.left)
         right_name = self.visit(binary.right)

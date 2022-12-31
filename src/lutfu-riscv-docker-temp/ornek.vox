@@ -1,6 +1,10 @@
 var t = true;
 var f = false;
 
+var bes = 5;
+var eksi_dort = -4;
+
+
 print #t and #f;
 print #t and #f ;
 print #f and #f;
@@ -10,3 +14,21 @@ print #t or #f;
 print #f or #f;
 print #t or #t;
 
+print 5 < 4;
+print 5 > 4;
+print 5 == 4;
+print 5 != 4;
+print 5 >= 4;
+print 5 <= 4;
+
+print bes < eksi_dort;
+print bes > eksi_dort;
+print bes == eksi_dort;
+print bes != eksi_dort;
+print bes >= eksi_dort;
+print bes <= eksi_dort;
+
+print 5 <= 5;
+print 5 >= 5;
+
+print !false;

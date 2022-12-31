@@ -21,6 +21,13 @@ class AssemblyYapici:
             '/': self.dortislem_den_asm_ye,
             'and': self.mantiksal_den_asm_ye,
             'or': self.mantiksal_den_asm_ye,
+            '!': self.mantiksal_den_asm_ye,
+            '<': self.karsilastirma_dan_asm_ye,
+            '>': self.karsilastirma_dan_asm_ye,
+            '<=': self.karsilastirma_dan_asm_ye,
+            '>=': self.karsilastirma_dan_asm_ye,
+            '==': self.karsilastirma_dan_asm_ye,
+            '!=': self.karsilastirma_dan_asm_ye,
 
         }
         self.type_values = {
@@ -98,8 +105,8 @@ class AssemblyYapici:
         result_type_addr = self._type_addr(komut[1])
         result_value_addr = self._value_addr(komut[1])
         # assuming type is 0 (int)
-        operand1_value_addr = self._value_addr(komut[2])
-        operand2_value_addr = self._value_addr(komut[3])
+        operand0_value_addr = self._value_addr(komut[2])
+        operand1_value_addr = self._value_addr(komut[3])
 
         islemler = {
             '+': 'add',
@@ -110,32 +117,63 @@ class AssemblyYapici:
         islem = islemler[komut[0]]
 
         asm = [f'  sd zero, {result_type_addr}',
-               f'  ld t0, {operand1_value_addr}',
-               f'  ld t1, {operand2_value_addr}',
+               f'  ld t0, {operand0_value_addr}',
+               f'  ld t1, {operand1_value_addr}',
                f'  {islem} t0, t0, t1',
                f'  sd t0, {result_value_addr}']
         return '\n'.join(asm) + '\n'
 
     def mantiksal_den_asm_ye(self, komut):
+        # assuming type is 3 (bool)
         result_type_addr = self._type_addr(komut[1])
         result_value_addr = self._value_addr(komut[1])
-        # assuming type is 3 (bool)
-        operand1_value_addr = self._value_addr(komut[2])
-        operand2_value_addr = self._value_addr(komut[3])
-
-        islemler = {
-            'and': 'and',
-            'or': 'or',
-        }
-        islem = islemler[komut[0]]
+        operand0_value_addr = self._value_addr(komut[2])
 
         asm = [f'  li t0, {self.type_values["bool"]}',
                f'  sd t0, {result_type_addr}',
-               f'  ld t0, {operand1_value_addr}',
-               f'  ld t1, {operand2_value_addr}',
-               f'  {islem} t0, t0, t1',
-               f'  andi t0, t0, 1',  # 0 veya 1 olmasi icin
-               f'  sd t0, {result_value_addr}']
+               f'  ld t0, {operand0_value_addr}']
+
+        if komut[0] in ['and', 'or']:
+            operand1_value_addr = self._value_addr(komut[3])
+            asm.extend([f'  ld t1, {operand1_value_addr}',
+                        f'  {komut[0]} t0, t0, t1'])
+        elif komut[0] == '!':
+            asm.extend([f'  xori t0, t0, 1'])
+
+        asm.extend([f'  sd t0, {result_value_addr}'])
+
+        return '\n'.join(asm) + '\n'
+
+    def karsilastirma_dan_asm_ye(self, komut):
+        result_type_addr = self._type_addr(komut[1])
+        result_value_addr = self._value_addr(komut[1])
+        # assuming type is 0 (int)
+        operand0_value_addr = self._value_addr(komut[2])
+        operand1_value_addr = self._value_addr(komut[3])
+
+        asm = [f'  li t0, {self.type_values["bool"]}',
+               f'  sd t0, {result_type_addr}',
+               f'  ld t0, {operand0_value_addr}',
+               f'  ld t1, {operand1_value_addr}']
+
+        if komut[0] == '>':
+            return self.karsilastirma_dan_asm_ye(['<', komut[1], komut[3], komut[2]])
+        elif komut[0] == '>=':
+            return self.karsilastirma_dan_asm_ye(['<=', komut[1], komut[3], komut[2]])
+        elif komut[0] == '<':
+            asm.extend([f'  slt t2, t0, t1'])
+        elif komut[0] == '<=':
+            asm.extend([f'  slt t2, t0, t1',
+                        f'  sub t0, t0, t1',
+                        f'  seqz t0, t0',
+                        f'  or t2, t2, t0'])
+        elif komut[0] in ['==', '!=']:
+            asm.extend([f'  sub t0, t0, t1',
+                        f'  {"seqz" if komut[0] == "==" else "snez"} t2, t0'])
+
+        asm.extend([f'  andi t2, t2, 1',  # 0 veya 1 olmasi icin
+                    f'  sd t2, {result_value_addr}'])
+
         return '\n'.join(asm) + '\n'
 
     def _type_addr(self, place):
