@@ -381,9 +381,11 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
         self.program_symbol_table = None
 
     def visit_SLiteral(self, sliteral: SLiteral):
+        # todo: implement
         pass
 
     def visit_Program(self, program: Program):
+        # todo: implement
         for fundecl in program.fun_decls:
             self.global_fun_decls[fundecl.identifier.name] = fundecl
         with Scope() as scope:
@@ -415,19 +417,22 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
         return vardecl.identifier.name
 
     def visit_FunDecl(self, fundecl: FunDecl):
+        # todo: implement
         with Scope(self.current_scope, fundecl.params) as func_scope:
             self.current_scope = func_scope
             self.visit(fundecl.body)
             self.current_scope = func_scope.parent
 
     def visit_Assign(self, assign: Assign):
-        self.visit(assign.expr)
+        self._ara_dile_ekle([['copy', assign.identifier.name, self.visit(assign.expr)]])
 
     def visit_SetVector(self, setvector: SetVector):
+        # todo: implement
         self.visit(setvector.vector_index)
         self.visit(setvector.expr)
 
     def visit_ForLoop(self, forloop: ForLoop):
+        # todo: implement
         if forloop.initializer is not None:
             self.visit(forloop.initializer)
         if forloop.condition is not None:
@@ -438,13 +443,16 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
         self.visit(forloop.body)
 
     def visit_Return(self, returnn: Return):
+        # todo: implement
         self.visit(returnn.expr)
 
     def visit_WhileLoop(self, whileloop: WhileLoop):
+        # todo: implement
         self.visit(whileloop.condition)
         self.visit(whileloop.body)
 
     def visit_Block(self, block: Block):
+        # todo: implement
         with Scope(self.current_scope) as block_scope:
             self.current_scope = block_scope
             for var_decl in block.var_decls:
@@ -459,44 +467,46 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
 
 
     def visit_IfElse(self, ifelse: IfElse):
+        # todo: implement
         self.visit(ifelse.condition)
         self.visit(ifelse.if_branch)
         if ifelse.else_branch is not None:
             self.visit(ifelse.else_branch)
 
     def visit_LBinary(self, lbinary: LBinary):
-        self.visit(lbinary.left)
-        self.visit(lbinary.right)
+        # todo: implement short circuit (if falan ekliycen)
+        return self.binary_op(lbinary)
 
     def visit_Comparison(self, comparison: Comparison):
+        # todo: implement
         self.visit(comparison.left)
         self.visit(comparison.right)
 
     def visit_LLiteral(self, lliteral: LLiteral):
-        pass
+        name = self.current_scope.generate_tmp()
+        self._ara_dile_ekle([['copy', name, lliteral.value]])
+        return name
 
     def visit_LPrimary(self, lprimary: LPrimary):
-        self.visit(lprimary.primary)
+        # todo: implement
+        return self.visit(lprimary.primary)
 
     def visit_GetVector(self, getvector: GetVector):
+        # todo: implement
         self.visit(getvector.vector_index)
 
     def visit_Variable(self, variable: Variable):
         return variable.identifier.name;
 
     def visit_LNot(self, lnot: LNot):
+        # todo: implement
         self.visit(lnot.right)
 
     def visit_ABinary(self, abinary: ABinary):
-        result_name = self.current_scope.generate_tmp()
-        left_name = self.visit(abinary.left)
-        right_name = self.visit(abinary.right)
-        self._ara_dile_ekle([
-            (abinary.op, result_name, left_name, right_name)
-        ])
-        return result_name
+        return self.binary_op(abinary)
 
     def visit_AUMinus(self, auminus: AUMinus):
+        # todo: implement
         self.visit(auminus.right)
 
     def visit_ALiteral(self, aliteral: ALiteral):
@@ -506,10 +516,20 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
         return name
 
     def visit_Call(self, call: Call):
+        # todo: implement
         if self.get_error_if_func_not_declared(call.callee) is None:
             pass
         for arg in call.arguments:
             self.visit(arg)
+
+    def binary_op(self, binary: Union[ABinary, LBinary]) -> str:
+        result_name = self.current_scope.generate_tmp()
+        left_name = self.visit(binary.left)
+        right_name = self.visit(binary.right)
+        self._ara_dile_ekle([
+            (binary.op, result_name, left_name, right_name)
+        ])
+        return result_name
 
     def _ara_dile_ekle(self, sozler):
         self.ara_dil_sozleri.extend(sozler)

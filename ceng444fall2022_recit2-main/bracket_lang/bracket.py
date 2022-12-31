@@ -27,7 +27,7 @@ relative_addr_table = {place:addr for (place, addr) in zip(places,range(0,stack_
 asm_filename = bracket_utils.strip_br_extension(args.source_file)+'.s'
 asm_file = open(asm_filename, 'w')
 
-asm_file.write('#include "lib_bracket.h"\n\n')
+asm_file.write('#include "vox_lib.h"\n\n')
 
 text_section_prologue = f'''  .global main
   .text

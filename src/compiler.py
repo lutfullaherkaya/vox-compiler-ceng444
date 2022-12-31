@@ -19,7 +19,14 @@ class AssemblyYapici:
             '-': self.dortislem_den_asm_ye,
             '*': self.dortislem_den_asm_ye,
             '/': self.dortislem_den_asm_ye,
+            'and': self.mantiksal_den_asm_ye,
+            'or': self.mantiksal_den_asm_ye,
 
+        }
+        self.type_values = {
+            'int': 0,
+            'vector': 1,
+            'bool': 2,
         }
 
     def aradilden_asm(self, komut):
@@ -68,12 +75,16 @@ class AssemblyYapici:
         type_addr = self._type_addr(komut[1])
         value_addr = self._value_addr(komut[1])
 
-        if type(komut[2]) == int:
+        if type(komut[2]) == int:  # immediate
             asm = [f'  sd zero, {type_addr}',
                    f'  li t0, {komut[2]}',
                    f'  sd t0, {value_addr}']
-        else:
-            # todo: değişken parametre için
+        elif type(komut[2]) == bool:
+            asm = [f'  li t0, {self.type_values["bool"]}',
+                   f'  sd t0, {type_addr}',
+                   f'  li t0, {int(komut[2])}',
+                   f'  sd t0, {value_addr}']
+        else:  # değişken parametre için
             type_addr_from = self._type_addr(komut[2])
             value_addr_from = self._value_addr(komut[2])
             asm = [f'  ld t0, {type_addr_from}',
@@ -105,6 +116,28 @@ class AssemblyYapici:
                f'  sd t0, {result_value_addr}']
         return '\n'.join(asm) + '\n'
 
+    def mantiksal_den_asm_ye(self, komut):
+        result_type_addr = self._type_addr(komut[1])
+        result_value_addr = self._value_addr(komut[1])
+        # assuming type is 3 (bool)
+        operand1_value_addr = self._value_addr(komut[2])
+        operand2_value_addr = self._value_addr(komut[3])
+
+        islemler = {
+            'and': 'and',
+            'or': 'or',
+        }
+        islem = islemler[komut[0]]
+
+        asm = [f'  li t0, {self.type_values["bool"]}',
+               f'  sd t0, {result_type_addr}',
+               f'  ld t0, {operand1_value_addr}',
+               f'  ld t1, {operand2_value_addr}',
+               f'  {islem} t0, t0, t1',
+               f'  andi t0, t0, 1',  # 0 veya 1 olmasi icin
+               f'  sd t0, {result_value_addr}']
+        return '\n'.join(asm) + '\n'
+
     def _type_addr(self, place):
         return str(self.sp_extra_offset + self.relative_addr_table[place]) + '(sp)'
 
@@ -130,7 +163,7 @@ class Compiler:
         stack_size = len(places) * 16 + 8
         relative_addr_table = {place: addr for (place, addr) in zip(places, range(0, stack_size - 8, 16))}
         on_soz = [
-            f'#include "lib_bracket.h"',
+            f'#include "vox_lib.h"',
             f'  ',
             f'  .global main',
             f'  .text',
