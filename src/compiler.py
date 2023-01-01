@@ -26,10 +26,12 @@ def get_global_value_name(var_name):
 
 
 class AssemblyYapici:
-    def __init__(self, global_vars, main_activation_record: ActivationRecord):
+    def __init__(self, global_vars, func_activation_records: Dict[str, ActivationRecord]):
         self.global_vars = global_vars
-        self.main_activation_record = main_activation_record
+        self.func_activation_records: Dict[str, ActivationRecord] = func_activation_records
         self.sp_extra_offset = 0
+        self.current_stack_size = 0
+        self.current_fun_label = ''
         self.aradil_sozlugu = {
             'call': self.call_den_asm_ye,
             'param': self.param_dan_asm_ye,
@@ -40,6 +42,8 @@ class AssemblyYapici:
             'branch_if_false': self.branch_if_false_den_asm_ye,
             'label': self.label_den_asm_ye,
             'fun': self.fun_den_asm_ye,
+            'ret': self.ret_den_asm_ye,
+            'endfun': self.endfun_den_asm_ye,
             '+': self.dortislem_den_asm_ye,
             '-': self.dortislem_den_asm_ye,
             '*': self.dortislem_den_asm_ye,
@@ -130,12 +134,16 @@ class AssemblyYapici:
 
     # todo
     def call_den_asm_ye(self, komut):
-        asm = ['  mv a1, sp',
-               f'  li a0, {komut[3]}',
-               f'  call {komut[2]}',
-               f'  addi sp, sp, {16 * komut[3]}']
+        asm = ['  mv a1, sp']
+        if len(komut) > 3:
+            # todo: implement func args
+            asm.append(f'  li a0, {komut[3]}')
 
-        self.sp_extra_offset -= 16 * komut[3]
+        asm.extend([f'  call {komut[2]}'])
+
+        if len(komut) > 3:
+            asm.extend([f'  addi sp, sp, {16 * komut[3]}'])
+            self.sp_extra_offset -= 16 * komut[3]
 
         if komut[1] is not None:
             asm.extend(self.asm_reg_to_var('t0', komut[1], 'a0', 'a1'))
@@ -143,8 +151,7 @@ class AssemblyYapici:
         return '\n'.join(asm) + '\n'
 
     def copy_den_asm_ye(self, komut):
-        type_addr = self._type_addr(komut[1])
-        value_addr = self._value_addr(komut[1])
+
         asm = []
         if len(komut) < 3:
             asm.extend(self.asm_reg_to_var('t0', komut[1], 'zero', 'zero'))
@@ -157,8 +164,6 @@ class AssemblyYapici:
                             f'  li t2, {int(komut[2])}'])
                 asm.extend(self.asm_reg_to_var('t0', komut[1], 't1', 't2'))
             else:  # değişken parametre için
-                type_addr_from = self._type_addr(komut[2])
-                value_addr_from = self._value_addr(komut[2])
                 asm.extend(self.asm_var_to_reg(komut[2], 't0', 't1'))
                 asm.extend(self.asm_reg_to_var('t2', komut[1], 't0', 't1'))
 
@@ -175,9 +180,30 @@ class AssemblyYapici:
         return f'{komut[1]}:\n'
 
     def fun_den_asm_ye(self, komut):
-        asm = []
+        label = komut[1]
+        signature = komut[2]
+        self.current_fun_label = label
+        degisken_adresleri = self.func_activation_records[label].degisken_goreli_adresleri
+        self.current_stack_size = len(degisken_adresleri) * 16 + 8
+        asm = [f'',
+               f'# fun {signature};',
+               f'{label}:\n',
+               f'  addi sp, sp, -{self.current_stack_size}',
+               f'  sd ra, {self.current_stack_size - 8}(sp)']  # caller saved oldugu icin stacke kaydediyoruz
 
-        return f'{komut[1]}:\n'
+        return '\n'.join(asm) + '\n'
+
+    def ret_den_asm_ye(self, komut):
+        asm = self.asm_var_to_reg(komut[1], 'a0', 'a1')
+        return '\n'.join(asm) + '\n'
+
+    def endfun_den_asm_ye(self, komut):
+        total_stack_size = self.current_stack_size + self.sp_extra_offset
+        asm = [f'  ld ra, {total_stack_size - 8}(sp)',  # caller saved oldugu icin stackten cekiyoruz
+               f'  addi sp, sp, {total_stack_size}',
+               f'  ret']
+        self.sp_extra_offset = 0
+        return '\n'.join(asm) + '\n'
 
     def branch_if_true_den_asm_ye(self, komut):
         asm = []
@@ -262,18 +288,18 @@ class AssemblyYapici:
         return '\n'.join(asm) + '\n'
 
     def _type_addr(self, place):
-        goreli_adresler = self.main_activation_record.degisken_goreli_adresleri
+        degisken_adresleri = self.func_activation_records[self.current_fun_label].degisken_goreli_adresleri
         key = (place['name'], place['id'])
-        if key in goreli_adresler:
-            return str(self.sp_extra_offset + goreli_adresler[key]) + '(sp)'
+        if key in degisken_adresleri:
+            return str(self.sp_extra_offset + degisken_adresleri[key]) + '(sp)'
         else:
             return None
 
     def _value_addr(self, place):
-        goreli_adresler = self.main_activation_record.degisken_goreli_adresleri
+        degisken_adresleri = self.func_activation_records[self.current_fun_label].degisken_goreli_adresleri
         key = (place['name'], place['id'])
-        if key in goreli_adresler:
-            return str(self.sp_extra_offset + goreli_adresler[key] + 8) + '(sp)'
+        if key in degisken_adresleri:
+            return str(self.sp_extra_offset + degisken_adresleri[key] + 8) + '(sp)'
         else:
             return None
 
@@ -294,35 +320,22 @@ class Compiler:
     def save_ass(self, filename: str):
         places = self.ara_dil_yapici_visitor.main_activation_record.degisken_goreli_adresleri
         stack_size = len(places) * 16 + 8
-        relative_addr_table = {place: addr for (place, addr) in zip(places, range(0, stack_size - 8, 16))}
-        on_soz = [
-            f'#include "vox_lib.h"',
-            f'  ',
-            f'  .global main',
-            f'  .text',
-            f'  .align 2',
-            f'main:',
-            f'  addi sp, sp, -{stack_size}',
-            f'  sd ra, {stack_size - 8}(sp)'  # caller saved oldugu icin stacke kaydediyoruz
-        ]
-        son_soz = [
-            f'  ld ra, {stack_size - 8}(sp)',  # caller saved oldugu icin stackten cekiyoruz
-            f'  addi sp, sp, {stack_size}',
-            f'  mv a0, zero',
-            f'  ret'
-        ]
+        on_soz = [f'#include "vox_lib.h"',
+                  f'  ',
+                  f'  .global main',
+                  f'  .text',
+                  f'  .align 2']
 
         with open(filename, 'w') as asm_dosyasi:
             for satir in on_soz:
                 asm_dosyasi.write(f'{satir}\n')
             asm_yapici = AssemblyYapici(self.ara_dil_yapici_visitor.global_vars,
-                                        self.ara_dil_yapici_visitor.main_activation_record)
+                                        self.ara_dil_yapici_visitor.func_activation_records)
 
             for komut in self.ara_dil_yapici_visitor.ara_dil_sozleri:
-                asm_dosyasi.write('            # ' + cu.komut_stringi_yap(komut) + '\n')
+                if komut[0] != 'fun':
+                    asm_dosyasi.write('            # ' + cu.komut_stringi_yap(komut) + '\n')
                 asm_dosyasi.write(asm_yapici.aradilden_asm(komut))
-            for satir in son_soz:
-                asm_dosyasi.write(f'{satir}\n')
 
             if len(self.ara_dil_yapici_visitor.global_vars) > 0:
                 asm_dosyasi.write(f'\n  .data\n')

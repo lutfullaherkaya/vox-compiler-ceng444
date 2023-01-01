@@ -80,6 +80,7 @@ class Program(ASTNode):
     var_decls: List[VarDecl]
     fun_decls: List[FunDecl]
     statements: List[Stmt]
+    has_errors: bool
 
 
 @dataclass(frozen=True)

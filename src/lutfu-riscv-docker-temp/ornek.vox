@@ -1,9 +1,14 @@
-var a = 2;
-
-if (true) {
-    var a = 4;
-    print (a);
+var toplam = 0;
+var temp = 0;
+fun yuze_kadar_toplama_ekle() {
+    if (toplam < 100) {
+        toplam = toplam + 1;
+        temp = yuze_kadar_toplama_ekle();
+    }
 }
+
+print yuze_kadar_toplama_ekle();
+print toplam;
 //a = 2 + 1;
 //print a;
 

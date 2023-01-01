@@ -41,6 +41,7 @@ elif args.test_type == 'parse':
 elif args.test_type == 'compile':
 
     intermediate = process(source)
+    has_errors = intermediate.has_errors
     ast = generate_ast(intermediate)
     print('PrintVisitor Output:')
     print(PrintVisitor().visit(ast))
@@ -51,7 +52,7 @@ elif args.test_type == 'compile':
     result = result + '\n' + 'Multiple var declarations:\n'
     result = result + '\n'.join([str(iden) for iden in multiple_decls])
     print(result)
-    if len(undecl_vars) == 0 and len(multiple_decls) == 0:
+    if len(undecl_vars) == 0 and len(multiple_decls) == 0 and not has_errors:
         compiler = Compiler(ast)
         compiler.compile().save_ass(args.filename + '.s')
     else:

@@ -20,7 +20,11 @@ class Parser(sly.Parser):
     # todo: EOF olması lazım sonda ama EOF'la ne yapılır bilemedim.
     @_('var_decls fun_decls free_statements')
     def program(self, p):
-        return ast_tools.Program(p.var_decls, p.fun_decls, p.free_statements)
+        has_errors = False
+        if hasattr(self, 'errorok'):
+            has_errors = True
+
+        return ast_tools.Program(p.var_decls, p.fun_decls, p.free_statements, has_errors)
 
     @_('VAR ID ASSIGN init ";"')
     def var_decl(self, p):

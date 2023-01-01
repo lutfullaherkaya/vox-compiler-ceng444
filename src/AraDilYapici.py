@@ -134,7 +134,8 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
     def __init__(self):
         super().__init__()
         self.current_scope: Optional[AraDilScope] = None
-        self.global_fun_decls: Dict[str, (FunDecl, ActivationRecord)] = {}
+        self.func_activation_records: Dict[str, ActivationRecord] = {}
+        self.fun_decls = {}
         self.ara_dil_sozleri = []
         self._ara_dil_fonksiyon_tanim_sozleri = []
         self.labels = Labels()
@@ -148,8 +149,13 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
 
     def visit_Program(self, program: Program):
         # todo: implement
+        self._ara_dile_ekle(['fun', 'main', 'main()'])
+
         for fundecl in program.fun_decls:
-            self.global_fun_decls[fundecl.identifier.name] = (fundecl, ActivationRecord())
+            self.func_activation_records[fundecl.identifier.name] = ActivationRecord()
+            self.fun_decls[fundecl.identifier.name] = fundecl
+        self.func_activation_records['main'] = self.main_activation_record
+
         with AraDilScope(None, None, self.main_activation_record) as scope:
             self.current_scope = scope
             for var_decl in program.var_decls:
@@ -160,6 +166,7 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
                 self.visit(stmt)
             self.current_scope = scope.parent
 
+        self._ara_dile_ekle(['endfun'])
         self.ara_dil_sozleri.extend(self._ara_dil_fonksiyon_tanim_sozleri)
 
     def visit_ErrorStmt(self, errorstmt: ErrorStmt):
@@ -199,16 +206,19 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
 
     def visit_FunDecl(self, fundecl: FunDecl):
         self._fonksiyon_tanimlaniyor = True
-        func_label = self.get_func_label(fundecl.identifier.name)
-        self._ara_dile_ekle(['label', func_label])
+        func_label = fundecl.identifier.name
+        self._ara_dile_ekle(['fun', func_label, self.get_func_signature(fundecl)])
+
+        main_scope = self.current_scope
 
         # here we cut the scope tree. function cant see caller scope.
         # since globals are not in any scope, they are hidden from all functions here but
         # seeing globals is handled in compiler part.
-        with AraDilScope(None, fundecl.params) as func_scope:
+        with AraDilScope(None, fundecl.params, self.func_activation_records[func_label]) as func_scope:
             self.current_scope = func_scope
             self.visit(fundecl.body)
-            self.current_scope = func_scope.parent
+            self.current_scope = main_scope
+        self._ara_dile_ekle(['endfun'])
         self._fonksiyon_tanimlaniyor = False
 
     def visit_Assign(self, assign: Assign):
@@ -238,8 +248,10 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
             self._ara_dile_ekle(['branch', body_label])
 
     def visit_Return(self, returnn: Return):
-        # todo: implement
-        self.visit(returnn.expr)
+        ad_ve_id = self.visit(returnn.expr)
+        self._ara_dile_ekle(['ret', ad_ve_id])
+        self._ara_dile_ekle(['endfun'])
+        return ad_ve_id
 
     def visit_WhileLoop(self, whileloop: WhileLoop):
         body_label, cond_label = self.labels.create_while()
@@ -347,11 +359,13 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
         return name_id
 
     def visit_Call(self, call: Call):
-        # todo: implement
-        if self.get_error_if_func_not_declared(call.callee) is None:
-            pass
+        ret_val_name_id_pair = self.current_scope.generate_tmp()
+        self._ara_dile_ekle(['call', ret_val_name_id_pair, call.callee.name])
+
+        # todo: implement args
         for arg in call.arguments:
             self.visit(arg)
+        return ret_val_name_id_pair
 
     def binary_op(self, binary: Union[ABinary, LBinary, Comparison]) -> NameIdPair:
         result_name_id = self.current_scope.generate_tmp()
@@ -373,6 +387,7 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
         elif isinstance(sozler[0], str):
             hedef_ara_dil_sozleri.append(sozler)
 
-    def get_func_label(self, func_name):
-        fundecl = self.global_fun_decls[func_name]
+    def get_func_signature(self, fundecl: Union[FunDecl, str]):
+        if isinstance(fundecl, str):
+            fundecl = self.fun_decls[fundecl]
         return f'{fundecl.identifier.name}({", ".join([param.name for param in fundecl.params])})'
