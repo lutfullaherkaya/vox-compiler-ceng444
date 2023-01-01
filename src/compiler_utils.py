@@ -1,3 +1,18 @@
-# thanks to bracket_utils of cem hoca (il_instr_to_str)
 def komut_stringi_yap(komut):
-    return komut[0] + " " + ", ".join([str(elem) for elem in komut[1:] if elem is not None])
+    sonuc = komut[0] + " "
+    args = []
+    for elem in komut[1:]:
+        if elem is not None:
+            if isinstance(elem, dict) and 'name' in elem:  # is a variable of NameIdPair
+                var_name = elem['name']
+                id = elem['id']
+                if id == -1:
+                    args.append('global_' + var_name)
+                elif id == 0:
+                    args.append(var_name)
+                elif id > 0:
+                    args.append(var_name + '-' + str(id))
+            else:
+                args.append(str(elem))
+
+    return sonuc + ", ".join(args)
