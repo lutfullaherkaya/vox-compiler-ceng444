@@ -8,6 +8,29 @@ from AraDilYapici import ActivationRecord
 import compiler_utils as cu
 import sys
 
+"""
+    Eksikler:
+    implement strings
+    Implement function parameters (a restriction of maximum 7 formal parameters is ok)
+    
+    e. Implement vectors as an additional type to integers. Overload "+,-,*,/" for vectors of same size so that they do element-wise operations with the parallel instructions of the V extension. (10 pts)
+    
+    
+    Bonus:
+    
+    After you are done with all of the compulsory steps, you can also implement optional features you'd like Vox to have. These will help you get that Gazozuna Compiler award. Some of them could be:
+    - Lower amount of temporary variables, better register allocation and lower register spill.
+    - Reals in addition to integers (just like Javascript).
+    - Garbage collection.
+    - Runtime errors.
+    - Functions with more than 7 formal parameters.
+    - Vectors can hold a mixture of types and other vectors.
+    - Cool additional syntactic sugar (like list expressions in Python).
+    
+    Eksik parametre kontrolü ve hatası
+    Optimizasyon belki
+
+"""
 
 def compilation_error(error):
     sys.stderr.write('Compilation error: ' + error)
