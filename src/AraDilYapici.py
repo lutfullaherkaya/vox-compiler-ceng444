@@ -92,6 +92,7 @@ class Labels:
         return f'.L_short_or{self.counts["or"]}', f'.L_or{self.counts["or"]}'
 
 
+
 class AraDilYapiciVisitor(ASTNodeVisitor):
     def __init__(self):
         super().__init__()
@@ -100,6 +101,7 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
         self.ara_dil_sozleri = []
         self.program_symbol_table = None
         self.labels = Labels()
+        self.global_vars = {}
 
     def visit_SLiteral(self, sliteral: SLiteral):
         # todo: implement
@@ -112,7 +114,7 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
         with Scope() as scope:
             self.current_scope = scope
             for var_decl in program.var_decls:
-                self.visit(var_decl)
+                self.add_global(var_decl)
             for fun_decl in program.fun_decls:
                 self.visit(fun_decl)
             for stmt in program.statements:
@@ -136,6 +138,24 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
 
         self.current_scope.add(vardecl.identifier)
         return vardecl.identifier.name
+
+    def add_global(self, vardecl: VarDecl):
+        self.global_vars[vardecl.identifier.name] = vardecl
+        # global komutunu bir seye donusturmuyorum. sadece self.global_vars kullaniyorum.
+        # global komutunu olusturma sebebim ara dili okumak istersem anlayayim global oldugunu diye.
+        # main fonksiyonunun bir görevi de global degiskenleri ilklendirmek oluyor.
+        self._ara_dile_ekle(['global', vardecl.identifier.name])
+
+        if vardecl.initializer is not None:
+            if type(vardecl.initializer) == list:
+                # todo: vektor tanımlama
+                for elem in vardecl.initializer:
+                    self.visit(elem)
+            else:
+                self._ara_dile_ekle([['copy', vardecl.identifier.name, self.visit(vardecl.initializer)]])
+
+        return vardecl.identifier.name
+
 
     def visit_FunDecl(self, fundecl: FunDecl):
         # todo: implement
