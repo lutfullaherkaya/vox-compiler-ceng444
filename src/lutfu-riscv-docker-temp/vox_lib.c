@@ -14,8 +14,8 @@ void __br_print__(long argc, BracketObject argv[]){
       long length = vector[0];
 
       putchar('[');
-      for(long i = 1; i < length; i++) printf("%d, ", vector[i]);
-      printf("%d]\n", vector[length]);
+      for(long i = 1; i < length; i++) printf("%ld, ", vector[i]);
+      printf("%ld]\n", vector[length]);
       break;
     }
     case VOX_BOOL: {
