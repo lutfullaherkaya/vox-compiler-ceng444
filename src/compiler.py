@@ -3,7 +3,7 @@
 from typing import Dict, Optional, Union, List
 import ast_tools
 import misc
-from misc import AraDilYapiciVisitor
+from AraDilYapici import AraDilYapiciVisitor
 import compiler_utils as cu
 
 

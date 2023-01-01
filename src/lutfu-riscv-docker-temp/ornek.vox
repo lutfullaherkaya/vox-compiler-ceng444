@@ -1,5 +1,5 @@
-var a = 5;
-print a;
+var a = 5 + 8 / 3;
+print a + 2;
 //a = 2 + 1;
 //print a;
 
