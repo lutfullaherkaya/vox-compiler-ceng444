@@ -14,7 +14,7 @@ import ast_tools
 # noinspection PyUnresolvedReferences,PyUnboundLocalVariable
 class Parser(sly.Parser):
     tokens = lexer.Lexer.tokens
-    debugfile = 'parser.out'
+    # debugfile = 'parser.out'
     start = 'program'
 
     # todo: EOF olması lazım sonda ama EOF'la ne yapılır bilemedim.
@@ -161,8 +161,6 @@ class Parser(sly.Parser):
     @_('"{" var_decls statements "}"')
     def block(self, p):
         return ast_tools.Block(p.var_decls, p.statements)
-
-
 
     @_('lexpr')
     def expr(self, p):
@@ -363,4 +361,3 @@ class Parser(sly.Parser):
                 print("End of File!")
                 return None
         self.restart()'''
-

@@ -5,6 +5,7 @@ import pickle
 from misc import *
 from lexer import Lexer
 from compiler import Compiler
+import sys
 
 arg_parser = argparse.ArgumentParser()
 
@@ -41,8 +42,21 @@ elif args.test_type == 'compile':
 
     intermediate = process(source)
     ast = generate_ast(intermediate)
-    compiler = Compiler(ast)
-    compiler.compile().save_ass(args.filename + '.s')
+    print('PrintVisitor Output:')
+    print(PrintVisitor().visit(ast))
+    undecl_vars = undeclared_vars(intermediate)
+    multiple_decls = multiple_var_declarations(intermediate)
+    result = 'Undeclared vars:\n'
+    result = result + '\n'.join([str(iden) for iden in undecl_vars])
+    result = result + '\n' + 'Multiple var declarations:\n'
+    result = result + '\n'.join([str(iden) for iden in multiple_decls])
+    print(result)
+    if len(undecl_vars) == 0 and len(multiple_decls) == 0:
+        compiler = Compiler(ast)
+        compiler.compile().save_ass(args.filename + '.s')
+    else:
+        sys.stderr.write('Compilation failed.\n')
+        print('Compilation failed.')
     # todo: should we also assemble the code?
 
 
