@@ -4,6 +4,7 @@ from typing import Dict, Optional, Union, List
 import ast_tools
 import misc
 from AraDilYapici import AraDilYapiciVisitor
+from AraDilYapici import ActivationRecord
 import compiler_utils as cu
 import sys
 
@@ -25,9 +26,9 @@ def get_global_value_name(var_name):
 
 
 class AssemblyYapici:
-    def __init__(self, relative_addr_table, global_vars):
-        self.relative_addr_table = relative_addr_table
+    def __init__(self, global_vars, main_activation_record: ActivationRecord):
         self.global_vars = global_vars
+        self.main_activation_record = main_activation_record
         self.sp_extra_offset = 0
         self.aradil_sozlugu = {
             'call': self.call_den_asm_ye,
@@ -38,6 +39,7 @@ class AssemblyYapici:
             'branch_if_true': self.branch_if_true_den_asm_ye,
             'branch_if_false': self.branch_if_false_den_asm_ye,
             'label': self.label_den_asm_ye,
+            'fun': self.fun_den_asm_ye,
             '+': self.dortislem_den_asm_ye,
             '-': self.dortislem_den_asm_ye,
             '*': self.dortislem_den_asm_ye,
@@ -59,43 +61,43 @@ class AssemblyYapici:
             'bool': 2,
         }
 
-    def asm_var_to_reg(self, var_name, type_reg=None, value_reg=None):
-        #asm = [f'      # asm_var_to_reg(var:{var_name}, type_reg:{type_reg}, value_reg:{value_reg})']
+    def asm_var_to_reg(self, var_name_id, type_reg=None, value_reg=None):
+        # asm = [f'      # asm_var_to_reg(var:{var_name}, type_reg:{type_reg}, value_reg:{value_reg})']
         asm = []
-        type_addr = self._type_addr(var_name)
-        value_addr = self._value_addr(var_name)
+        type_addr = self._type_addr(var_name_id)
+        value_addr = self._value_addr(var_name_id)
         if type_addr is not None:  # local
             if type_reg is not None:
                 asm.append(f'  ld {type_reg}, {type_addr}')
             if value_reg is not None:
                 asm.append(f'  ld {value_reg}, {value_addr}')
-        elif var_name in self.global_vars:
+        elif var_name_id["name"] in self.global_vars:
             if type_reg is not None:
-                asm.append(f'  ld {type_reg}, {get_global_type_name(var_name)}')
+                asm.append(f'  ld {type_reg}, {get_global_type_name(var_name_id["name"])}')
             if value_reg is not None:
-                asm.append(f'  ld {value_reg}, {get_global_value_name(var_name)}')
+                asm.append(f'  ld {value_reg}, {get_global_value_name(var_name_id["name"])}')
         else:
-            compilation_error(f'Unknown variable {var_name}')
+            compilation_error(f'Unknown variable {var_name_id["name"]}')
         return asm
 
-    def asm_reg_to_var(self, temp_reg, var_name, type_reg=None, value_reg=None):
-        #asm = [f'      # asm_reg_to_var(tmp:{temp_reg}, var:{var_name}, type_reg:{type_reg}, value_reg:{value_reg})']
+    def asm_reg_to_var(self, temp_reg, var_name_id, type_reg=None, value_reg=None):
+        # asm = [f'      # asm_reg_to_var(tmp:{temp_reg}, var:{var_name}, type_reg:{type_reg}, value_reg:{value_reg})']
         asm = []
-        type_addr = self._type_addr(var_name)
-        value_addr = self._value_addr(var_name)
+        type_addr = self._type_addr(var_name_id)
+        value_addr = self._value_addr(var_name_id)
         if type_addr is not None:  # local
             if type_reg is not None:
                 asm.append(f'  sd {type_reg}, {type_addr}')
             if value_reg is not None:
                 asm.append(f'  sd {value_reg}, {value_addr}')
-        elif var_name in self.global_vars:
-            asm.append(f'  la {temp_reg}, {get_global_type_name(var_name)}')
+        elif var_name_id["name"] in self.global_vars:
+            asm.append(f'  la {temp_reg}, {get_global_type_name(var_name_id["name"])}')
             if type_reg is not None:
                 asm.append(f'  sd {type_reg}, ({temp_reg})')
             if value_reg is not None:
                 asm.append(f'  sd {value_reg}, 8({temp_reg})')
         else:
-            compilation_error(f'Unknown variable {var_name}')
+            compilation_error(f'Unknown variable {var_name_id["name"]}')
         return asm
 
     def get_global_type_name(self, var_name):
@@ -170,6 +172,11 @@ class AssemblyYapici:
         return f'  j {komut[1]}\n'
 
     def label_den_asm_ye(self, komut):
+        return f'{komut[1]}:\n'
+
+    def fun_den_asm_ye(self, komut):
+        asm = []
+
         return f'{komut[1]}:\n'
 
     def branch_if_true_den_asm_ye(self, komut):
@@ -255,14 +262,18 @@ class AssemblyYapici:
         return '\n'.join(asm) + '\n'
 
     def _type_addr(self, place):
-        if place in self.relative_addr_table:
-            return str(self.sp_extra_offset + self.relative_addr_table[place]) + '(sp)'
+        goreli_adresler = self.main_activation_record.degisken_goreli_adresleri
+        key = (place['name'], place['id'])
+        if key in goreli_adresler:
+            return str(self.sp_extra_offset + goreli_adresler[key]) + '(sp)'
         else:
             return None
 
     def _value_addr(self, place):
-        if place in self.relative_addr_table:
-            return str(self.sp_extra_offset + self.relative_addr_table[place] + 8) + '(sp)'
+        goreli_adresler = self.main_activation_record.degisken_goreli_adresleri
+        key = (place['name'], place['id'])
+        if key in goreli_adresler:
+            return str(self.sp_extra_offset + goreli_adresler[key] + 8) + '(sp)'
         else:
             return None
 
@@ -281,7 +292,7 @@ class Compiler:
         return self
 
     def save_ass(self, filename: str):
-        places = self.ara_dil_yapici_visitor.program_symbol_table
+        places = self.ara_dil_yapici_visitor.main_activation_record.degisken_goreli_adresleri
         stack_size = len(places) * 16 + 8
         relative_addr_table = {place: addr for (place, addr) in zip(places, range(0, stack_size - 8, 16))}
         on_soz = [
@@ -304,7 +315,8 @@ class Compiler:
         with open(filename, 'w') as asm_dosyasi:
             for satir in on_soz:
                 asm_dosyasi.write(f'{satir}\n')
-            asm_yapici = AssemblyYapici(relative_addr_table, self.ara_dil_yapici_visitor.global_vars)
+            asm_yapici = AssemblyYapici(self.ara_dil_yapici_visitor.global_vars,
+                                        self.ara_dil_yapici_visitor.main_activation_record)
 
             for komut in self.ara_dil_yapici_visitor.ara_dil_sozleri:
                 asm_dosyasi.write('            # ' + cu.komut_stringi_yap(komut) + '\n')

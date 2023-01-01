@@ -1,5 +1,9 @@
-var a = 5;
-print a + 5 + 2 / 3 > -50515;
+var a = 2;
+
+if (true) {
+    var a = 4;
+    print (a);
+}
 //a = 2 + 1;
 //print a;
 
