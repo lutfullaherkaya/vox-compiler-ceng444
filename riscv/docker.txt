@@ -1,0 +1,12 @@
+Get-Content Dockerfile | docker build .
+
+docker run f48a78236f94 sleep infinity
+
+docker ps
+
+docker exec -it f48a78236f94 bash
+
+
+docker run --mount type=bind,source="Z:\Mektep\41\ceng444 derleyici\vox-compiler-ceng444\src\lutfu-riscv-docker-temp",target=/lutfu-riscv-temp  f48a78236f94 sleep infinity
+
+
