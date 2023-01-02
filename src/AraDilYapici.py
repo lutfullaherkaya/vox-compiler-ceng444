@@ -370,13 +370,17 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
         if len(call.arguments) != param_count:
             cu.compilation_warning(f'Function {call.callee.name} expects {param_count} arguments, '
                                    f'but {len(call.arguments)} were given. Empty arguments are set to 0. '
-                                   f'Redundant arguments are short circuited.', call.callee.lineno)
+                                   f'Redundant arguments will not be evaluated.', call.callee.lineno)
         self._ara_dile_ekle(['arg_count', param_count])
-        # todo: fazla argumanlari hic evaluate etme, eksikleri de 0 yap
+        for i in range(param_count):
+            if i < len(call.arguments):
+                name_ad_ve_id = self.visit(call.arguments[i])
+                self._ara_dile_ekle(['arg', name_ad_ve_id, i])
+            else:
+                name_ad_ve_id = self.current_scope.generate_tmp()
+                self._ara_dile_ekle(['copy', name_ad_ve_id, 0])
+                self._ara_dile_ekle(['arg', name_ad_ve_id, i])
 
-        for i, arg in enumerate(call.arguments):
-            name_ad_ve_id = self.visit(arg)
-            self._ara_dile_ekle(['arg', name_ad_ve_id, i])
         ret_val_name_id_pair = self.current_scope.generate_tmp()
         self._ara_dile_ekle(['call', ret_val_name_id_pair, call.callee.name])
         return ret_val_name_id_pair

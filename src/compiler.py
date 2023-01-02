@@ -23,17 +23,15 @@ import sys
     - Reals in addition to integers (just like Javascript).
     - Garbage collection.
     - Runtime errors.
-    - Functions with more than 7 formal parameters.
+    ✓ Functions with more than 7 formal parameters.
     - Vectors can hold a mixture of types and other vectors.
     - Cool additional syntactic sugar (like list expressions in Python).
     
-    Eksik parametre kontrolü ve hatası
+    parametrelerden ayrıca local değişken yapmama gerek yok, direkt stackte var zaten parametreler (a reglerine sığmayan)
+    
     Optimizasyon belki
 
 """
-
-
-
 
 
 def get_global_type_name(var_name):
@@ -56,6 +54,7 @@ class AssemblyYapici:
             'call_vox_lib': self.cevir_call_vox_lib,
             'arg_vox_lib': self.cevir_arg_vox_lib,
             'call': self.cevir_call,
+            'arg_count': self.cevir_arg_count,
             'arg': self.cevir_arg,
             ''
             'copy': self.cevir_copy,
@@ -88,6 +87,7 @@ class AssemblyYapici:
             'bool': 2,
         }
         self.current_fun_callee_saved_regs = OrderedDict()
+        self.current_fun_non_reg_arg_count = 0
 
     def add_to_saved_regs(self, regs: Union[str, List[str]]):
         """
@@ -172,7 +172,18 @@ class AssemblyYapici:
 
         return asm
 
+    def cevir_arg_count(self, komut):
+        asm = []
+        non_reg_arg_count = komut[1] - 4
+        if non_reg_arg_count > 0:
+            self.current_fun_non_reg_arg_count = non_reg_arg_count
+            self.sp_extra_offset += 16 * non_reg_arg_count
+            asm.append(f'  addi sp, sp, -{16 * non_reg_arg_count}')
+
+        return asm
+
     def cevir_arg(self, komut):
+        # todo: optimizasyon: komut[1] int, bool, float olabilmeli
         arg_name_id = komut[1]
         arg_index = komut[2]
         asm = []
@@ -181,8 +192,10 @@ class AssemblyYapici:
                                            f'a{2 * arg_index}',
                                            f'a{2 * arg_index + 1}'))
         else:
-            # todo: implement more than 3 args
-            pass
+            non_reg_index = arg_index - 4
+            asm.extend(self.asm_var_to_reg(arg_name_id, 't0', 't1'))
+            asm.extend([f'  sd t0, {16 * non_reg_index}(sp)',
+                        f'  sd t1, {16 * non_reg_index + 8}(sp)'])
 
         return asm
 
@@ -206,7 +219,11 @@ class AssemblyYapici:
     def cevir_call(self, komut):
         ret_val_name_id = komut[1]
         func_name = komut[2]
-        asm = [f'  call {func_name}']
+        asm = [f'  call {func_name}',
+               f'  addi sp, sp, {16 * self.current_fun_non_reg_arg_count}']
+        self.sp_extra_offset -= 16 * self.current_fun_non_reg_arg_count
+        self.current_fun_non_reg_arg_count = 0
+
         if ret_val_name_id is not None:
             asm.extend(self.asm_reg_to_var('t0', ret_val_name_id, 'a0', 'a1'))
 
@@ -273,8 +290,13 @@ class AssemblyYapici:
                                            f'a{2 * param_index}',
                                            f'a{2 * param_index + 1}'))
         else:
-            # todo: implement more than 3 params
-            pass
+            non_reg_index = param_index - 4
+            asm.extend([f'  ld t1, {16 * non_reg_index}(fp)',
+                        f'  ld t2, {16 * non_reg_index + 8}(fp)'])
+            asm.extend(self.asm_reg_to_var('t0', param_name_id,
+                                           't1',
+                                           't2'))
+
 
         return asm
 
