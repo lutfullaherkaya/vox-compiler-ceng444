@@ -55,6 +55,7 @@ class AssemblyYapici:
         self.global_vars = global_vars
         self.func_activation_records: Dict[str, ActivationRecord] = func_activation_records
         self.sp_extra_offset = 0
+        self.fp_extra_offset = 0
         self.current_stack_size = 0
         self.current_fun_label = ''
         self.aradil_sozlugu = {
@@ -104,7 +105,7 @@ class AssemblyYapici:
         for reg in regs:
             if reg not in self.current_fun_callee_saved_regs:
                 self.current_fun_callee_saved_regs[reg] = True
-                self.sp_extra_offset += 8
+                self.fp_extra_offset += 8
 
     def asm_var_to_reg(self, var_name_id, type_reg=None, value_reg=None):
         # asm = [f'      # asm_var_to_reg(var:{var_name}, type_reg:{type_reg}, value_reg:{value_reg})']
@@ -255,7 +256,7 @@ class AssemblyYapici:
         self.add_to_saved_regs(['ra', 'fp'])
 
         self.current_stack_size = len(degisken_adresleri) * 16
-        total_stack_size = self.current_stack_size + self.sp_extra_offset
+        total_stack_size = self.current_stack_size + self.sp_extra_offset + self.fp_extra_offset
 
         asm = [f'',
                f'# fun {signature};',
@@ -287,13 +288,14 @@ class AssemblyYapici:
         return asm
 
     def cevir_endfun(self, komut):
-        total_stack_size = self.current_stack_size + self.sp_extra_offset
+        total_stack_size = self.current_stack_size + self.sp_extra_offset + self.fp_extra_offset
         asm = []
         for i, reg_to_save in enumerate(self.current_fun_callee_saved_regs):
             asm.append(f'  ld {reg_to_save}, {total_stack_size - 8 * (i + 1)}(sp)')
         asm.extend([f'  addi sp, sp, {total_stack_size}',
                     f'  ret'])
         self.sp_extra_offset = 0
+        self.fp_extra_offset = 0
         self.current_fun_callee_saved_regs = OrderedDict()
         return asm
 

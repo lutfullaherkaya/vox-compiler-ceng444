@@ -1,10 +1,10 @@
-//var temp;
-//fun f(a) {
-//    print a;
-//}
+var temp;
+fun f(a) {
+    print a;
+}
 
+temp = f(19);
 
-print 1;
 
 //fun f(a,b,c,d,e) {
 //    return a + b + c + d + e;
