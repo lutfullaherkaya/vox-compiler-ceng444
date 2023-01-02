@@ -1,5 +1,4 @@
 # https://github.com/bozsahin/ceng444
-# todo: pypy kullan
 import sys
 import misc
 

@@ -1,5 +1,4 @@
-# https://medium.com/swlh/risc-v-assembly-for-beginners-387c6cd02c49
-
+# hizli olmasi icin pypy kullanilabilir
 from typing import Dict, Optional, Union, List
 import ast_tools
 import misc
@@ -12,7 +11,7 @@ import sys
 """
     Eksikler:
     implement strings
-    Implement function parameters (a restriction of maximum 7 formal parameters is ok)
+    Implement function parameters (su an 3 tane degiskeni a0 a1 a2 a3 a4 a5 e koydum) (a restriction of maximum 7 formal parameters is ok)
     
     e. Implement vectors as an additional type to integers. Overload "+,-,*,/" for vectors of same size so that they do element-wise operations with the parallel instructions of the V extension. (10 pts)
     
@@ -34,12 +33,7 @@ import sys
 """
 
 
-def compilation_error(error):
-    sys.stderr.write('Compilation error: ' + error)
 
-
-def runtime_error(error):
-    sys.stderr.write('Runtime error: ' + error)
 
 
 def get_global_type_name(var_name):
@@ -63,6 +57,7 @@ class AssemblyYapici:
             'arg_vox_lib': self.cevir_arg_vox_lib,
             'call': self.cevir_call,
             'arg': self.cevir_arg,
+            ''
             'copy': self.cevir_copy,
             'global': self.cevir_global,
             'branch': self.cevir_branch,
@@ -123,7 +118,7 @@ class AssemblyYapici:
             if value_reg is not None:
                 asm.append(f'  ld {value_reg}, {get_global_value_name(var_name_id["name"])}')
         else:
-            compilation_error(f'Unknown variable {var_name_id["name"]}')
+            cu.compilation_error(f'Unknown variable {var_name_id["name"]}')
         return asm
 
     def asm_reg_to_var(self, temp_reg, var_name_id, type_reg=None, value_reg=None):
@@ -146,7 +141,7 @@ class AssemblyYapici:
             if value_reg is not None:
                 asm.append(f'  sd {value_reg}, 8({temp_reg})')
         else:
-            compilation_error(f'Unknown variable {var_name_id["name"]}')
+            cu.compilation_error(f'Unknown variable {var_name_id["name"]}')
         return asm
 
     def get_global_type_name(self, var_name):

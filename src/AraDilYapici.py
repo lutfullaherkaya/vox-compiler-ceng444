@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from typing import Dict, Optional, Union, List, Tuple, TypedDict
 from ast_tools import *
 import sys
+import compiler_utils as cu
 
 
 class NameIdPair(TypedDict):
@@ -135,7 +136,7 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
         super().__init__()
         self.current_scope: Optional[AraDilScope] = None
         self.func_activation_records: Dict[str, ActivationRecord] = {}
-        self.fun_decls = {}
+        self.fun_decls: Dict[str, FunDecl] = {}
         self.ara_dil_sozleri = []
         self._ara_dil_fonksiyon_tanim_sozleri = []
         self.labels = Labels()
@@ -365,6 +366,14 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
         return name_id
 
     def visit_Call(self, call: Call):
+        param_count = len(self.fun_decls[call.callee.name].params)
+        if len(call.arguments) != param_count:
+            cu.compilation_warning(f'Function {call.callee.name} expects {param_count} arguments, '
+                                   f'but {len(call.arguments)} were given. Empty arguments are set to 0. '
+                                   f'Redundant arguments are short circuited.', call.callee.lineno)
+        self._ara_dile_ekle(['arg_count', param_count])
+        # todo: fazla argumanlari hic evaluate etme, eksikleri de 0 yap
+
         for i, arg in enumerate(call.arguments):
             name_ad_ve_id = self.visit(arg)
             self._ara_dile_ekle(['arg', name_ad_ve_id, i])

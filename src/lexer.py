@@ -1,5 +1,5 @@
 # https://github.com/bozsahin/ceng444
-# todo: pypy kullan
+
 
 # Press Ctrl+F5 to execute it or replace it with your code.
 # Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.

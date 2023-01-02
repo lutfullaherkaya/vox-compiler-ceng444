@@ -1,9 +1,13 @@
 var temp;
-fun f(a) {
+fun f(a, b, c, d, e) {
     print a;
+    print b;
+    print c;
+    print d;
+    print e;
 }
 
-temp = f(19);
+temp = f(19, -1919, 191919, 123, 22);
 
 
 //fun f(a,b,c,d,e) {
