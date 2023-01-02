@@ -10,7 +10,6 @@ import sys
 
 """
     Eksikler:
-    Implement function parameters (su an 3 tane degiskeni a0 a1 a2 a3 a4 a5 e koydum) (a restriction of maximum 7 formal parameters is ok)
     
     e. Implement vectors as an additional type to integers. Overload "+,-,*,/" for vectors of same size so that they do element-wise operations with the parallel instructions of the V extension. (10 pts)
     
