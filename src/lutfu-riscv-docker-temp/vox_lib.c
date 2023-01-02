@@ -23,6 +23,10 @@ void __br_print__(long argc, BracketObject argv[]){
       else printf("false\n");
       break;
     }
+    case VOX_STRING: {
+      printf("%s\n", argv[0].value.string);
+      break;
+    }
   }
 
 }

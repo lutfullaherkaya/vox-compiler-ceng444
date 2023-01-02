@@ -10,7 +10,6 @@ import sys
 
 """
     Eksikler:
-    implement strings
     Implement function parameters (su an 3 tane degiskeni a0 a1 a2 a3 a4 a5 e koydum) (a restriction of maximum 7 formal parameters is ok)
     
     e. Implement vectors as an additional type to integers. Overload "+,-,*,/" for vectors of same size so that they do element-wise operations with the parallel instructions of the V extension. (10 pts)
@@ -27,8 +26,9 @@ import sys
     - Vectors can hold a mixture of types and other vectors.
     - Cool additional syntactic sugar (like list expressions in Python).
     
-    parametrelerden ayrıca local değişken yapmama gerek yok, direkt stackte var zaten parametreler (a reglerine sığmayan)
     
+    parametrelerden ayrıca local değişken yapmama gerek yok, direkt stackte var zaten parametreler (a reglerine sığmayan)
+    type checking lazım illa. 
     Optimizasyon belki
 
 """
@@ -43,9 +43,11 @@ def get_global_value_name(var_name):
 
 
 class AssemblyYapici:
-    def __init__(self, global_vars, func_activation_records: Dict[str, ActivationRecord]):
+    def __init__(self, global_vars, func_activation_records: Dict[str, ActivationRecord],
+                 string_to_label: OrderedDict):
         self.global_vars = global_vars
         self.func_activation_records: Dict[str, ActivationRecord] = func_activation_records
+        self.string_to_label: OrderedDict = string_to_label
         self.sp_extra_offset = 0
         self.fp_extra_offset = 0
         self.current_stack_size = 0
@@ -56,7 +58,6 @@ class AssemblyYapici:
             'call': self.cevir_call,
             'arg_count': self.cevir_arg_count,
             'arg': self.cevir_arg,
-            ''
             'copy': self.cevir_copy,
             'global': self.cevir_global,
             'branch': self.cevir_branch,
@@ -85,6 +86,7 @@ class AssemblyYapici:
             'int': 0,
             'vector': 1,
             'bool': 2,
+            'string': 3,
         }
         self.current_fun_callee_saved_regs = OrderedDict()
         self.current_fun_non_reg_arg_count = 0
@@ -230,7 +232,6 @@ class AssemblyYapici:
         return asm
 
     def cevir_copy(self, komut):
-
         asm = []
         if len(komut) < 3:
             asm.extend(self.asm_reg_to_var('t0', komut[1], 'zero', 'zero'))
@@ -242,6 +243,11 @@ class AssemblyYapici:
                 asm.extend([f'  li t1, {self.type_values["bool"]}',
                             f'  li t2, {int(komut[2])}'])
                 asm.extend(self.asm_reg_to_var('t0', komut[1], 't1', 't2'))
+            elif type(komut[2]) == str:
+                asm.extend([f'  li t1, {self.type_values["string"]}',
+                            f'  la t2, {self.string_to_label[komut[2]]}'])
+                asm.extend(self.asm_reg_to_var('t0', komut[1], 't1', 't2'))
+
             else:  # değişken parametre için
                 asm.extend(self.asm_var_to_reg(komut[2], 't0', 't1'))
                 asm.extend(self.asm_reg_to_var('t2', komut[1], 't0', 't1'))
@@ -296,7 +302,6 @@ class AssemblyYapici:
             asm.extend(self.asm_reg_to_var('t0', param_name_id,
                                            't1',
                                            't2'))
-
 
         return asm
 
@@ -441,7 +446,8 @@ class Compiler:
             for satir in on_soz:
                 asm_dosyasi.write(f'{satir}\n')
             asm_yapici = AssemblyYapici(self.ara_dil_yapici_visitor.global_vars,
-                                        self.ara_dil_yapici_visitor.func_activation_records)
+                                        self.ara_dil_yapici_visitor.func_activation_records,
+                                        self.ara_dil_yapici_visitor.string_to_label)
 
             for komut in self.ara_dil_yapici_visitor.ara_dil_sozleri:
                 if komut[0] != 'fun':
@@ -451,11 +457,14 @@ class Compiler:
                     asm_dosyasi.write('\n'.join(satirlar))
                     asm_dosyasi.write('\n')
 
-            if len(self.ara_dil_yapici_visitor.global_vars) > 0:
+            if len(self.ara_dil_yapici_visitor.global_vars) > 0 or len(self.ara_dil_yapici_visitor.string_to_label) > 0:
                 asm_dosyasi.write(f'\n  .data\n')
-                for global_name in self.ara_dil_yapici_visitor.global_vars:
-                    asm_dosyasi.write(f'{get_global_type_name(global_name)}:  .quad 0\n')
-                    asm_dosyasi.write(f'{get_global_value_name(global_name)}: .quad 0\n\n')
+            for global_name in self.ara_dil_yapici_visitor.global_vars:
+                asm_dosyasi.write(f'{get_global_type_name(global_name)}:   .quad 0\n')
+                asm_dosyasi.write(f'{get_global_value_name(global_name)}:  .quad 0\n\n')
+            for string_value, string_label in self.ara_dil_yapici_visitor.string_to_label.items():
+                # .ascii does not add a null terminator
+                asm_dosyasi.write(f'{string_label}:  .string "{string_value}"\n')
 
         return self
 

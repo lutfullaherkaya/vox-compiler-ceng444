@@ -8,13 +8,13 @@ def komut_stringi_yap(komut):
         if elem is not None:
             if isinstance(elem, dict) and 'name' in elem:  # is a variable of NameIdPair
                 var_name = elem['name']
-                id = elem['id']
-                if id == -1:
+                var_id = elem['id']
+                if var_id == -1:
                     args.append('global_' + var_name)
-                elif id == 0:
+                elif var_id == 0:
                     args.append(var_name)
-                elif id > 0:
-                    args.append(var_name + '-' + str(id))
+                elif var_id > 0:
+                    args.append(var_name + '-' + str(var_id))
             else:
                 args.append(str(elem))
 

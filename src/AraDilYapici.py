@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from dataclasses import dataclass
 from typing import Dict, Optional, Union, List, Tuple, TypedDict
 from ast_tools import *
@@ -107,6 +108,7 @@ class Labels:
             'for': 0,
             'and': 0,
             'or': 0,
+            'string': 0,
         }
         # .L for local label
 
@@ -130,6 +132,11 @@ class Labels:
         self.counts['or'] += 1
         return f'.L_short_or{self.counts["or"]}', f'.L_or{self.counts["or"]}'
 
+    def create_string(self):
+        self.counts['string'] += 1
+        return f'.L_string{self.counts["string"]}'
+
+
 
 class AraDilYapiciVisitor(ASTNodeVisitor):
     def __init__(self):
@@ -141,12 +148,16 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
         self._ara_dil_fonksiyon_tanim_sozleri = []
         self.labels = Labels()
         self.global_vars = {}
+        self.string_to_label = OrderedDict()
         self._fonksiyon_tanimlaniyor = False
         self.main_activation_record: ActivationRecord = ActivationRecord()
 
     def visit_SLiteral(self, sliteral: SLiteral):
-        # todo: implement
-        pass
+        # todo: optimisation: add seperate instructions for literals instead of putting them in a variable
+        self.string_to_label[sliteral.value] = self.labels.create_string()
+        name_id = self.current_scope.generate_tmp()
+        self._ara_dile_ekle([['copy', name_id, sliteral.value]])
+        return name_id
 
     def visit_Program(self, program: Program):
         # todo: implement

@@ -7,11 +7,13 @@ void _br_vector_vector_add(long* vector1, long* vector2, long *result_vector, lo
 #define VOX_INT 0
 #define VOX_VECTOR 1
 #define VOX_BOOL 2
+#define VOX_STRING 3
 
 typedef union BracketValue {
-  long integer; // 0 vector 1 integer galiba
+  long integer;
   long* vector;
   long boolean;
+  char* string;
 } BracketValue;
 
 typedef struct BracketObject {
