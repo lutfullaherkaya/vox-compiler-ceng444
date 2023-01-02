@@ -5,6 +5,7 @@ import ast_tools
 import misc
 from AraDilYapici import AraDilYapiciVisitor
 from AraDilYapici import ActivationRecord
+from collections import OrderedDict
 import compiler_utils as cu
 import sys
 
@@ -32,6 +33,7 @@ import sys
 
 """
 
+
 def compilation_error(error):
     sys.stderr.write('Compilation error: ' + error)
 
@@ -56,37 +58,53 @@ class AssemblyYapici:
         self.current_stack_size = 0
         self.current_fun_label = ''
         self.aradil_sozlugu = {
-            'call': self.call_den_asm_ye,
-            'param': self.param_dan_asm_ye,
-            'copy': self.copy_den_asm_ye,
-            'global': self.global_den_asm_ye,
-            'branch': self.branch_den_asm_ye,
-            'branch_if_true': self.branch_if_true_den_asm_ye,
-            'branch_if_false': self.branch_if_false_den_asm_ye,
-            'label': self.label_den_asm_ye,
-            'fun': self.fun_den_asm_ye,
-            'ret': self.ret_den_asm_ye,
-            'endfun': self.endfun_den_asm_ye,
-            '+': self.dortislem_den_asm_ye,
-            '-': self.dortislem_den_asm_ye,
-            '*': self.dortislem_den_asm_ye,
-            '/': self.dortislem_den_asm_ye,
-            'and': self.mantiksal_den_asm_ye,
-            'or': self.mantiksal_den_asm_ye,
-            '!': self.mantiksal_den_asm_ye,
-            '<': self.karsilastirma_dan_asm_ye,
-            '>': self.karsilastirma_dan_asm_ye,
-            '<=': self.karsilastirma_dan_asm_ye,
-            '>=': self.karsilastirma_dan_asm_ye,
-            '==': self.karsilastirma_dan_asm_ye,
-            '!=': self.karsilastirma_dan_asm_ye,
-
+            'call_vox_lib': self.cevir_call_vox_lib,
+            'arg_vox_lib': self.cevir_arg_vox_lib,
+            'call': self.cevir_call,
+            'arg': self.cevir_arg,
+            'copy': self.cevir_copy,
+            'global': self.cevir_global,
+            'branch': self.cevir_branch,
+            'branch_if_true': self.cevir_branch_if_true,
+            'branch_if_false': self.cevir_branch_if_false,
+            'label': self.cevir_label,
+            'fun': self.cevir_fun,
+            'param': self.cevir_param,
+            'ret': self.cevir_ret,
+            'endfun': self.cevir_endfun,
+            '+': self.ceviriler_dortislem,
+            '-': self.ceviriler_dortislem,
+            '*': self.ceviriler_dortislem,
+            '/': self.ceviriler_dortislem,
+            'and': self.ceviriler_mantiksal,
+            'or': self.ceviriler_mantiksal,
+            '!': self.ceviriler_mantiksal,
+            '<': self.ceviriler_karsilastirma,
+            '>': self.ceviriler_karsilastirma,
+            '<=': self.ceviriler_karsilastirma,
+            '>=': self.ceviriler_karsilastirma,
+            '==': self.ceviriler_karsilastirma,
+            '!=': self.ceviriler_karsilastirma,
         }
         self.type_values = {
             'int': 0,
             'vector': 1,
             'bool': 2,
         }
+        self.current_fun_callee_saved_regs = OrderedDict()
+
+    def add_to_saved_regs(self, regs: Union[str, List[str]]):
+        """
+
+        :param regs:registers to be saved when declaring a function and restored when exiting
+        :return:
+        """
+        if isinstance(regs, str):
+            regs = [regs]
+        for reg in regs:
+            if reg not in self.current_fun_callee_saved_regs:
+                self.current_fun_callee_saved_regs[reg] = True
+                self.sp_extra_offset += 8
 
     def asm_var_to_reg(self, var_name_id, type_reg=None, value_reg=None):
         # asm = [f'      # asm_var_to_reg(var:{var_name}, type_reg:{type_reg}, value_reg:{value_reg})']
@@ -108,6 +126,9 @@ class AssemblyYapici:
         return asm
 
     def asm_reg_to_var(self, temp_reg, var_name_id, type_reg=None, value_reg=None):
+        """
+        :param temp_reg: only used for storing to global variables
+        """
         # asm = [f'      # asm_reg_to_var(tmp:{temp_reg}, var:{var_name}, type_reg:{type_reg}, value_reg:{value_reg})']
         asm = []
         type_addr = self._type_addr(var_name_id)
@@ -139,7 +160,7 @@ class AssemblyYapici:
         else:
             return f'ERROR! Unknown IL {komut}'
 
-    def param_dan_asm_ye(self, komut):
+    def cevir_arg_vox_lib(self, komut):
         self.sp_extra_offset += 16
         asm = ['  addi sp, sp, -16']
 
@@ -153,10 +174,23 @@ class AssemblyYapici:
             asm.extend([f'  sd t0, (sp)',
                         f'  sd t1, 8(sp)'])
 
-        return '\n'.join(asm) + '\n'
+        return asm
 
-    # todo
-    def call_den_asm_ye(self, komut):
+    def cevir_arg(self, komut):
+        arg_name_id = komut[1]
+        arg_index = komut[2]
+        asm = []
+        if arg_index <= 3:
+            asm.extend(self.asm_var_to_reg(arg_name_id,
+                                           f'a{2 * arg_index}',
+                                           f'a{2 * arg_index + 1}'))
+        else:
+            # todo: implement more than 3 args
+            pass
+
+        return asm
+
+    def cevir_call_vox_lib(self, komut):
         asm = ['  mv a1, sp']
         if len(komut) > 3:
             # todo: implement func args
@@ -171,9 +205,18 @@ class AssemblyYapici:
         if komut[1] is not None:
             asm.extend(self.asm_reg_to_var('t0', komut[1], 'a0', 'a1'))
 
-        return '\n'.join(asm) + '\n'
+        return asm
 
-    def copy_den_asm_ye(self, komut):
+    def cevir_call(self, komut):
+        ret_val_name_id = komut[1]
+        func_name = komut[2]
+        asm = [f'  call {func_name}']
+        if ret_val_name_id is not None:
+            asm.extend(self.asm_reg_to_var('t0', ret_val_name_id, 'a0', 'a1'))
+
+        return asm
+
+    def cevir_copy(self, komut):
 
         asm = []
         if len(komut) < 3:
@@ -190,57 +233,83 @@ class AssemblyYapici:
                 asm.extend(self.asm_var_to_reg(komut[2], 't0', 't1'))
                 asm.extend(self.asm_reg_to_var('t2', komut[1], 't0', 't1'))
 
-        return '\n'.join(asm) + '\n'
+        return asm
 
-    def global_den_asm_ye(self, komut):
+    def cevir_global(self, komut):
         # Compiler sınıfı oluşturur globalleri
-        return ''
+        return []
 
-    def branch_den_asm_ye(self, komut):
-        return f'  j {komut[1]}\n'
+    def cevir_branch(self, komut):
+        return [f'  j {komut[1]}']
 
-    def label_den_asm_ye(self, komut):
-        return f'{komut[1]}:\n'
+    def cevir_label(self, komut):
+        return [f'{komut[1]}:']
 
-    def fun_den_asm_ye(self, komut):
+    def cevir_fun(self, komut):
         label = komut[1]
         signature = komut[2]
+        param_count = komut[3]
+
         self.current_fun_label = label
         degisken_adresleri = self.func_activation_records[label].degisken_goreli_adresleri
-        self.current_stack_size = len(degisken_adresleri) * 16 + 8
+        self.add_to_saved_regs(['ra', 'fp'])
+
+        self.current_stack_size = len(degisken_adresleri) * 16
+        total_stack_size = self.current_stack_size + self.sp_extra_offset
+
         asm = [f'',
                f'# fun {signature};',
-               f'{label}:\n',
-               f'  addi sp, sp, -{self.current_stack_size}',
-               f'  sd ra, {self.current_stack_size - 8}(sp)']  # caller saved oldugu icin stacke kaydediyoruz
+               f'{label}:',
+               f'  addi sp, sp, -{total_stack_size}']
 
-        return '\n'.join(asm) + '\n'
+        for i, reg_to_save in enumerate(self.current_fun_callee_saved_regs):
+            asm.append(f'  sd {reg_to_save}, {total_stack_size - 8 * (i + 1)}(sp)')
+        asm.append(f'  addi fp, sp, {total_stack_size}')
 
-    def ret_den_asm_ye(self, komut):
+        return asm
+
+    def cevir_param(self, komut):
+        param_name_id = komut[1]
+        param_index = komut[2]
+        asm = []
+        if param_index <= 3:
+            asm.extend(self.asm_reg_to_var('t0', param_name_id,
+                                           f'a{2 * param_index}',
+                                           f'a{2 * param_index + 1}'))
+        else:
+            # todo: implement more than 3 params
+            pass
+
+        return asm
+
+    def cevir_ret(self, komut):
         asm = self.asm_var_to_reg(komut[1], 'a0', 'a1')
-        return '\n'.join(asm) + '\n'
+        return asm
 
-    def endfun_den_asm_ye(self, komut):
+    def cevir_endfun(self, komut):
         total_stack_size = self.current_stack_size + self.sp_extra_offset
-        asm = [f'  ld ra, {total_stack_size - 8}(sp)',  # caller saved oldugu icin stackten cekiyoruz
-               f'  addi sp, sp, {total_stack_size}',
-               f'  ret']
+        asm = []
+        for i, reg_to_save in enumerate(self.current_fun_callee_saved_regs):
+            asm.append(f'  ld {reg_to_save}, {total_stack_size - 8 * (i + 1)}(sp)')
+        asm.extend([f'  addi sp, sp, {total_stack_size}',
+                    f'  ret'])
         self.sp_extra_offset = 0
-        return '\n'.join(asm) + '\n'
+        self.current_fun_callee_saved_regs = OrderedDict()
+        return asm
 
-    def branch_if_true_den_asm_ye(self, komut):
+    def cevir_branch_if_true(self, komut):
         asm = []
         asm.extend(self.asm_var_to_reg(komut[1], None, 't0'))
         asm.extend([f'  bne t0, zero, {komut[2]}'])
-        return '\n'.join(asm) + '\n'
+        return asm
 
-    def branch_if_false_den_asm_ye(self, komut):
+    def cevir_branch_if_false(self, komut):
         asm = []
         asm.extend(self.asm_var_to_reg(komut[1], None, 't0'))
         asm.extend([f'  beq t0, zero, {komut[2]}'])
-        return '\n'.join(asm) + '\n'
+        return asm
 
-    def dortislem_den_asm_ye(self, komut):
+    def ceviriler_dortislem(self, komut):
         # assuming type is 0 (int)
         result_name = komut[1]
         operand0_name = komut[2]
@@ -259,9 +328,9 @@ class AssemblyYapici:
         asm.extend(self.asm_var_to_reg(operand1_name, None, 't1'))
         asm.extend([f'  {islem} t0, t0, t1'])
         asm.extend(self.asm_reg_to_var('t1', result_name, 'zero', 't0'))
-        return '\n'.join(asm) + '\n'
+        return asm
 
-    def mantiksal_den_asm_ye(self, komut):
+    def ceviriler_mantiksal(self, komut):
         # assuming type is 3 (bool)
         result_name = komut[1]
         operand0_name = komut[2]
@@ -278,13 +347,13 @@ class AssemblyYapici:
         asm.extend([f'  li t2, {self.type_values["bool"]}'])
         asm.extend(self.asm_reg_to_var('t1', result_name, 't2', 't0'))
 
-        return '\n'.join(asm) + '\n'
+        return asm
 
-    def karsilastirma_dan_asm_ye(self, komut):
+    def ceviriler_karsilastirma(self, komut):
         if komut[0] == '>':
-            return self.karsilastirma_dan_asm_ye(['<', komut[1], komut[3], komut[2]])
+            return self.ceviriler_karsilastirma(['<', komut[1], komut[3], komut[2]])
         elif komut[0] == '>=':
-            return self.karsilastirma_dan_asm_ye(['<=', komut[1], komut[3], komut[2]])
+            return self.ceviriler_karsilastirma(['<=', komut[1], komut[3], komut[2]])
 
         # assuming type is 0 (int)
         result_name = komut[1]
@@ -308,7 +377,7 @@ class AssemblyYapici:
 
         asm.extend([f'  li t1, {self.type_values["bool"]}'])
         asm.extend(self.asm_reg_to_var('t0', result_name, 't1', 't2'))
-        return '\n'.join(asm) + '\n'
+        return asm
 
     def _type_addr(self, place):
         degisken_adresleri = self.func_activation_records[self.current_fun_label].degisken_goreli_adresleri
@@ -358,7 +427,10 @@ class Compiler:
             for komut in self.ara_dil_yapici_visitor.ara_dil_sozleri:
                 if komut[0] != 'fun':
                     asm_dosyasi.write('            # ' + cu.komut_stringi_yap(komut) + '\n')
-                asm_dosyasi.write(asm_yapici.aradilden_asm(komut))
+                satirlar = asm_yapici.aradilden_asm(komut)
+                if satirlar:
+                    asm_dosyasi.write('\n'.join(satirlar))
+                    asm_dosyasi.write('\n')
 
             if len(self.ara_dil_yapici_visitor.global_vars) > 0:
                 asm_dosyasi.write(f'\n  .data\n')

@@ -1,17 +1,32 @@
-var toplam = 0;
-var temp = 0;
-fun yuze_kadar_toplama_ekle() {
-    if (toplam < 100) {
-        toplam = toplam + 1;
-        temp = yuze_kadar_toplama_ekle();
-    }
-}
+//var temp;
+//fun f(a) {
+//    print a;
+//}
 
-print yuze_kadar_toplama_ekle();
-print toplam;
+
+print 1;
+
+//fun f(a,b,c,d,e) {
+//    return a + b + c + d + e;
+//}
+
+
+//var toplam = 0;
+//var temp = 0;
+//var a = 123;
+//fun yuze_kadar_toplama_ekle() {
+//    var temp = 5;
+//    if (toplam < 100) {
+//        toplam = toplam + 1;
+//        temp = yuze_kadar_toplama_ekle();
+//    }
+//}
+//
+//print yuze_kadar_toplama_ekle();
+//print temp;
 //a = 2 + 1;
 //print a;
-
+//
 //if (2 + 2 <= 4) {
 //    if (#a) {
 //        print 1;

@@ -149,7 +149,7 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
 
     def visit_Program(self, program: Program):
         # todo: implement
-        self._ara_dile_ekle(['fun', 'main', 'main()'])
+        self._ara_dile_ekle(['fun', 'main', 'main()', 0])
 
         for fundecl in program.fun_decls:
             self.func_activation_records[fundecl.identifier.name] = ActivationRecord()
@@ -207,16 +207,22 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
     def visit_FunDecl(self, fundecl: FunDecl):
         self._fonksiyon_tanimlaniyor = True
         func_label = fundecl.identifier.name
-        self._ara_dile_ekle(['fun', func_label, self.get_func_signature(fundecl)])
+        self._ara_dile_ekle(['fun', func_label, self.get_func_signature(fundecl), len(fundecl.params)])
 
         main_scope = self.current_scope
 
         # here we cut the scope tree. function cant see caller scope.
         # since globals are not in any scope, they are hidden from all functions here but
         # seeing globals is handled in compiler part.
-        with AraDilScope(None, fundecl.params, self.func_activation_records[func_label]) as func_scope:
+        with AraDilScope(None, None, self.func_activation_records[func_label]) as func_scope:
             self.current_scope = func_scope
+
+            for i, param in enumerate(fundecl.params):
+                degisken_ad_ve_id = self.current_scope.add(param)
+                self._ara_dile_ekle(['param', degisken_ad_ve_id, i])
+
             self.visit(fundecl.body)
+
             self.current_scope = main_scope
         self._ara_dile_ekle(['endfun'])
         self._fonksiyon_tanimlaniyor = False
@@ -273,8 +279,8 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
             self.current_scope = block_scope.parent
 
     def visit_Print(self, printt: Print):
-        self._ara_dile_ekle([['param', self.visit(printt.expr)],
-                             ['call', None, '__br_print__', 1]])
+        self._ara_dile_ekle([['arg_vox_lib', self.visit(printt.expr)],
+                             ['call_vox_lib', None, '__br_print__', 1]])
 
     def visit_IfElse(self, ifelse: IfElse):
         endif_label, endelse_label = self.labels.create_endifelse()
@@ -359,12 +365,11 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
         return name_id
 
     def visit_Call(self, call: Call):
+        for i, arg in enumerate(call.arguments):
+            name_ad_ve_id = self.visit(arg)
+            self._ara_dile_ekle(['arg', name_ad_ve_id, i])
         ret_val_name_id_pair = self.current_scope.generate_tmp()
         self._ara_dile_ekle(['call', ret_val_name_id_pair, call.callee.name])
-
-        # todo: implement args
-        for arg in call.arguments:
-            self.visit(arg)
         return ret_val_name_id_pair
 
     def binary_op(self, binary: Union[ABinary, LBinary, Comparison]) -> NameIdPair:
