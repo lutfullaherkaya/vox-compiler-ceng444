@@ -47,7 +47,7 @@ main:
             # global d
             # copy .tmp3, bu
   li t1, 3
-  la t2, .L_string7
+  la t2, .L_string1
   sd t1, 48(sp)
   sd t2, 56(sp)
             # vector_set global_d, 0, .tmp3
@@ -59,7 +59,7 @@ main:
   sd t1, 8(t2)
             # copy .tmp4, bir
   li t1, 3
-  la t2, .L_string8
+  la t2, .L_string2
   sd t1, 64(sp)
   sd t2, 72(sp)
             # vector_set global_d, 1, .tmp4
@@ -83,7 +83,7 @@ main:
   sd t1, 8(t2)
             # copy .tmp6, arrayidir
   li t1, 3
-  la t2, .L_string10
+  la t2, .L_string4
   sd t1, 96(sp)
   sd t2, 104(sp)
             # vector_set global_d, 3, .tmp6
@@ -95,7 +95,7 @@ main:
   sd t1, 8(t2)
             # copy .tmp7, \n
   li t1, 3
-  la t2, .L_string11
+  la t2, .L_string5
   sd t1, 112(sp)
   sd t2, 120(sp)
             # vector_set global_d, 4, .tmp7
@@ -156,7 +156,7 @@ main:
   sd t1, 8(t2)
             # copy .tmp11, string
   li t1, 3
-  la t2, .L_string9
+  la t2, .L_string6
   sd t1, 248(sp)
   sd t2, 256(sp)
             # vector_set c, 2, .tmp11
@@ -175,7 +175,7 @@ main:
   sd t0, 280(sp)
             # copy .tmp12, bu
   li t1, 3
-  la t2, .L_string7
+  la t2, .L_string1
   sd t1, 352(sp)
   sd t2, 360(sp)
             # vector_set d, 0, .tmp12
@@ -187,7 +187,7 @@ main:
   sd t1, 8(t2)
             # copy .tmp13, bir
   li t1, 3
-  la t2, .L_string8
+  la t2, .L_string2
   sd t1, 368(sp)
   sd t2, 376(sp)
             # vector_set d, 1, .tmp13
@@ -199,7 +199,7 @@ main:
   sd t1, 8(t2)
             # copy .tmp14, string
   li t1, 3
-  la t2, .L_string9
+  la t2, .L_string6
   sd t1, 384(sp)
   sd t2, 392(sp)
             # vector_set d, 2, .tmp14
@@ -211,7 +211,7 @@ main:
   sd t1, 8(t2)
             # copy .tmp15, arrayidir
   li t1, 3
-  la t2, .L_string10
+  la t2, .L_string4
   sd t1, 400(sp)
   sd t2, 408(sp)
             # vector_set d, 3, .tmp15
@@ -312,7 +312,7 @@ main:
   addi sp, sp, 16
             # copy .tmp22, \n
   li t1, 3
-  la t2, .L_string11
+  la t2, .L_string5
   sd t1, 528(sp)
   sd t2, 536(sp)
             # arg_vox_lib .tmp22
@@ -433,9 +433,9 @@ global_d_vector:
 global_i_type:   .quad 0
 global_i_value:  .quad 0
 
-.L_string7:  .string "bu"
-.L_string8:  .string "bir"
+.L_string1:  .string "bu"
+.L_string2:  .string "bir"
 .L_string3:  .string "global"
-.L_string10:  .string "arrayidir"
-.L_string11:  .string "\n"
-.L_string9:  .string "string"
+.L_string4:  .string "arrayidir"
+.L_string5:  .string "\n"
+.L_string6:  .string "string"

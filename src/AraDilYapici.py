@@ -161,7 +161,8 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
 
     def visit_SLiteral(self, sliteral: SLiteral):
         # todo: optimisation: add seperate instructions for literals instead of putting them in a variable
-        self.global_string_to_label[sliteral.value] = self.labels.create_string()
+        if sliteral.value not in self.global_string_to_label:
+            self.global_string_to_label[sliteral.value] = self.labels.create_string()
         name_id = self.current_scope.generate_tmp()
         self._ara_dile_ekle([['copy', name_id, sliteral.value]])
         return name_id
