@@ -2,33 +2,38 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-void __vox_print_without_newline__(long argc, VoxObject argv[]) {
-    switch (argv[0].type) {
+void __vox_print_without_newline__(VoxObject *object, int print_str_quotes) {
+    switch (object->type) {
         case VOX_INT: {
-            printf("%ld", argv[0].value.integer);
+            printf("%ld", object->value.integer);
             break;
         }
         case VOX_VECTOR: {
-            VoxObject *vector = argv[0].value.vector;
-            long length = *(((long *) argv[0].value.vector) - 1);
+            VoxObject *vector = object->value.vector;
+            long length = *(((long *) object->value.vector) - 1);
 
 
             putchar('[');
             for (long i = 0; i < length - 1; i++) {
-                __vox_print_without_newline__(1, &vector[i]);
+                __vox_print_without_newline__(&vector[i], 1);
                 printf(", ");
             }
-            __vox_print_without_newline__(1, &vector[length - 1]);
+            __vox_print_without_newline__(&vector[length - 1], 1);
             putchar(']');
             break;
         }
         case VOX_BOOL: {
-            if (argv[0].value.boolean) printf("true");
+            if (object->value.boolean) printf("true");
             else printf("false");
             break;
         }
         case VOX_STRING: {
-            printf("%s", argv[0].value.string);
+            if (print_str_quotes) {
+                printf("\"%s\"", object->value.string);
+            } else {
+                printf("%s", object->value.string);
+            }
+
             break;
         }
     }
@@ -36,7 +41,7 @@ void __vox_print_without_newline__(long argc, VoxObject argv[]) {
 }
 
 void __vox_print__(long argc, VoxObject argv[]) {
-    __vox_print_without_newline__(argc, argv);
+    __vox_print_without_newline__(argv, 0);
     putchar('\n');
 }
 

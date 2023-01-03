@@ -1,10 +1,25 @@
-var c = [1, 2, 3];
-    print c;
+var c = [1, 22, 3];
+var d = ["bu", "bir", "global", "arrayidir", "\n"];
+var i;
+print c;
+
 if (true) {
-    var c = [1, 2, 3];
+    var c = [1, 2, "string"];
+    var d = ["bu", "bir", "string", "arrayidir"];
+    var i;
     print c;
+
+    for (i = 0; i < 4; i = i + 1) {
+        print d[i];
+    }
+    print d;
+    print "\n";
 }
 
+for (i = 0; i < 4; i = i + 1) {
+    print d[i];
+}
+print d;
 //var temp;
 //fun a(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13) {
 //    print p1;

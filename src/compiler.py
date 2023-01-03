@@ -18,6 +18,7 @@ https://github.com/riscv-non-isa/riscv-asm-manual/blob/master/riscv-asm.md
     tutuyorum ki her vector[i] dediğimde i +1 işlemini yapmayayım.
     değişken structuna yazsam olabilirdi, mesela 4 byte type deyip 4 byte vector length diyebilirdim ama demedim. 
     not: vektörler type ve değer çifti tutar, doğal olarak heterojen olurlar.
+    
     Eksikler:
     
     e. Implement vectors as an additional type to integers. Overload "+,-,*,/" for vectors of same size so that they do element-wise operations with the parallel instructions of the V extension. (10 pts)
@@ -172,6 +173,17 @@ class AssemblyYapici:
             cu.compilation_error(f'Unknown variable {var_name_id["name"]}')
         return asm
 
+    def asm_get_vector_elm_addr(self, tmp_reg, addr_reg, vector_name_id, index):
+        asm = []
+        asm.extend(self.asm_var_to_reg(vector_name_id, None, addr_reg))
+        if type(index) == int:
+            asm.extend([f'  addi {addr_reg}, {addr_reg}, {index * 16}'])
+        else:
+            asm.extend(self.asm_var_to_reg(index, None, tmp_reg))
+            asm.extend([f'  slli {tmp_reg}, {tmp_reg}, 4',
+                        f'  add {addr_reg}, {addr_reg}, {tmp_reg}'])
+        return asm
+
     def aradilden_asm(self, komut):
         if komut[0] in self.aradil_sozlugu:
             return self.aradil_sozlugu[komut[0]](komut)
@@ -299,10 +311,27 @@ class AssemblyYapici:
         return asm
 
     def cevir_vector_set(self, komut):
-        pass
+        vector_name_id = komut[1]
+        index = komut[2]
+        expr_name_id = komut[3]
+        asm = []
+        asm.extend(self.asm_var_to_reg(expr_name_id, 't0', 't1'))
+        asm.extend(self.asm_get_vector_elm_addr('t3', 't2', vector_name_id, index))
+        asm.extend([f'  sd t0, 0(t2)',
+                    f'  sd t1, 8(t2)'])
+        return asm
 
     def cevir_vector_get(self, komut):
-        pass
+        result_name_id = komut[1]
+        vector_name_id = komut[2]
+        index = komut[3]
+        asm = []
+        asm.extend(self.asm_get_vector_elm_addr('t0', 't1', vector_name_id, index))
+        asm.extend([f'  ld t0, 0(t1)',
+                    f'  ld t1, 8(t1)'])
+        asm.extend(self.asm_reg_to_var('t2', result_name_id, 't0', 't1'))
+
+        return asm
 
     def cevir_global(self, komut):
         # Compiler sınıfı oluşturur globalleri

@@ -25,7 +25,7 @@ typedef struct VoxObject {
 } VoxObject;
 
 void __vox_print__(long argc, VoxObject argv[]);
-void __vox_print_without_newline__(long argc, VoxObject argv[]);
+void __vox_print_without_newline__(VoxObject* object, int print_str_quotes);
 
 VoxObject __br_initvector__(long argc, VoxObject argv[]);
 

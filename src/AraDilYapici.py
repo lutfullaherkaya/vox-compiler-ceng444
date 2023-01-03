@@ -362,6 +362,7 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
         index = self.visit(getvector.vector_index)
         result = self.current_scope.generate_tmp()
         self._ara_dile_ekle([['vector_get', result, vector, index]])
+        return result
 
     def visit_Variable(self, variable: Variable):
         name_id_pair = self.current_scope.get_name_id_pair(variable.identifier)
