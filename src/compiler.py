@@ -320,10 +320,9 @@ class AssemblyYapici:
         param_count = komut[3]
 
         self.current_fun_label = label
-        degisken_adresleri = self.func_activation_records[label].degisken_goreli_adresleri
         self.add_to_saved_regs(['ra', 'fp'])
 
-        self.current_stack_size = len(degisken_adresleri) * 16
+        self.current_stack_size = self.func_activation_records[label].son_goreli_adres
         total_stack_size = self.current_stack_size + self.sp_extra_offset + self.fp_extra_offset
 
         asm = [f'',
@@ -476,7 +475,7 @@ class AssemblyYapici:
         degisken_adresleri = self.func_activation_records[self.current_fun_label].degisken_goreli_adresleri
         key = (place['name'], place['id'])
         if key in degisken_adresleri:
-            return str(self.sp_extra_offset + degisken_adresleri[key] + 24) + '(sp)'
+            return str(self.sp_extra_offset + degisken_adresleri[key] + 16) + '(sp)'
         else:
             return None
 
@@ -487,7 +486,7 @@ class AssemblyYapici:
         degisken_adresleri = self.func_activation_records[self.current_fun_label].degisken_goreli_adresleri
         key = (place['name'], place['id'])
         if key in degisken_adresleri:
-            return self.sp_extra_offset + degisken_adresleri[key] + 32
+            return self.sp_extra_offset + degisken_adresleri[key] + 24
         else:
             return None
 

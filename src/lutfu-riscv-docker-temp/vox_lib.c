@@ -2,105 +2,107 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-void __br_print__(long argc, BracketObject argv[]){
-  switch (argv[0].type) {
-    case VOX_INT: {
-      printf("%ld\n", argv[0].value.integer);
+void __vox_print_without_newline__(long argc, VoxObject argv[]) {
+    switch (argv[0].type) {
+        case VOX_INT: {
+            printf("%ld", argv[0].value.integer);
+            break;
+        }
+        case VOX_VECTOR: {
+            VoxObject *vector = argv[0].value.vector;
+            long length = *(((long *) argv[0].value.vector) - 1);
 
-      break;
-    }
-    case VOX_VECTOR: {
-      BracketObject* vector = argv[0].value.vector;
-      long length = *(((long*)argv[0].value.vector)-1); // vector length is stored just before first element of vector.
 
-      putchar('[');
-      for (long i = 0; i < length-1; i++) {
-        __br_print__(1, &vector[i]);
-        printf(", ");
-      };
-      __br_print__(1, &vector[length-1]);
-      printf("]\n");
-      break;
+            putchar('[');
+            for (long i = 0; i < length - 1; i++) {
+                __vox_print_without_newline__(1, &vector[i]);
+                printf(", ");
+            }
+            __vox_print_without_newline__(1, &vector[length - 1]);
+            putchar(']');
+            break;
+        }
+        case VOX_BOOL: {
+            if (argv[0].value.boolean) printf("true");
+            else printf("false");
+            break;
+        }
+        case VOX_STRING: {
+            printf("%s", argv[0].value.string);
+            break;
+        }
     }
-    case VOX_BOOL: {
-      if (argv[0].value.boolean) printf("true\n");
-      else printf("false\n");
-      break;
-    }
-    case VOX_STRING: {
-      printf("%s\n", argv[0].value.string);
-      break;
-    }
-  }
 
 }
 
-BracketObject __br_initvector__(long argc,  BracketObject argv[]){
-  BracketObject return_object;
-  return_object.type = 1;
-
-  long* vector = (long* )malloc((argc+1)*sizeof(long));
-  vector[0] = argc;
-
-  for(long i = 1; i < argc+1; i++){
-    if(argv[i-1].type){
-      printf("Trying to initialize a nested array on index %d. This is the culprit:\n",i-1);
-      __br_print__(1, &(argv[i-1]));
-      puts("Runtime error :(");
-      exit(1);
-    }
-
-    vector[i] = argv[i-1].value.integer; 
-  }
-  
-  return_object.value.vector = vector;
-  return return_object;
+void __vox_print__(long argc, VoxObject argv[]) {
+    __vox_print_without_newline__(argc, argv);
+    putchar('\n');
 }
 
-BracketObject __br_add__(long argc, BracketObject argv[]){
-  BracketObject return_object;
-  return_object.type = argv[0].type || argv[1].type;
+VoxObject __br_initvector__(long argc, VoxObject argv[]) {
+    VoxObject return_object;
+    return_object.type = 1;
 
-  if(return_object.type){
-    if(argv[0].type && argv[1].type){
-      long* vector1 = argv[0].value.vector;
-      long* vector2 = argv[1].value.vector;
+    long *vector = (long *) malloc((argc + 1) * sizeof(long));
+    vector[0] = argc;
 
-      if(vector1[0] != vector2[0]){
-        puts("Vector sizes of");
-        __br_print__(1, argv);
-        __br_print__(1, &(argv[1]));
-        puts("do not match. Runtime error :(");
-        exit(1);
-      }
+    for (long i = 1; i < argc + 1; i++) {
+        if (argv[i - 1].type) {
+            printf("Trying to initialize a nested array on index %d. This is the culprit:\n", i - 1);
+            __vox_print__(1, &(argv[i - 1]));
+            puts("Runtime error :(");
+            exit(1);
+        }
 
-      long* result_vector = (long* )malloc((vector1[0]+1)*sizeof(long));
-      result_vector[0] = vector1[0];
-
-      _br_vector_vector_add(vector1+1, vector2+1, result_vector+1, vector1[0]);
-
-      return_object.value.vector = result_vector;
+        vector[i] = argv[i - 1].value.integer;
     }
-    else if(argv[0].type){
-      long* vector = argv[0].value.vector;
-      long* result_vector = (long* )malloc((vector[0]+1)*sizeof(long));
-      result_vector[0] = vector[0];
 
-      _br_vector_integer_add(vector+1, argv[1].value.integer, result_vector+1, vector[0]);
+    return_object.value.vector = vector;
+    return return_object;
+}
 
-      return_object.value.vector = result_vector;
-    }
-    else{
-      long* vector = argv[1].value.vector;
-      long* result_vector = (long* )malloc((vector[0]+1)*sizeof(long));
-      result_vector[0] = vector[0];
+VoxObject __br_add__(long argc, VoxObject argv[]) {
+    VoxObject return_object;
+    return_object.type = argv[0].type || argv[1].type;
 
-      _br_vector_integer_add(vector+1, argv[0].value.integer, result_vector+1,  vector[0]);
+    if (return_object.type) {
+        if (argv[0].type && argv[1].type) {
+            long *vector1 = argv[0].value.vector;
+            long *vector2 = argv[1].value.vector;
 
-      return_object.value.vector = result_vector;      
-    }
-  }
-  else return_object.value.integer = argv[0].value.integer + argv[1].value.integer;
+            if (vector1[0] != vector2[0]) {
+                puts("Vector sizes of");
+                __vox_print__(1, argv);
+                __vox_print__(1, &(argv[1]));
+                puts("do not match. Runtime error :(");
+                exit(1);
+            }
 
-  return return_object;
+            long *result_vector = (long *) malloc((vector1[0] + 1) * sizeof(long));
+            result_vector[0] = vector1[0];
+
+            _br_vector_vector_add(vector1 + 1, vector2 + 1, result_vector + 1, vector1[0]);
+
+            return_object.value.vector = result_vector;
+        } else if (argv[0].type) {
+            long *vector = argv[0].value.vector;
+            long *result_vector = (long *) malloc((vector[0] + 1) * sizeof(long));
+            result_vector[0] = vector[0];
+
+            _br_vector_integer_add(vector + 1, argv[1].value.integer, result_vector + 1, vector[0]);
+
+            return_object.value.vector = result_vector;
+        } else {
+            long *vector = argv[1].value.vector;
+            long *result_vector = (long *) malloc((vector[0] + 1) * sizeof(long));
+            result_vector[0] = vector[0];
+
+            _br_vector_integer_add(vector + 1, argv[0].value.integer, result_vector + 1, vector[0]);
+
+            return_object.value.vector = result_vector;
+        }
+    } else return_object.value.integer = argv[0].value.integer + argv[1].value.integer;
+
+    return return_object;
 }

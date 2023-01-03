@@ -1,7 +1,8 @@
-var a = 5;
-var b = [a, 1, "asdf"];
+var c = [1, 2, 3];
+    print c;
 if (true) {
-    var c = [1,23, false, "asdff"];
+    var c = [1, 2, 3];
+    print c;
 }
 
 //var temp;

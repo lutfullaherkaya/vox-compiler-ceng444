@@ -302,7 +302,7 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
 
     def visit_Print(self, printt: Print):
         self._ara_dile_ekle([['arg_vox_lib', self.visit(printt.expr)],
-                             ['call_vox_lib', None, '__br_print__', 1]])
+                             ['call_vox_lib', None, '__vox_print__', 1]])
 
     def visit_IfElse(self, ifelse: IfElse):
         endif_label, endelse_label = self.labels.create_endifelse()
