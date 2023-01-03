@@ -1,14 +1,23 @@
 # hizli olmasi icin pypy kullanilabilir
 from typing import Dict, Optional, Union, List
 import ast_tools
+from ast_tools import VarDecl
 import misc
 from AraDilYapici import AraDilYapiciVisitor
 from AraDilYapici import ActivationRecord
-from collections import OrderedDict
+from AraDilYapici import NameIdPair
+
 import compiler_utils as cu
 import sys
 
 """
+https://github.com/riscv-non-isa/riscv-asm-manual/blob/master/riscv-asm.md
+    
+    vektör implementasyonu
+    vektör uzunluğunu vektörün ilk elemanından bir önceki eleman olarak (8 byte, 16 byte değil)
+    tutuyorum ki her vector[i] dediğimde i +1 işlemini yapmayayım.
+    değişken structuna yazsam olabilirdi, mesela 4 byte type deyip 4 byte vector length diyebilirdim ama demedim. 
+    not: vektörler type ve değer çifti tutar, doğal olarak heterojen olurlar.
     Eksikler:
     
     e. Implement vectors as an additional type to integers. Overload "+,-,*,/" for vectors of same size so that they do element-wise operations with the parallel instructions of the V extension. (10 pts)
@@ -26,6 +35,7 @@ import sys
     - Cool additional syntactic sugar (like list expressions in Python).
     
     
+    
     parametrelerden ayrıca local değişken yapmama gerek yok, direkt stackte var zaten parametreler (a reglerine sığmayan)
     type checking lazım illa. 
     Optimizasyon belki
@@ -41,12 +51,32 @@ def get_global_value_name(var_name):
     return f'global_{var_name}_value'
 
 
+def get_global_length_name(var_name):
+    return f'global_{var_name}_length'
+
+
+def get_global_vector_name(var_name):
+    return f'global_{var_name}_vector'
+
+
+type_values = {
+    'int': 0,
+    'vector': 1,
+    'bool': 2,
+    'string': 3,
+}
+
+
 class AssemblyYapici:
-    def __init__(self, global_vars, func_activation_records: Dict[str, ActivationRecord],
-                 string_to_label: OrderedDict):
-        self.global_vars = global_vars
+    def __init__(self,
+                 global_vars: Dict[str, VarDecl],
+                 global_vectors: Dict[str, VarDecl],
+                 func_activation_records: Dict[str, ActivationRecord],
+                 global_string_to_label: Dict[str, str]):
+        self.global_vars: Dict[str, VarDecl] = global_vars
+        self.global_vectors: Dict[str, VarDecl] = global_vectors
         self.func_activation_records: Dict[str, ActivationRecord] = func_activation_records
-        self.string_to_label: OrderedDict = string_to_label
+        self.global_string_to_label: Dict[str, str] = global_string_to_label
         self.sp_extra_offset = 0
         self.fp_extra_offset = 0
         self.current_stack_size = 0
@@ -58,6 +88,9 @@ class AssemblyYapici:
             'arg_count': self.cevir_arg_count,
             'arg': self.cevir_arg,
             'copy': self.cevir_copy,
+            'vector': self.cevir_vector,
+            'vector_set': self.cevir_vector_set,
+            'vector_get': self.cevir_vector_get,
             'global': self.cevir_global,
             'branch': self.cevir_branch,
             'branch_if_true': self.cevir_branch_if_true,
@@ -81,13 +114,7 @@ class AssemblyYapici:
             '==': self.ceviriler_karsilastirma,
             '!=': self.ceviriler_karsilastirma,
         }
-        self.type_values = {
-            'int': 0,
-            'vector': 1,
-            'bool': 2,
-            'string': 3,
-        }
-        self.current_fun_callee_saved_regs = OrderedDict()
+        self.current_fun_callee_saved_regs: Dict[str, bool] = {}
         self.current_fun_non_reg_arg_count = 0
 
     def add_to_saved_regs(self, regs: Union[str, List[str]]):
@@ -145,12 +172,6 @@ class AssemblyYapici:
             cu.compilation_error(f'Unknown variable {var_name_id["name"]}')
         return asm
 
-    def get_global_type_name(self, var_name):
-        if var_name in self.global_vars:
-            return self.global_vars[var_name]
-        else:
-            return None
-
     def aradilden_asm(self, komut):
         if komut[0] in self.aradil_sozlugu:
             return self.aradil_sozlugu[komut[0]](komut)
@@ -203,7 +224,6 @@ class AssemblyYapici:
     def cevir_call_vox_lib(self, komut):
         asm = ['  mv a1, sp']
         if len(komut) > 3:
-            # todo: implement func args
             asm.append(f'  li a0, {komut[3]}')
 
         asm.extend([f'  call {komut[2]}'])
@@ -239,12 +259,12 @@ class AssemblyYapici:
                 asm.extend([f'  li t0, {komut[2]}'])
                 asm.extend(self.asm_reg_to_var('t1', komut[1], 'zero', 't0'))
             elif type(komut[2]) == bool:
-                asm.extend([f'  li t1, {self.type_values["bool"]}',
+                asm.extend([f'  li t1, {type_values["bool"]}',
                             f'  li t2, {int(komut[2])}'])
                 asm.extend(self.asm_reg_to_var('t0', komut[1], 't1', 't2'))
             elif type(komut[2]) == str:
-                asm.extend([f'  li t1, {self.type_values["string"]}',
-                            f'  la t2, {self.string_to_label[komut[2]]}'])
+                asm.extend([f'  li t1, {type_values["string"]}',
+                            f'  la t2, {self.global_string_to_label[komut[2]]}'])
                 asm.extend(self.asm_reg_to_var('t0', komut[1], 't1', 't2'))
 
             else:  # değişken parametre için
@@ -252,6 +272,37 @@ class AssemblyYapici:
                 asm.extend(self.asm_reg_to_var('t2', komut[1], 't0', 't1'))
 
         return asm
+
+    def cevir_vector(self, komut):
+        name_id = komut[1]
+        length = komut[2]
+
+        type_addr = self._type_addr(name_id)
+
+        asm = []
+
+        if type_addr is not None:  # local
+            length_addr = self._length_addr(name_id)
+            i_first_elm = self._vector_first_elm_sp_index(name_id)
+            asm.extend([f'  li t1, {type_values["vector"]}',
+                        f'  add t2, sp, {i_first_elm}'])
+            asm.extend(self.asm_reg_to_var('t0', name_id, 't1', 't2'))
+
+            asm.extend([f'  li t0, {length}',
+                        f'  sd t0, {length_addr}'])
+        elif name_id["name"] in self.global_vars:
+            pass
+        else:
+            # impossible if undeclared variable check is done before
+            cu.compilation_error(f'Unknown variable {name_id["name"]}')
+
+        return asm
+
+    def cevir_vector_set(self, komut):
+        pass
+
+    def cevir_vector_get(self, komut):
+        pass
 
     def cevir_global(self, komut):
         # Compiler sınıfı oluşturur globalleri
@@ -317,7 +368,7 @@ class AssemblyYapici:
                     f'  ret'])
         self.sp_extra_offset = 0
         self.fp_extra_offset = 0
-        self.current_fun_callee_saved_regs = OrderedDict()
+        self.current_fun_callee_saved_regs = {}
         return asm
 
     def cevir_branch_if_true(self, komut):
@@ -367,7 +418,7 @@ class AssemblyYapici:
         elif komut[0] == '!':
             asm.extend([f'  xori t0, t0, 1'])
 
-        asm.extend([f'  li t2, {self.type_values["bool"]}'])
+        asm.extend([f'  li t2, {type_values["bool"]}'])
         asm.extend(self.asm_reg_to_var('t1', result_name, 't2', 't0'))
 
         return asm
@@ -398,11 +449,11 @@ class AssemblyYapici:
             asm.extend([f'  sub t0, t0, t1',
                         f'  {"seqz" if komut[0] == "==" else "snez"} t2, t0'])
 
-        asm.extend([f'  li t1, {self.type_values["bool"]}'])
+        asm.extend([f'  li t1, {type_values["bool"]}'])
         asm.extend(self.asm_reg_to_var('t0', result_name, 't1', 't2'))
         return asm
 
-    def _type_addr(self, place):
+    def _type_addr(self, place: NameIdPair):
         degisken_adresleri = self.func_activation_records[self.current_fun_label].degisken_goreli_adresleri
         key = (place['name'], place['id'])
         if key in degisken_adresleri:
@@ -410,11 +461,33 @@ class AssemblyYapici:
         else:
             return None
 
-    def _value_addr(self, place):
+    def _value_addr(self, place: NameIdPair):
         degisken_adresleri = self.func_activation_records[self.current_fun_label].degisken_goreli_adresleri
         key = (place['name'], place['id'])
         if key in degisken_adresleri:
             return str(self.sp_extra_offset + degisken_adresleri[key] + 8) + '(sp)'
+        else:
+            return None
+
+    def _length_addr(self, place: NameIdPair):
+        """
+        only works right after vector variable initialization since variable vector address can change.
+        """
+        degisken_adresleri = self.func_activation_records[self.current_fun_label].degisken_goreli_adresleri
+        key = (place['name'], place['id'])
+        if key in degisken_adresleri:
+            return str(self.sp_extra_offset + degisken_adresleri[key] + 24) + '(sp)'
+        else:
+            return None
+
+    def _vector_first_elm_sp_index(self, place: NameIdPair):
+        """
+        only works right after vector variable initialization since variable vector address can change.
+        """
+        degisken_adresleri = self.func_activation_records[self.current_fun_label].degisken_goreli_adresleri
+        key = (place['name'], place['id'])
+        if key in degisken_adresleri:
+            return self.sp_extra_offset + degisken_adresleri[key] + 32
         else:
             return None
 
@@ -445,8 +518,9 @@ class Compiler:
             for satir in on_soz:
                 asm_dosyasi.write(f'{satir}\n')
             asm_yapici = AssemblyYapici(self.ara_dil_yapici_visitor.global_vars,
+                                        self.ara_dil_yapici_visitor.global_string_to_label,
                                         self.ara_dil_yapici_visitor.func_activation_records,
-                                        self.ara_dil_yapici_visitor.string_to_label)
+                                        self.ara_dil_yapici_visitor.global_string_to_label)
 
             for komut in self.ara_dil_yapici_visitor.ara_dil_sozleri:
                 if komut[0] != 'fun':
@@ -456,13 +530,25 @@ class Compiler:
                     asm_dosyasi.write('\n'.join(satirlar))
                     asm_dosyasi.write('\n')
 
-            if len(self.ara_dil_yapici_visitor.global_vars) > 0 or len(self.ara_dil_yapici_visitor.string_to_label) > 0:
+            if len(self.ara_dil_yapici_visitor.global_vars) > 0 or \
+                    len(self.ara_dil_yapici_visitor.global_string_to_label):
                 asm_dosyasi.write(f'\n  .data\n')
-            for global_name in self.ara_dil_yapici_visitor.global_vars:
-                asm_dosyasi.write(f'{get_global_type_name(global_name)}:   .quad 0\n')
-                asm_dosyasi.write(f'{get_global_value_name(global_name)}:  .quad 0\n\n')
-            for string_value, string_label in self.ara_dil_yapici_visitor.string_to_label.items():
-                # .ascii does not add a null terminator
+            for name, vardecl in self.ara_dil_yapici_visitor.global_vars.items():
+                if vardecl.initializer is not None and type(vardecl.initializer) == list:
+                    global_vector_name = get_global_vector_name(name)
+                    asm_dosyasi.write(f'{get_global_type_name(name)}:    .quad {type_values["vector"]}\n')
+                    asm_dosyasi.write(f'{get_global_value_name(name)}:   .quad {global_vector_name}\n')
+                    asm_dosyasi.write(f'{get_global_length_name(name)}:  .quad {len(vardecl.initializer)}\n')
+                    asm_dosyasi.write(f'{global_vector_name}:\n')
+                    for i in range(len(vardecl.initializer)):
+                        asm_dosyasi.write(f'  .quad 0, 0\n')
+                else:
+                    asm_dosyasi.write(f'{get_global_type_name(name)}:   .quad 0\n')
+                    asm_dosyasi.write(f'{get_global_value_name(name)}:  .quad 0\n')
+                asm_dosyasi.write('\n')
+
+            for string_value, string_label in self.ara_dil_yapici_visitor.global_string_to_label.items():
+                # .ascii does not add a null terminator, thus use .string
                 asm_dosyasi.write(f'{string_label}:  .string "{string_value}"\n')
 
         return self

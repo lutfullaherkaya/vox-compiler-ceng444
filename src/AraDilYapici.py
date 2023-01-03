@@ -1,4 +1,3 @@
-from collections import OrderedDict
 from dataclasses import dataclass
 from typing import Dict, Optional, Union, List, Tuple, TypedDict
 from ast_tools import *
@@ -32,6 +31,11 @@ class ActivationRecord:
         self.son_goreli_adres += 16
         return degisken_ad_ve_id
 
+    def vektor_degiskeni_ekle(self, degisken_adi: str, vektor_uzunlugu: int):
+        degisken_ad_ve_id = self.degisken_ekle(degisken_adi)
+        self.son_goreli_adres += 16 * vektor_uzunlugu + 8
+        return degisken_ad_ve_id
+
 
 class AraDilScope:
     """
@@ -61,9 +65,12 @@ class AraDilScope:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.drop_symbol_table()
 
-    def add(self, identifier: Identifier):
+    def add(self, identifier: Identifier, vector_length: Optional[int] = None) -> NameIdPair:
         if identifier.name not in self.symbol_table:
-            degisken_ad_ve_id = self.activation_record.degisken_ekle(identifier.name)
+            if vector_length is None:
+                degisken_ad_ve_id = self.activation_record.degisken_ekle(identifier.name)
+            else:
+                degisken_ad_ve_id = self.activation_record.vektor_degiskeni_ekle(identifier.name, vector_length)
             self.symbol_table[identifier.name] = Symbol(identifier, degisken_ad_ve_id['id'])
             return degisken_ad_ve_id
 
@@ -137,7 +144,6 @@ class Labels:
         return f'.L_string{self.counts["string"]}'
 
 
-
 class AraDilYapiciVisitor(ASTNodeVisitor):
     def __init__(self):
         super().__init__()
@@ -146,21 +152,21 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
         self.fun_decls: Dict[str, FunDecl] = {}
         self.ara_dil_sozleri = []
         self._ara_dil_fonksiyon_tanim_sozleri = []
-        self.labels = Labels()
-        self.global_vars = {}
-        self.string_to_label = OrderedDict()
+        self.labels: Labels = Labels()
+        self.global_vars: Dict[str, VarDecl] = {}
+        self.global_string_to_label: Dict[str, str] = {}
+
         self._fonksiyon_tanimlaniyor = False
         self.main_activation_record: ActivationRecord = ActivationRecord()
 
     def visit_SLiteral(self, sliteral: SLiteral):
         # todo: optimisation: add seperate instructions for literals instead of putting them in a variable
-        self.string_to_label[sliteral.value] = self.labels.create_string()
+        self.global_string_to_label[sliteral.value] = self.labels.create_string()
         name_id = self.current_scope.generate_tmp()
         self._ara_dile_ekle([['copy', name_id, sliteral.value]])
         return name_id
 
     def visit_Program(self, program: Program):
-        # todo: implement
         self._ara_dile_ekle(['fun', 'main', 'main()', 0])
 
         for fundecl in program.fun_decls:
@@ -185,34 +191,38 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
         pass
 
     def visit_VarDecl(self, vardecl: VarDecl):
-        degisken_ad_ve_id = self.current_scope.add(vardecl.identifier)
-        if vardecl.initializer is not None:
-            if type(vardecl.initializer) == list:
-                # todo: vektor tanımlama
-                for elem in vardecl.initializer:
-                    self.visit(elem)
-            else:
-                self._ara_dile_ekle(
-                    [['copy', degisken_ad_ve_id, self.visit(vardecl.initializer)]])
-        else:
+        if type(vardecl.initializer) == list:
+            degisken_ad_ve_id = self.current_scope.add(vardecl.identifier, len(vardecl.initializer))
+            self._ara_dile_ekle(['vector', degisken_ad_ve_id, len(vardecl.initializer)])
+            for i, elem in enumerate(vardecl.initializer):
+                elem_ad_ve_id = self.visit(elem)
+                self._ara_dile_ekle([['vector_set', degisken_ad_ve_id, i, elem_ad_ve_id]])
+        elif vardecl.initializer is None:
+            degisken_ad_ve_id = self.current_scope.add(vardecl.identifier)
             self._ara_dile_ekle([['copy', degisken_ad_ve_id]])
+        else:
+            degisken_ad_ve_id = self.current_scope.add(vardecl.identifier)
+            self._ara_dile_ekle(['copy', degisken_ad_ve_id, self.visit(vardecl.initializer)])
 
         return degisken_ad_ve_id
 
     def add_global(self, vardecl: VarDecl):
-        self.global_vars[vardecl.identifier.name] = vardecl
         # global komutunu bir seye donusturmuyorum. sadece self.global_vars kullaniyorum.
         # global komutunu olusturma sebebim ara dili okumak istersem anlayayim global oldugunu diye.
         # main fonksiyonunun bir görevi de global degiskenleri ilklendirmek oluyor.
         self._ara_dile_ekle(['global', vardecl.identifier.name])
         degisken_ad_ve_id = {'name': vardecl.identifier.name, 'id': -1}
-        if vardecl.initializer is not None:
-            if type(vardecl.initializer) == list:
-                # todo: vektor tanımlama
-                for elem in vardecl.initializer:
-                    self.visit(elem)
-            else:
-                self._ara_dile_ekle([['copy', degisken_ad_ve_id, self.visit(vardecl.initializer)]])
+
+        if type(vardecl.initializer) == list:
+            self.global_vars[vardecl.identifier.name] = vardecl
+            for i, elem in enumerate(vardecl.initializer):
+                elem_ad_ve_id = self.visit(elem)
+                self._ara_dile_ekle([['vector_set', degisken_ad_ve_id, i, elem_ad_ve_id]])
+        elif vardecl.initializer is None:
+            self.global_vars[vardecl.identifier.name] = vardecl
+        else:
+            self.global_vars[vardecl.identifier.name] = vardecl
+            self._ara_dile_ekle([['copy', degisken_ad_ve_id, self.visit(vardecl.initializer)]])
 
         return degisken_ad_ve_id
 
@@ -245,9 +255,10 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
         self._ara_dile_ekle(['copy', degisken_ad_ve_id, rhs_ad_ve_id])
 
     def visit_SetVector(self, setvector: SetVector):
-        # todo: implement
-        self.visit(setvector.vector_index)
-        self.visit(setvector.expr)
+        vector = self.current_scope.get_name_id_pair(setvector.identifier)
+        index = self.visit(setvector.vector_index)
+        expr = self.visit(setvector.expr)
+        self._ara_dile_ekle([['vector_set', vector, index, expr]])
 
     def visit_ForLoop(self, forloop: ForLoop):
         body_label, cond_label = self.labels.create_for()
@@ -281,7 +292,6 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
         self._ara_dile_ekle(['branch_if_true', cond_name_ve_id, body_label])
 
     def visit_Block(self, block: Block):
-        # todo: implement
         with AraDilScope(self.current_scope) as block_scope:
             self.current_scope = block_scope
             for var_decl in block.var_decls:
@@ -345,12 +355,13 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
         return name_id_pair
 
     def visit_LPrimary(self, lprimary: LPrimary):
-        # todo: implement
         return self.visit(lprimary.primary)
 
     def visit_GetVector(self, getvector: GetVector):
-        # todo: implement
-        self.visit(getvector.vector_index)
+        vector = self.current_scope.get_name_id_pair(getvector.identifier)
+        index = self.visit(getvector.vector_index)
+        result = self.current_scope.generate_tmp()
+        self._ara_dile_ekle([['vector_get', result, vector, index]])
 
     def visit_Variable(self, variable: Variable):
         name_id_pair = self.current_scope.get_name_id_pair(variable.identifier)

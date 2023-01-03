@@ -10,12 +10,16 @@ void __br_print__(long argc, BracketObject argv[]){
       break;
     }
     case VOX_VECTOR: {
-      long* vector = argv[0].value.vector;
-      long length = vector[0];
+      BracketObject* vector = argv[0].value.vector;
+      long length = *(((long*)argv[0].value.vector)-1); // vector length is stored just before first element of vector.
 
       putchar('[');
-      for(long i = 1; i < length; i++) printf("%ld, ", vector[i]);
-      printf("%ld]\n", vector[length]);
+      for (long i = 0; i < length-1; i++) {
+        __br_print__(1, &vector[i]);
+        printf(", ");
+      };
+      __br_print__(1, &vector[length-1]);
+      printf("]\n");
       break;
     }
     case VOX_BOOL: {

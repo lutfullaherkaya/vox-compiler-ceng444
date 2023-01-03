@@ -11,7 +11,7 @@ void _br_vector_vector_add(long* vector1, long* vector2, long *result_vector, lo
 
 typedef union BracketValue {
   long integer;
-  long* vector;
+  long* vector; // todo: BracketValue vector
   long boolean;
   char* string;
 } BracketValue;

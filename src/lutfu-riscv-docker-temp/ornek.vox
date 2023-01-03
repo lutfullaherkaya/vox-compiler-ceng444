@@ -1,4 +1,8 @@
-print "Merhaba dünya!";
+var a = 5;
+var b = [a, 1, "asdf"];
+if (true) {
+    var c = [1,23, false, "asdff"];
+}
 
 //var temp;
 //fun a(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13) {
