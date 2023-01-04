@@ -149,7 +149,10 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
         super().__init__()
         self.current_scope: Optional[AraDilScope] = None
         self.func_activation_records: Dict[str, ActivationRecord] = {}
-        self.fun_decls: Dict[str, FunDecl] = {}
+        self.fun_decls: Dict[str, FunDecl] = {
+            # vox_lib functions. can be overwritten by programmer.
+            'len': FunDecl(Identifier('len', -1, -1), [Identifier('a', -1, -1)], None),
+        }
         self.ara_dil_sozleri = []
         self._ara_dil_fonksiyon_tanim_sozleri = []
         self.labels: Labels = Labels()
@@ -302,8 +305,10 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
             self.current_scope = block_scope.parent
 
     def visit_Print(self, printt: Print):
-        self._ara_dile_ekle([['arg_vox_lib', self.visit(printt.expr)],
-                             ['call_vox_lib', None, '__vox_print__', 1]])
+        name_id = self.visit(printt.expr)
+        self._ara_dile_ekle([['arg_count', 1],
+                             ['arg', name_id, 0],
+                             ['call', None, '__vox_print__']])
 
     def visit_IfElse(self, ifelse: IfElse):
         endif_label, endelse_label = self.labels.create_endifelse()
@@ -378,7 +383,17 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
         return result_name_id
 
     def visit_ABinary(self, abinary: ABinary):
-        return self.binary_op(abinary)
+        # todo: implement / * -
+        result_name_id = self.current_scope.generate_tmp()
+        left_name_id = self.visit(abinary.left)
+        right_name_id = self.visit(abinary.right)
+
+        self._ara_dile_ekle([['arg_count', 2],
+                             ['arg', left_name_id, 0],
+                             ['arg', right_name_id, 1],
+                             ['call', result_name_id, '__vox_add__']])
+        return result_name_id
+        # return self.binary_op(abinary)
 
     def visit_AUMinus(self, auminus: AUMinus):
         return self.binary_op(ABinary('-', ALiteral(0), auminus.right))

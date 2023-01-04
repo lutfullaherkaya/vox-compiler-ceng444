@@ -21,7 +21,8 @@ https://github.com/riscv-non-isa/riscv-asm-manual/blob/master/riscv-asm.md
     
     Eksikler:
     
-    e. Implement vectors as an additional type to integers. Overload "+,-,*,/" for vectors of same size so that they do element-wise operations with the parallel instructions of the V extension. (10 pts)
+    e. Implement vectors as an additional type to integers. Overload "+,-,*,/" for vectors of same size so that they do 
+    element-wise operations with the parallel instructions of the V extension. (10 pts)
     
     
     Bonus:
@@ -58,6 +59,10 @@ def get_global_length_name(var_name):
 
 def get_global_vector_name(var_name):
     return f'global_{var_name}_vector'
+
+
+def is_temp(var_name_id: NameIdPair):
+    return var_name_id['name'].startswith('.tmp')
 
 
 type_values = {
