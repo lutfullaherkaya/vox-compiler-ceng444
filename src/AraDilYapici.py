@@ -173,7 +173,9 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
     def visit_Program(self, program: Program):
         self._ara_dile_ekle(['fun', 'main', 'main()', 0])
 
-        for fundecl in program.fun_decls:
+        for i, fundecl in enumerate(program.fun_decls):
+            if fundecl.identifier.name == 'main':
+                fundecl.identifier.name = 'main.fake'
             self.func_activation_records[fundecl.identifier.name] = ActivationRecord()
             self.fun_decls[fundecl.identifier.name] = fundecl
         self.func_activation_records['main'] = self.main_activation_record
@@ -405,6 +407,8 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
         return name_id
 
     def visit_Call(self, call: Call):
+        if call.callee.name == 'main':
+            call.callee.name = 'main.fake'
         param_count = len(self.fun_decls[call.callee.name].params)
         if len(call.arguments) != param_count:
             cu.compilation_warning(f'Function {call.callee.name} expects {param_count} arguments, '

@@ -3,54 +3,54 @@ from dataclasses import dataclass
 from abc import ABC, abstractmethod
 from typing import List, Union
 
-@dataclass(frozen=True)
+@dataclass
 class ASTNode:
     pass
 
 
-@dataclass(frozen=True)
+@dataclass
 class Expr(ASTNode):
     '''expressions. some of the the parse tree components are not explicitly represented (such as parantheses to increase precedence)'''
     pass
 
 
-@dataclass(frozen=True)
+@dataclass
 class LExpr(Expr):
     '''logical expressions. conditions of if/while/for stmts, operands of logical operators, and primaries prepended with # are members.'''
     pass
 
 
-@dataclass(frozen=True)
+@dataclass
 class AExpr(Expr):
     '''arithmetic expressions.'''
     pass
 
 
-@dataclass(frozen=True)
+@dataclass
 class SLiteral(Expr):
     '''string literal. the grammar makes them unusable in arithmetic/logical ops when they are expressed as naked string literals.'''
     value: str
 
 
-@dataclass(frozen=True)
+@dataclass
 class Stmt(ASTNode):
     '''statements. middle classes of statements (simpleStmt/free-statement etc.) are not explicitly represented.'''
     pass
 
 
-@dataclass(frozen=True)
+@dataclass
 class ErrorStmt(Stmt):
     '''this node should correspond to an error during parsing that is resolved with character re-synchronization.'''
     pass
 
 
-@dataclass(frozen=True)
+@dataclass
 class Decl(ASTNode):
     '''declarations.'''
     pass
 
 
-@dataclass(frozen=True)
+@dataclass
 class Identifier:
     '''represents an identifier token. lineno and index fields are added to help with error reporting.'''
     name: str
@@ -58,7 +58,7 @@ class Identifier:
     index: int
 
 
-@dataclass(frozen=True)
+@dataclass
 class VarDecl(Decl):
     '''variable declaration. the initilializer attribute is None if the variable is not initialized to any value,
     it is a list if the variable is initialized as a vector, and and Expr if it is initialized as a non-vector.'''
@@ -66,7 +66,7 @@ class VarDecl(Decl):
 
     initializer: Union[Expr, List[Expr], None]
 
-@dataclass(frozen=True)
+@dataclass
 class FunDecl(Decl):
     '''function declaration. as in fun identifier(params...) body'''
     identifier: Identifier
@@ -74,7 +74,7 @@ class FunDecl(Decl):
     body: Block
 
 
-@dataclass(frozen=True)
+@dataclass
 class Program(ASTNode):
     '''the root node of the AST.'''
     var_decls: List[VarDecl]
@@ -83,14 +83,14 @@ class Program(ASTNode):
     has_errors: bool
 
 
-@dataclass(frozen=True)
+@dataclass
 class Assign(Stmt):
     '''assignments to a variable in the form identifier = expr'''
     identifier: Identifier
     expr: Expr
 
 
-@dataclass(frozen=True)
+@dataclass
 class SetVector(Stmt):
     '''assignments to a member of vector in the form identifier[vector_index] = expr'''
     identifier: Identifier
@@ -98,7 +98,7 @@ class SetVector(Stmt):
     expr: Expr
 
 
-@dataclass(frozen=True)
+@dataclass
 class ForLoop(Stmt):
     '''a for loop. If any of the fields are left empty, such as in for(;;){}, set them as None.'''
     initializer: Union[Assign, None]
@@ -107,29 +107,29 @@ class ForLoop(Stmt):
     body: Stmt
 
 
-@dataclass(frozen=True)
+@dataclass
 class Return(Stmt):
     expr: Expr
 
 
-@dataclass(frozen=True)
+@dataclass
 class WhileLoop(Stmt):
     condition: LExpr
     body: Stmt
 
 
-@dataclass(frozen=True)
+@dataclass
 class Block(Stmt):
     var_decls: List[VarDecl]
     statements: List[Stmt]
 
 
-@dataclass(frozen=True)
+@dataclass
 class Print(Stmt):
     expr: Expr
 
 
-@dataclass(frozen=True)
+@dataclass
 class IfElse(Stmt):
     '''an if-else statement. If there is no else corresponding to this if, set else_branch as None.'''
     condition: LExpr
@@ -137,7 +137,7 @@ class IfElse(Stmt):
     else_branch: Union[Stmt, None]
 
 
-@dataclass(frozen=True)
+@dataclass
 class LBinary(LExpr):
     '''logical binary operations and and or. Set op as "and"/"or".'''
     op: str
@@ -145,7 +145,7 @@ class LBinary(LExpr):
     right: LExpr
 
 
-@dataclass(frozen=True)
+@dataclass
 class Comparison(LExpr):
     '''comparison operations <,>,==,!=,<=,>=. Set op as "<"/">"/"=="/"!="/"<="/">=".'''
     op: str
@@ -153,38 +153,38 @@ class Comparison(LExpr):
     right: AExpr
 
 
-@dataclass(frozen=True)
+@dataclass
 class LLiteral(LExpr):
     '''logical literals (TRUE/FALSE tokens).'''
     value: bool
 
 
-@dataclass(frozen=True)
+@dataclass
 class LPrimary(LExpr):
     '''# operator on primaries: function calls(# fizzbuzz()), vector accesses(# foo[0]) or variables (# bar) to cast them explicitly as logical.'''
     primary: Union[Call, GetVector, Variable]
 
 
-@dataclass(frozen=True)
+@dataclass
 class GetVector(AExpr):
     '''vector access as an expression, as in foo = identifier[vector_index]'''
     identifier: Identifier
     vector_index: AExpr
 
 
-@dataclass(frozen=True)
+@dataclass
 class Variable(AExpr):
     '''variable access as an expression, as in foo = identifier'''
     identifier: Identifier
 
 
-@dataclass(frozen=True)
+@dataclass
 class LNot(LExpr):
     '''! operation.'''
     right: LExpr
 
 
-@dataclass(frozen=True)
+@dataclass
 class ABinary(AExpr):
     '''arithmetic binary operations +,-,* or /. Set op as "+"/"-"/"*" or "/"'''
     op: str
@@ -192,19 +192,19 @@ class ABinary(AExpr):
     right: AExpr
 
 
-@dataclass(frozen=True)
+@dataclass
 class AUMinus(AExpr):
     '''unary minus operation'''
     right: AExpr
 
 
-@dataclass(frozen=True)
+@dataclass
 class ALiteral(AExpr):
     '''arithmetic literals (Number)'''
     value: float
 
 
-@dataclass(frozen=True)
+@dataclass
 class Call(AExpr):
     '''function call as an expression, as in foo = callee(arguments...)'''
     callee: Identifier

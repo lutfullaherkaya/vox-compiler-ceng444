@@ -194,8 +194,8 @@ main:
             # arg global_a, 0
   ld a0, global_a_type
   ld a1, global_a_value
-            # call .tmp14, len
-  call len
+            # call .tmp14, main.fake
+  call main.fake
   addi sp, sp, 0
   sd a0, 224(sp)
   sd a1, 232(sp)
@@ -210,6 +210,31 @@ main:
   ld ra, 248(sp)
   ld fp, 240(sp)
   addi sp, sp, 256
+  ret
+
+# fun main.fake(a);
+main.fake:
+  addi sp, sp, -48
+  sd ra, 40(sp)
+  sd fp, 32(sp)
+  addi fp, sp, 48
+            # param a, 0
+  sd a0, 0(sp)
+  sd a1, 8(sp)
+            # copy .tmp0, 31
+  li t0, 31
+  sd zero, 16(sp)
+  sd t0, 24(sp)
+            # ret .tmp0
+  ld a0, 16(sp)
+  ld a1, 24(sp)
+            # endfun 
+  ld ra, 40(sp)
+  ld fp, 32(sp)
+  addi sp, sp, 48
+  ret
+            # endfun 
+  addi sp, sp, 32
   ret
 
   .data
