@@ -1,9 +1,9 @@
 asssemble komutu
 riscv64-unknown-linux-gnu-gcc -march=rv64gcv -static ornek.vox.s -o ornek
-riscv64-unknown-linux-gnu-gcc -march=rv64gcv -static ornek.vox.s vox_lib.c lib_br_vector.s -o ornek 
+riscv64-unknown-linux-gnu-gcc -march=rv64gcv -static ornek.vox.s vox_lib.c lib_vox_vector.s -o ornek
 
 çalıştırma:
 spike --isa=RV64IMAFDCV $(which pk) ornek
 
 assemble ve çalıştır:
-riscv64-unknown-linux-gnu-gcc -march=rv64gcv -static ornek.vox.s vox_lib.c lib_br_vector.s -o ornek; spike --isa=RV64IMAFDCV $(which pk) ornek
+riscv64-unknown-linux-gnu-gcc -march=rv64gcv -static ornek.vox.s vox_lib.c lib_vox_vector.s -o ornek; spike --isa=RV64IMAFDCV $(which pk) ornek

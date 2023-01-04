@@ -23,9 +23,11 @@ def komut_stringi_yap(komut):
 
 def compilation_error(error, lineno=None):
     if lineno is not None:
-        sys.stderr.write('Compilation error: at line ' + str(lineno) + ': ' + error + '\n')
+        sys.stderr.write('Compilation error at line ' + str(lineno) + ': ' + error + '\n')
     else:
-        sys.stderr.write('Compilation error: ' + error)
+        sys.stderr.write('Compilation error: ' + error + '\n')
+    sys.stderr.write('Compilation failed.\n')
+    sys.exit(1)
 
 
 def compilation_warning(warning, lineno=None):

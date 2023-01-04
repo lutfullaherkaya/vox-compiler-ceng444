@@ -149,9 +149,10 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
         super().__init__()
         self.current_scope: Optional[AraDilScope] = None
         self.func_activation_records: Dict[str, ActivationRecord] = {}
+        # vox_lib functions. can be overwritten by programmer.
         self.fun_decls: Dict[str, FunDecl] = {
-            # vox_lib functions. can be overwritten by programmer.
-            'len': FunDecl(Identifier('len', -1, -1), [Identifier('a', -1, -1)], None),
+            'len': FunDecl(Identifier('len', -1, -1), [Identifier('object', -1, -1)], None),
+            'type': FunDecl(Identifier('type', -1, -1), [Identifier('object', -1, -1)], None),
         }
         self.ara_dil_sozleri = []
         self._ara_dil_fonksiyon_tanim_sozleri = []
@@ -385,20 +386,33 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
         return result_name_id
 
     def visit_ABinary(self, abinary: ABinary):
-        # todo: implement / * -
         result_name_id = self.current_scope.generate_tmp()
         left_name_id = self.visit(abinary.left)
         right_name_id = self.visit(abinary.right)
+        op_to_instruction = {
+            '+': 'add',
+            '-': 'sub',
+            '*': 'mul',
+            '/': 'div',
+        }
 
         self._ara_dile_ekle([['arg_count', 2],
                              ['arg', left_name_id, 0],
                              ['arg', right_name_id, 1],
-                             ['call', result_name_id, '__vox_add__']])
+                             ['call', result_name_id, f'__vox_{op_to_instruction[abinary.op]}__']])
         return result_name_id
-        # return self.binary_op(abinary)
 
     def visit_AUMinus(self, auminus: AUMinus):
-        return self.binary_op(ABinary('-', ALiteral(0), auminus.right))
+        result_name_id = self.current_scope.generate_tmp()
+        left_name_id = self.current_scope.generate_tmp()
+        right_name_id = self.visit(auminus.right)
+
+        self._ara_dile_ekle([['copy', left_name_id, 0],
+                             ['arg_count', 2],
+                             ['arg', left_name_id, 0],
+                             ['arg', right_name_id, 1],
+                             ['call', result_name_id, f'__vox_sub__']])
+        return result_name_id
 
     def visit_ALiteral(self, aliteral: ALiteral):
         # todo: optimisation: add seperate instructions for literals instead of putting them in a variable
@@ -409,6 +423,13 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
     def visit_Call(self, call: Call):
         if call.callee.name == 'main':
             call.callee.name = 'main.fake'
+
+        if call.callee.name not in self.fun_decls:
+            if call.callee.name == 'main.fake':
+                call.callee.name = 'main'
+            cu.compilation_error(f"Function identifier '{call.callee.name}' referenced without being declared.",
+                                 call.callee.lineno)
+
         param_count = len(self.fun_decls[call.callee.name].params)
         if len(call.arguments) != param_count:
             cu.compilation_warning(f'Function {call.callee.name} expects {param_count} arguments, '

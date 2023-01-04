@@ -1,14 +1,26 @@
 var a = [1,2,3,4,5];
 var b = [5,6,7,8,9];
 var c = 3;
-fun main(a) {
-    return 31;
-}
 
-print a + b;
-print c + a;
-print a + c;
-print main(a);
+print 1-a;
+print a-1;
+print -a;
+print a-b;
+print b-a;
+print b / a;
+print a / b;
+print 10 / b;
+print b / 2;
+print a * b;
+print a * 2;
+print 10 / b;
+
+
+//
+//print a + b;
+//print a - b;
+//print a * b;
+//print a / b;
 //var c = [1, 22, 3];
 //var d = ["bu", "bir", "global", "arrayidir", "\n"];
 //var i;
@@ -84,6 +96,8 @@ print main(a);
 //}
 
 //print true or true;
+
+
 //var t = true;
 //var f = false;
 //

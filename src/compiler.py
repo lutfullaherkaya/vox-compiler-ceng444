@@ -20,9 +20,9 @@ https://github.com/riscv-non-isa/riscv-asm-manual/blob/master/riscv-asm.md
     not: vektörler type ve değer çifti tutar, doğal olarak heterojen olurlar.
     
     Eksikler:
-    
     e. Implement vectors as an additional type to integers. Overload "+,-,*,/" for vectors of same size so that they do 
     element-wise operations with the parallel instructions of the V extension. (10 pts)
+    
     
     
     Bonus:
@@ -39,8 +39,9 @@ https://github.com/riscv-non-isa/riscv-asm-manual/blob/master/riscv-asm.md
     
     
     parametrelerden ayrıca local değişken yapmama gerek yok, direkt stackte var zaten parametreler (a reglerine sığmayan)
-    type checking lazım illa. 
+    type checking lazım illa. mesela vektör işlemlerinde vektörlerin tipi sayı olmalı. 
     Optimizasyon belki
+    string + işlemi
 
 """
 
@@ -88,8 +89,6 @@ class AssemblyYapici:
         self.current_stack_size = 0
         self.current_fun_label = ''
         self.aradil_sozlugu = {
-            'call_vox_lib': self.cevir_call_vox_lib,
-            'arg_vox_lib': self.cevir_arg_vox_lib,
             'call': self.cevir_call,
             'arg_count': self.cevir_arg_count,
             'arg': self.cevir_arg,
@@ -106,10 +105,6 @@ class AssemblyYapici:
             'param': self.cevir_param,
             'ret': self.cevir_ret,
             'endfun': self.cevir_endfun,
-            '+': self.ceviriler_dortislem,
-            '-': self.ceviriler_dortislem,
-            '*': self.ceviriler_dortislem,
-            '/': self.ceviriler_dortislem,
             'and': self.ceviriler_mantiksal,
             'or': self.ceviriler_mantiksal,
             '!': self.ceviriler_mantiksal,
@@ -195,22 +190,6 @@ class AssemblyYapici:
         else:
             return f'ERROR! Unknown IL {komut}'
 
-    def cevir_arg_vox_lib(self, komut):
-        self.sp_extra_offset += 16
-        asm = ['  addi sp, sp, -16']
-
-        if type(komut[1]) == int:
-            asm.extend([f'  sd zero, (sp)',
-                        f'  li t0, {komut[1]}',
-                        f'  sd t0, 8(sp)'])
-        else:
-            # todo: vektor ve icin
-            asm.extend(self.asm_var_to_reg(komut[1], 't0', 't1'))
-            asm.extend([f'  sd t0, (sp)',
-                        f'  sd t1, 8(sp)'])
-
-        return asm
-
     def cevir_arg_count(self, komut):
         asm = []
         non_reg_arg_count = komut[1] - 4
@@ -235,22 +214,6 @@ class AssemblyYapici:
             asm.extend(self.asm_var_to_reg(arg_name_id, 't0', 't1'))
             asm.extend([f'  sd t0, {16 * non_reg_index}(sp)',
                         f'  sd t1, {16 * non_reg_index + 8}(sp)'])
-
-        return asm
-
-    def cevir_call_vox_lib(self, komut):
-        asm = ['  mv a1, sp']
-        if len(komut) > 3:
-            asm.append(f'  li a0, {komut[3]}')
-
-        asm.extend([f'  call {komut[2]}'])
-
-        if len(komut) > 3:
-            asm.extend([f'  addi sp, sp, {16 * komut[3]}'])
-            self.sp_extra_offset -= 16 * komut[3]
-
-        if komut[1] is not None:
-            asm.extend(self.asm_reg_to_var('t0', komut[1], 'a0', 'a1'))
 
         return asm
 
@@ -416,36 +379,15 @@ class AssemblyYapici:
         asm.extend([f'  beq t0, zero, {komut[2]}'])
         return asm
 
-    def ceviriler_dortislem(self, komut):
-        # assuming type is 0 (int)
-        result_name = komut[1]
-        operand0_name = komut[2]
-        operand1_name = komut[3]
-
-        islemler = {
-            '+': 'add',
-            '-': 'sub',
-            '*': 'mul',
-            '/': 'div',
-        }
-        islem = islemler[komut[0]]
-
-        asm = []
-        asm.extend(self.asm_var_to_reg(operand0_name, None, 't0'))
-        asm.extend(self.asm_var_to_reg(operand1_name, None, 't1'))
-        asm.extend([f'  {islem} t0, t0, t1'])
-        asm.extend(self.asm_reg_to_var('t1', result_name, 'zero', 't0'))
-        return asm
-
     def ceviriler_mantiksal(self, komut):
         # assuming type is 3 (bool)
         result_name = komut[1]
         operand0_name = komut[2]
-        operand1_name = komut[3]
 
         asm = []
         asm.extend(self.asm_var_to_reg(operand0_name, None, 't0'))
         if komut[0] in ['and', 'or']:
+            operand1_name = komut[3]
             asm.extend(self.asm_var_to_reg(operand1_name, None, 't1'))
             asm.extend([f'  {komut[0]} t0, t0, t1'])
         elif komut[0] == '!':

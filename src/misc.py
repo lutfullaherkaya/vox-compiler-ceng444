@@ -247,19 +247,11 @@ class UnDeclVarVisitor(ASTNodeVisitor):
 
     def visit_Call(self, call: Call):
         un_declared_vars = []
-        if self.get_error_if_func_not_declared(call.callee) is None:
-            # un_declared_vars.append(call.callee)
-            pass
         for arg in call.arguments:
             un_declared_vars += self.visit(arg)
         return un_declared_vars
 
-    def get_error_if_func_not_declared(self, callee: Identifier):
-        if callee.name not in self.global_fun_decls:
-            semantic_error(f"Function identifier '{callee.name}' referenced without being declared.",
-                           callee.lineno)
-            return None
-        return self.global_fun_decls[callee.name]
+
 
 
 class MultiVarDeclVisitor(ASTNodeVisitor):
