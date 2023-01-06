@@ -45,11 +45,20 @@ https://github.com/riscv-non-isa/riscv-asm-manual/blob/master/riscv-asm.md
     
     https://en.wikipedia.org/wiki/Optimizing_compiler
     
+    todo: 
+    remove unused  variables
+    hata kontrol visitor açıp şunu ekle: Compilation error: Return statement can only be used inside a function.
+    
+    compiler utils compilation error quit yapmamalı, sadece sonunda dosyaya assembly yazılmasını engellemelidir.
+    
     
     parametrelerden ayrıca local değişken yapmama gerek yok, direkt stackte var zaten parametreler (a reglerine sığmayan)
     type checking lazım illa. mesela vektör işlemlerinde vektörlerin tipi sayı olmalı. 
     Optimizasyon belki
     string + işlemi
+    
+    
+    
 
 """
 

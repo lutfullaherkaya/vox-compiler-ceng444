@@ -190,7 +190,6 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
             for stmt in program.statements:
                 self.visit(stmt)
             self.current_scope = scope.parent
-
         self._ara_dile_ekle(['endfun'])
         self.ara_dil_sozleri.extend(self._ara_dil_fonksiyon_tanim_sozleri)
 
@@ -284,6 +283,8 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
             self._ara_dile_ekle(['branch', body_label])
 
     def visit_Return(self, returnn: Return):
+        if not self._fonksiyon_tanimlaniyor:
+            cu.compilation_error("Return statement can only be used inside a function.")
         ad_ve_id = self.visit(returnn.expr)
         self._ara_dile_ekle(['ret', ad_ve_id])
         self._ara_dile_ekle(['endfun'])
@@ -464,10 +465,12 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
         else:
             hedef_ara_dil_sozleri = self.ara_dil_sozleri
 
-        if isinstance(sozler[0], list) or isinstance(sozler[0], tuple):
-            hedef_ara_dil_sozleri.extend(sozler)
-        elif isinstance(sozler[0], str):
-            hedef_ara_dil_sozleri.append(sozler)
+        if not (len(hedef_ara_dil_sozleri) and hedef_ara_dil_sozleri[-1][0] == 'endfun' and sozler[0] == 'endfun'):
+            # fonksiyon bitirirken ve return ederken endfun deyince ust uste biniyor eğer return sondaysa
+            if isinstance(sozler[0], list) or isinstance(sozler[0], tuple):
+                hedef_ara_dil_sozleri.extend(sozler)
+            elif isinstance(sozler[0], str):
+                hedef_ara_dil_sozleri.append(sozler)
 
     def get_func_signature(self, fundecl: Union[FunDecl, str]):
         if isinstance(fundecl, str):
