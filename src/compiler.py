@@ -27,13 +27,14 @@ https://github.com/riscv-non-isa/riscv-asm-manual/blob/master/riscv-asm.md
     
     Bonus:
     
-    After you are done with all of the compulsory steps, you can also implement optional features you'd like Vox to have. These will help you get that Gazozuna Compiler award. Some of them could be:
+    After you are done with all of the compulsory steps, you can also implement optional features you'd like Vox to have. 
+    These will help you get that Gazozuna Compiler award. Some of them could be:
     - Lower amount of temporary variables, better register allocation and lower register spill.
     - Reals in addition to integers (just like Javascript).
     - Garbage collection.
     - Runtime errors.
     ✓ Functions with more than 7 formal parameters.
-    - Vectors can hold a mixture of types and other vectors.
+    ✓ Vectors can hold a mixture of types and other vectors.
     - Cool additional syntactic sugar (like list expressions in Python).
     
     
@@ -47,19 +48,19 @@ https://github.com/riscv-non-isa/riscv-asm-manual/blob/master/riscv-asm.md
 
 
 def get_global_type_name(var_name):
-    return f'global_{var_name}_type'
+    return f'{var_name}_type'
 
 
 def get_global_value_name(var_name):
-    return f'global_{var_name}_value'
+    return f'{var_name}_value'
 
 
 def get_global_length_name(var_name):
-    return f'global_{var_name}_length'
+    return f'{var_name}_length'
 
 
 def get_global_vector_name(var_name):
-    return f'global_{var_name}_vector'
+    return f'{var_name}_vector'
 
 
 def is_temp(var_name_id: NameIdPair):
@@ -77,11 +78,9 @@ type_values = {
 class AssemblyYapici:
     def __init__(self,
                  global_vars: Dict[str, VarDecl],
-                 global_vectors: Dict[str, VarDecl],
                  func_activation_records: Dict[str, ActivationRecord],
                  global_string_to_label: Dict[str, str]):
         self.global_vars: Dict[str, VarDecl] = global_vars
-        self.global_vectors: Dict[str, VarDecl] = global_vectors
         self.func_activation_records: Dict[str, ActivationRecord] = func_activation_records
         self.global_string_to_label: Dict[str, str] = global_string_to_label
         self.sp_extra_offset = 0
@@ -186,7 +185,11 @@ class AssemblyYapici:
 
     def aradilden_asm(self, komut):
         if komut[0] in self.aradil_sozlugu:
-            return self.aradil_sozlugu[komut[0]](komut)
+            asm = []
+            if komut[0] != 'fun':
+                asm.append('            # ' + cu.komut_stringi_yap(komut))
+            asm.extend(self.aradil_sozlugu[komut[0]](komut))
+            return asm
         else:
             return f'ERROR! Unknown IL {komut}'
 
@@ -473,58 +476,56 @@ class Compiler:
         self.program = program
         self.main_assembly_lines = []
         self.ara_dil_yapici_visitor = AraDilYapiciVisitor()
+        self.asm_satirlar = []
+
         self.ara_dil_yapici_visitor.visit(self.program)
         self.ara_dildeki_floatlari_int_yap()
 
     def compile(self):
         print(self.ara_dil_yapici_visitor.ara_dil_sozleri)
-        return self
-
-    def save_ass(self, filename: str):
-        places = self.ara_dil_yapici_visitor.main_activation_record.degisken_goreli_adresleri
-        stack_size = len(places) * 16 + 8
         on_soz = [f'#include "vox_lib.h"',
                   f'  ',
                   f'  .global main',
                   f'  .text',
                   f'  .align 2']
+        self.asm_satirlar.extend(on_soz)
 
+        asm_yapici = AssemblyYapici(self.ara_dil_yapici_visitor.global_vars,
+                                    self.ara_dil_yapici_visitor.func_activation_records,
+                                    self.ara_dil_yapici_visitor.global_string_to_label)
+
+        for komut in self.ara_dil_yapici_visitor.ara_dil_sozleri:
+            self.asm_satirlar.extend(asm_yapici.aradilden_asm(komut))
+
+        if len(self.ara_dil_yapici_visitor.global_vars) > 0 or \
+                len(self.ara_dil_yapici_visitor.global_string_to_label):
+            self.asm_satirlar.extend(['',
+                                      '  .data'])
+        for name, vardecl in self.ara_dil_yapici_visitor.global_vars.items():
+            if vardecl.initializer is not None and type(vardecl.initializer) == list:
+                global_vector_name = get_global_vector_name(name)
+                self.asm_satirlar.extend([f'{get_global_type_name(name)}:    .quad {type_values["vector"]}',
+                                          f'{get_global_value_name(name)}:   .quad {global_vector_name}',
+                                          f'{get_global_length_name(name)}:  .quad {len(vardecl.initializer)}',
+                                          f'{global_vector_name}:'])
+                for i in range(len(vardecl.initializer)):
+                    self.asm_satirlar.append('  .quad 0, 0')
+                self.asm_satirlar.append('')
+            else:
+                self.asm_satirlar.extend([f'{get_global_type_name(name)}:   .quad 0',
+                                          f'{get_global_value_name(name)}:  .quad 0',
+                                          f''])
+
+        for string_value, string_label in self.ara_dil_yapici_visitor.global_string_to_label.items():
+            # .ascii does not add a null terminator, thus use .string
+            self.asm_satirlar.append(f'{string_label}:  .string "{string_value}"')
+
+        return self
+
+    def save_ass(self, filename: str):
         with open(filename, 'w') as asm_dosyasi:
-            for satir in on_soz:
+            for satir in self.asm_satirlar:
                 asm_dosyasi.write(f'{satir}\n')
-            asm_yapici = AssemblyYapici(self.ara_dil_yapici_visitor.global_vars,
-                                        self.ara_dil_yapici_visitor.global_string_to_label,
-                                        self.ara_dil_yapici_visitor.func_activation_records,
-                                        self.ara_dil_yapici_visitor.global_string_to_label)
-
-            for komut in self.ara_dil_yapici_visitor.ara_dil_sozleri:
-                if komut[0] != 'fun':
-                    asm_dosyasi.write('            # ' + cu.komut_stringi_yap(komut) + '\n')
-                satirlar = asm_yapici.aradilden_asm(komut)
-                if satirlar:
-                    asm_dosyasi.write('\n'.join(satirlar))
-                    asm_dosyasi.write('\n')
-
-            if len(self.ara_dil_yapici_visitor.global_vars) > 0 or \
-                    len(self.ara_dil_yapici_visitor.global_string_to_label):
-                asm_dosyasi.write(f'\n  .data\n')
-            for name, vardecl in self.ara_dil_yapici_visitor.global_vars.items():
-                if vardecl.initializer is not None and type(vardecl.initializer) == list:
-                    global_vector_name = get_global_vector_name(name)
-                    asm_dosyasi.write(f'{get_global_type_name(name)}:    .quad {type_values["vector"]}\n')
-                    asm_dosyasi.write(f'{get_global_value_name(name)}:   .quad {global_vector_name}\n')
-                    asm_dosyasi.write(f'{get_global_length_name(name)}:  .quad {len(vardecl.initializer)}\n')
-                    asm_dosyasi.write(f'{global_vector_name}:\n')
-                    for i in range(len(vardecl.initializer)):
-                        asm_dosyasi.write(f'  .quad 0, 0\n')
-                else:
-                    asm_dosyasi.write(f'{get_global_type_name(name)}:   .quad 0\n')
-                    asm_dosyasi.write(f'{get_global_value_name(name)}:  .quad 0\n')
-                asm_dosyasi.write('\n')
-
-            for string_value, string_label in self.ara_dil_yapici_visitor.global_string_to_label.items():
-                # .ascii does not add a null terminator, thus use .string
-                asm_dosyasi.write(f'{string_label}:  .string "{string_value}"\n')
 
         return self
 
