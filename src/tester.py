@@ -4,7 +4,7 @@ import argparse
 import pickle
 from misc import *
 from lexer import Lexer
-from compiler import Compiler
+from compiler import Compiler, RiscVAssemblyYapici
 import sys
 
 arg_parser = argparse.ArgumentParser()
@@ -53,7 +53,7 @@ elif args.test_type == 'compile':
     result = result + '\n'.join([str(iden) for iden in multiple_decls])
     print(result)
     if len(undecl_vars) == 0 and len(multiple_decls) == 0 and not has_errors:
-        compiler = Compiler(ast)
+        compiler = Compiler(ast, RiscVAssemblyYapici)
         compiler.compile().save_ass(args.filename + '.s')
     else:
         sys.stderr.write('Compilation failed.\n')

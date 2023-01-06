@@ -1,12 +1,13 @@
 # hizli olmasi icin pypy kullanilabilir
-from typing import Dict, Optional, Union, List
+from typing import Dict, Optional, Union, List, Callable, Any, Type
 import ast_tools
 from ast_tools import VarDecl
+from abc import ABC, abstractmethod
 import misc
 from AraDilYapici import AraDilYapiciVisitor
 from AraDilYapici import ActivationRecord
 from AraDilYapici import NameIdPair
-
+import optimizer
 import compiler_utils as cu
 import sys
 
@@ -37,6 +38,12 @@ https://github.com/riscv-non-isa/riscv-asm-manual/blob/master/riscv-asm.md
     ✓ Vectors can hold a mixture of types and other vectors.
     - Cool additional syntactic sugar (like list expressions in Python).
     
+    Yapılabilecek optimizasyonlar:
+    constant folding yanında constant propogation:
+    https://en.wikipedia.org/wiki/Constant_folding
+    özet: değişiklik olmayana kadar bir folding bir propogation yap.
+    
+    https://en.wikipedia.org/wiki/Optimizing_compiler
     
     
     parametrelerden ayrıca local değişken yapmama gerek yok, direkt stackte var zaten parametreler (a reglerine sığmayan)
@@ -67,27 +74,47 @@ def is_temp(var_name_id: NameIdPair):
     return var_name_id['name'].startswith('.tmp')
 
 
-type_values = {
-    'int': 0,
-    'vector': 1,
-    'bool': 2,
-    'string': 3,
-}
-
-
-class AssemblyYapici:
+class AssemblyYapici(ABC):
     def __init__(self,
                  global_vars: Dict[str, VarDecl],
                  func_activation_records: Dict[str, ActivationRecord],
-                 global_string_to_label: Dict[str, str]):
+                 global_string_to_label: Dict[str, str],
+                 ara_dil_satirlari: List[List[Any]]):
         self.global_vars: Dict[str, VarDecl] = global_vars
         self.func_activation_records: Dict[str, ActivationRecord] = func_activation_records
         self.global_string_to_label: Dict[str, str] = global_string_to_label
+        self.aradil_sozlugu: Dict[str, Callable[[List[Any]], List[str]]] = {}
+        self.ara_dil_satirlari: List[List[Any]] = ara_dil_satirlari
+
+    def aradilden_asm(self, komut):
+        if komut[0] in self.aradil_sozlugu:
+            asm = []
+            if komut[0] != 'fun':
+                asm.append('            # ' + cu.komut_stringi_yap(komut))
+            asm.extend(self.aradil_sozlugu[komut[0]](komut))
+            return asm
+        else:
+            return f'ERROR! Unknown IL {komut}'
+
+    @abstractmethod
+    def yap(self) -> List[str]:
+        pass
+
+
+class RiscVAssemblyYapici(AssemblyYapici):
+    def __init__(self,
+                 global_vars: Dict[str, VarDecl],
+                 func_activation_records: Dict[str, ActivationRecord],
+                 global_string_to_label: Dict[str, str],
+                 ara_dil_satirlari: List[List[Any]]):
+        super().__init__(global_vars, func_activation_records, global_string_to_label, ara_dil_satirlari)
         self.sp_extra_offset = 0
         self.fp_extra_offset = 0
         self.current_stack_size = 0
         self.current_fun_label = ''
-        self.aradil_sozlugu = {
+        self.current_fun_callee_saved_regs: Dict[str, bool] = {}
+        self.current_fun_non_reg_arg_count = 0
+        self.aradil_sozlugu: Dict[str, Callable[[List[Any]], List[str]]] = {
             'call': self.cevir_call,
             'arg_count': self.cevir_arg_count,
             'arg': self.cevir_arg,
@@ -114,8 +141,52 @@ class AssemblyYapici:
             '==': self.ceviriler_karsilastirma,
             '!=': self.ceviriler_karsilastirma,
         }
-        self.current_fun_callee_saved_regs: Dict[str, bool] = {}
-        self.current_fun_non_reg_arg_count = 0
+        self.tip_rakamlari: Dict[str, int] = {
+            'int': 0,
+            'vector': 1,
+            'bool': 2,
+            'string': 3,
+        }
+
+    def yap(self):
+        assembly_lines = []
+        assembly_lines.extend(self.get_on_soz())
+
+        for komut in self.ara_dil_satirlari:
+            assembly_lines.extend(self.aradilden_asm(komut))
+
+        if len(self.global_vars) > 0 or \
+                len(self.global_string_to_label):
+            assembly_lines.extend(['',
+                                   '  .data'])
+        for name, vardecl in self.global_vars.items():
+            if vardecl.initializer is not None and type(vardecl.initializer) == list:
+                global_vector_name = get_global_vector_name(name)
+                assembly_lines.extend([f'{get_global_type_name(name)}:    .quad {self.tip_rakamlari["vector"]}',
+                                       f'{get_global_value_name(name)}:   .quad {global_vector_name}',
+                                       f'{get_global_length_name(name)}:  .quad {len(vardecl.initializer)}',
+                                       f'{global_vector_name}:'])
+                for i in range(len(vardecl.initializer)):
+                    assembly_lines.append('  .quad 0, 0')
+                assembly_lines.append('')
+            else:
+                assembly_lines.extend([f'{get_global_type_name(name)}:   .quad 0',
+                                       f'{get_global_value_name(name)}:  .quad 0',
+                                       f''])
+
+        for string_value, string_label in self.global_string_to_label.items():
+            # .ascii does not add a null terminator, thus use .string
+            assembly_lines.append(f'{string_label}:  .string "{string_value}"')
+
+        return assembly_lines
+
+    def get_on_soz(self):
+        on_soz = [f'#include "vox_lib.h"',
+                  f'  ',
+                  f'  .global main',
+                  f'  .text',
+                  f'  .align 2']
+        return on_soz
 
     def add_to_saved_regs(self, regs: Union[str, List[str]]):
         """
@@ -183,16 +254,6 @@ class AssemblyYapici:
                         f'  add {addr_reg}, {addr_reg}, {tmp_reg}'])
         return asm
 
-    def aradilden_asm(self, komut):
-        if komut[0] in self.aradil_sozlugu:
-            asm = []
-            if komut[0] != 'fun':
-                asm.append('            # ' + cu.komut_stringi_yap(komut))
-            asm.extend(self.aradil_sozlugu[komut[0]](komut))
-            return asm
-        else:
-            return f'ERROR! Unknown IL {komut}'
-
     def cevir_arg_count(self, komut):
         asm = []
         non_reg_arg_count = komut[1] - 4
@@ -242,11 +303,11 @@ class AssemblyYapici:
                 asm.extend([f'  li t0, {komut[2]}'])
                 asm.extend(self.asm_reg_to_var('t1', komut[1], 'zero', 't0'))
             elif type(komut[2]) == bool:
-                asm.extend([f'  li t1, {type_values["bool"]}',
+                asm.extend([f'  li t1, {self.tip_rakamlari["bool"]}',
                             f'  li t2, {int(komut[2])}'])
                 asm.extend(self.asm_reg_to_var('t0', komut[1], 't1', 't2'))
             elif type(komut[2]) == str:
-                asm.extend([f'  li t1, {type_values["string"]}',
+                asm.extend([f'  li t1, {self.tip_rakamlari["string"]}',
                             f'  la t2, {self.global_string_to_label[komut[2]]}'])
                 asm.extend(self.asm_reg_to_var('t0', komut[1], 't1', 't2'))
 
@@ -267,7 +328,7 @@ class AssemblyYapici:
         if type_addr is not None:  # local
             length_addr = self._length_addr(name_id)
             i_first_elm = self._vector_first_elm_sp_index(name_id)
-            asm.extend([f'  li t1, {type_values["vector"]}',
+            asm.extend([f'  li t1, {self.tip_rakamlari["vector"]}',
                         f'  add t2, sp, {i_first_elm}'])
             asm.extend(self.asm_reg_to_var('t0', name_id, 't1', 't2'))
 
@@ -396,7 +457,7 @@ class AssemblyYapici:
         elif komut[0] == '!':
             asm.extend([f'  xori t0, t0, 1'])
 
-        asm.extend([f'  li t2, {type_values["bool"]}'])
+        asm.extend([f'  li t2, {self.tip_rakamlari["bool"]}'])
         asm.extend(self.asm_reg_to_var('t1', result_name, 't2', 't0'))
 
         return asm
@@ -427,7 +488,7 @@ class AssemblyYapici:
             asm.extend([f'  sub t0, t0, t1',
                         f'  {"seqz" if komut[0] == "==" else "snez"} t2, t0'])
 
-        asm.extend([f'  li t1, {type_values["bool"]}'])
+        asm.extend([f'  li t1, {self.tip_rakamlari["bool"]}'])
         asm.extend(self.asm_reg_to_var('t0', result_name, 't1', 't2'))
         return asm
 
@@ -471,66 +532,68 @@ class AssemblyYapici:
 
 
 class Compiler:
-
-    def __init__(self, program: ast_tools.Program):
-        self.program = program
-        self.main_assembly_lines = []
+    def __init__(self, ast: ast_tools.Program, asm_yapici_cls: Type[AssemblyYapici]):
+        self.ast: ast_tools.Program = ast
         self.ara_dil_yapici_visitor = AraDilYapiciVisitor()
-        self.asm_satirlar = []
+        self.assembly_lines: List[str] = []
+        self.ara_dil_satirlari: List[List[Any]] = []
+        self.AssemblyYapici: Type[AssemblyYapici] = asm_yapici_cls
+        self.asm_yapici: Optional[AssemblyYapici] = None
 
-        self.ara_dil_yapici_visitor.visit(self.program)
-        self.ara_dildeki_floatlari_int_yap()
+    def ast_optimize_et(self):
+        changes_made = True
+        while changes_made:
+            constant_folder = optimizer.ConstantFoldingVisitor()
+            constant_folder.visit(self.ast)
+            changes_made = constant_folder.changes_made
+            if not changes_made:
+                break
+            constant_propagator = optimizer.ConstantPropogationVisitor()
+            constant_propagator.visit(self.ast)
+            changes_made = constant_propagator.changes_made
+
+        olu_kod_oldurucu = optimizer.OluKodOldurucuVisitor()
+        olu_kod_oldurucu.visit(self.ast)
+
+
+
+
+    def ara_dil_optimize_et(self):
+        pass
+
+    def assembly_optimize_et(self):
+        pass
+
+    def ara_dil_yap(self):
+        self.ara_dil_yapici_visitor.visit(self.ast)
+        self.ara_dil_satirlari = self.ara_dil_yapici_visitor.ara_dil_sozleri
+
+    def assembly_yap(self):
+        self.asm_yapici = self.AssemblyYapici(self.ara_dil_yapici_visitor.global_vars,
+                                              self.ara_dil_yapici_visitor.func_activation_records,
+                                              self.ara_dil_yapici_visitor.global_string_to_label,
+                                              self.ara_dil_satirlari)
+        self.assembly_lines = self.asm_yapici.yap()
 
     def compile(self):
-        print(self.ara_dil_yapici_visitor.ara_dil_sozleri)
-        on_soz = [f'#include "vox_lib.h"',
-                  f'  ',
-                  f'  .global main',
-                  f'  .text',
-                  f'  .align 2']
-        self.asm_satirlar.extend(on_soz)
-
-        asm_yapici = AssemblyYapici(self.ara_dil_yapici_visitor.global_vars,
-                                    self.ara_dil_yapici_visitor.func_activation_records,
-                                    self.ara_dil_yapici_visitor.global_string_to_label)
-
-        for komut in self.ara_dil_yapici_visitor.ara_dil_sozleri:
-            self.asm_satirlar.extend(asm_yapici.aradilden_asm(komut))
-
-        if len(self.ara_dil_yapici_visitor.global_vars) > 0 or \
-                len(self.ara_dil_yapici_visitor.global_string_to_label):
-            self.asm_satirlar.extend(['',
-                                      '  .data'])
-        for name, vardecl in self.ara_dil_yapici_visitor.global_vars.items():
-            if vardecl.initializer is not None and type(vardecl.initializer) == list:
-                global_vector_name = get_global_vector_name(name)
-                self.asm_satirlar.extend([f'{get_global_type_name(name)}:    .quad {type_values["vector"]}',
-                                          f'{get_global_value_name(name)}:   .quad {global_vector_name}',
-                                          f'{get_global_length_name(name)}:  .quad {len(vardecl.initializer)}',
-                                          f'{global_vector_name}:'])
-                for i in range(len(vardecl.initializer)):
-                    self.asm_satirlar.append('  .quad 0, 0')
-                self.asm_satirlar.append('')
-            else:
-                self.asm_satirlar.extend([f'{get_global_type_name(name)}:   .quad 0',
-                                          f'{get_global_value_name(name)}:  .quad 0',
-                                          f''])
-
-        for string_value, string_label in self.ara_dil_yapici_visitor.global_string_to_label.items():
-            # .ascii does not add a null terminator, thus use .string
-            self.asm_satirlar.append(f'{string_label}:  .string "{string_value}"')
+        self.ast_optimize_et()
+        self.ara_dil_yap()
+        self.ara_dil_optimize_et()
+        self.ara_dildeki_floatlari_int_yap()
+        self.assembly_yap()
+        self.assembly_optimize_et()
 
         return self
 
     def save_ass(self, filename: str):
         with open(filename, 'w') as asm_dosyasi:
-            for satir in self.asm_satirlar:
+            for satir in self.assembly_lines:
                 asm_dosyasi.write(f'{satir}\n')
 
         return self
 
     def ara_dildeki_floatlari_int_yap(self):
-        for komut in self.ara_dil_yapici_visitor.ara_dil_sozleri:
+        for komut in self.ara_dil_satirlari:
             for i, arg in enumerate(komut):
                 if type(arg) == float:
                     komut[i] = int(arg)
