@@ -159,8 +159,17 @@ class ConstantFoldingVisitor(OptimizerVisitor):
                 if lbinary.left.value:
                     self.changes_made = True
                     return LLiteral(True)
-        # todo: implement side effect visitor and check if right has side effects. (function calls)
-        # If not, check for answer just like left
+        if isinstance(lbinary.right, LLiteral):
+            solda_yan_etki_var = YanEtkiVarMiVisitor().visit(lbinary.left)
+            if not solda_yan_etki_var:
+                if lbinary.op == 'and':
+                    if not lbinary.right.value:
+                        self.changes_made = True
+                        return LLiteral(False)
+                elif lbinary.op == 'or':
+                    if lbinary.right.value:
+                        self.changes_made = True
+                        return LLiteral(True)
         return lbinary
 
     def visit_Comparison(self, comparison: Comparison):
@@ -203,7 +212,39 @@ class ConstantFoldingVisitor(OptimizerVisitor):
             elif abinary.op == '/' and abinary.right.value != 0:
                 # payda 0 ise ne hali varsa görsün runtimede
                 return ALiteral(abinary.left.value / abinary.right.value)
-        # todo: implement side effect visitor and check for yutan eleman for * operator
+        yan_etki_visitor = YanEtkiVarMiVisitor()
+        if isinstance(abinary.left, ALiteral):
+            if abinary.op == '+':
+                if abinary.left.value == 0:
+                    self.changes_made = True
+                    return abinary.right
+            elif abinary.op == '-':
+                if abinary.left.value == 0:
+                    self.changes_made = True
+                    return AUMinus(abinary.right)
+            elif abinary.op == '*':
+                if abinary.left.value == 0 and not yan_etki_visitor.visit(abinary.right):
+                    self.changes_made = True
+                    return ALiteral(0)
+                elif abinary.left.value == 1:
+                    self.changes_made = True
+                    return abinary.right
+        if isinstance(abinary.right, ALiteral):
+            if abinary.op == '+':
+                if abinary.right.value == 0:
+                    self.changes_made = True
+                    return abinary.left
+            elif abinary.op == '-':
+                if abinary.right.value == 0:
+                    self.changes_made = True
+                    return abinary.left
+            elif abinary.op == '*':
+                if abinary.right.value == 0 and not yan_etki_visitor.visit(abinary.left):
+                    self.changes_made = True
+                    return ALiteral(0)
+                elif abinary.right.value == 1:
+                    self.changes_made = True
+                    return abinary.left
 
         return abinary
 
@@ -218,6 +259,91 @@ class ConstantFoldingVisitor(OptimizerVisitor):
 class ConstantPropogationVisitor(OptimizerVisitor):
     def __init__(self):
         super().__init__()
+
+
+class YanEtkiVarMiVisitor(ASTNodeVisitor):
+    def __init__(self):
+        super().__init__()
+
+    def visit_SLiteral(self, sliteral: SLiteral):
+        return False
+
+    def visit_Program(self, program: Program):
+        return True
+
+    def visit_ErrorStmt(self, errorstmt: ErrorStmt):
+        return True
+
+    def visit_VarDecl(self, vardecl: VarDecl):
+        return True
+
+    def visit_FunDecl(self, fundecl: FunDecl):
+        return True
+
+    def visit_Assign(self, assign: Assign):
+        return True
+
+    def visit_SetVector(self, setvector: SetVector):
+        return True
+
+    def visit_ForLoop(self, forloop: ForLoop):
+        return True
+
+    def visit_Return(self, returnn: Return):
+        return True
+
+    def visit_WhileLoop(self, whileloop: WhileLoop):
+        return True
+
+    def visit_Block(self, block: Block):
+        if any(self.visit(var_decl) for var_decl in block.var_decls):
+            return True
+        if any(self.visit(stmt) for stmt in block.statements):
+            return True
+        return False
+
+    def visit_Print(self, printt: Print):
+        return True
+
+    def visit_IfElse(self, ifelse: IfElse):
+        if self.visit(ifelse.condition) or self.visit(ifelse.if_branch):
+            return True
+        if ifelse.else_branch is not None:
+            return self.visit(ifelse.else_branch)
+        return False
+
+    def visit_LBinary(self, lbinary: LBinary):
+        return self.visit(lbinary.left) or self.visit(lbinary.right)
+
+    def visit_Comparison(self, comparison: Comparison):
+        return self.visit(comparison.left) or self.visit(comparison.right)
+
+    def visit_LLiteral(self, lliteral: LLiteral):
+        return False
+
+    def visit_LPrimary(self, lprimary: LPrimary):
+        return self.visit(lprimary.primary)
+
+    def visit_GetVector(self, getvector: GetVector):
+        return self.visit(getvector.vector_index)
+
+    def visit_Variable(self, variable: Variable):
+        return False
+
+    def visit_LNot(self, lnot: LNot):
+        return self.visit(lnot.right)
+
+    def visit_ABinary(self, abinary: ABinary):
+        return self.visit(abinary.left) or self.visit(abinary.right)
+
+    def visit_AUMinus(self, auminus: AUMinus):
+        return self.visit(auminus.right)
+
+    def visit_ALiteral(self, aliteral: ALiteral):
+        return False
+
+    def visit_Call(self, calll: Call):
+        return True  # asıl önemli kısım. fonksiyon çağrısı varsa yan etki vardır, ölü kod saymamalıyız o kodu.
 
 
 class OluKodOldurucuVisitor(OptimizerVisitor):

@@ -20,9 +20,6 @@ https://github.com/riscv-non-isa/riscv-asm-manual/blob/master/riscv-asm.md
     değişken structuna yazsam olabilirdi, mesela 4 byte type deyip 4 byte vector length diyebilirdim ama demedim. 
     not: vektörler type ve değer çifti tutar, doğal olarak heterojen olurlar.
     
-    Eksikler:
-    e. Implement vectors as an additional type to integers. Overload "+,-,*,/" for vectors of same size so that they do 
-    element-wise operations with the parallel instructions of the V extension. (10 pts)
     
     
     
@@ -48,7 +45,7 @@ https://github.com/riscv-non-isa/riscv-asm-manual/blob/master/riscv-asm.md
     todo: 
     remove unused  variables
     hata kontrol visitor açıp şunu ekle: Compilation error: Return statement can only be used inside a function.
-    
+    sadece fonksiyon içerisinde değiştirilen registerler savelensin.
     compiler utils compilation error quit yapmamalı, sadece sonunda dosyaya assembly yazılmasını engellemelidir.
     
     
@@ -293,9 +290,10 @@ class RiscVAssemblyYapici(AssemblyYapici):
     def cevir_call(self, komut):
         ret_val_name_id = komut[1]
         func_name = komut[2]
-        asm = [f'  call {func_name}',
-               f'  addi sp, sp, {16 * self.current_fun_non_reg_arg_count}']
-        self.sp_extra_offset -= 16 * self.current_fun_non_reg_arg_count
+        asm = [f'  call {func_name}']
+        if self.current_fun_non_reg_arg_count > 0:
+            asm.append(f'  addi sp, sp, {16 * self.current_fun_non_reg_arg_count}')
+            self.sp_extra_offset -= 16 * self.current_fun_non_reg_arg_count
         self.current_fun_non_reg_arg_count = 0
 
         if ret_val_name_id is not None:
@@ -397,8 +395,9 @@ class RiscVAssemblyYapici(AssemblyYapici):
 
         asm = [f'',
                f'# fun {signature};',
-               f'{label}:',
-               f'  addi sp, sp, -{total_stack_size}']
+               f'{label}:']
+        if total_stack_size > 0:
+            asm.append(f'  addi sp, sp, -{total_stack_size}')
 
         for i, reg_to_save in enumerate(self.current_fun_callee_saved_regs):
             asm.append(f'  sd {reg_to_save}, {total_stack_size - 8 * (i + 1)}(sp)')
@@ -433,8 +432,9 @@ class RiscVAssemblyYapici(AssemblyYapici):
         asm = []
         for i, reg_to_save in enumerate(self.current_fun_callee_saved_regs):
             asm.append(f'  ld {reg_to_save}, {total_stack_size - 8 * (i + 1)}(sp)')
-        asm.extend([f'  addi sp, sp, {total_stack_size}',
-                    f'  ret'])
+        if total_stack_size > 0:
+            asm.extend([f'  addi sp, sp, {total_stack_size}'])
+        asm.append(f'  ret')
         self.sp_extra_offset = 0
         self.fp_extra_offset = 0
         self.current_fun_callee_saved_regs = {}
@@ -563,9 +563,6 @@ class Compiler:
 
         olu_kod_oldurucu = optimizer.OluKodOldurucuVisitor()
         olu_kod_oldurucu.visit(self.ast)
-
-
-
 
     def ara_dil_optimize_et(self):
         pass
