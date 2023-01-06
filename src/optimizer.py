@@ -275,8 +275,3 @@ class OluKodOldurucuVisitor(OptimizerVisitor):
                     return Block([], [])
 
         return ifelse
-
-    def visit_Call(self, calll: Call):
-        for i in range(len(calll.arguments)):
-            calll.arguments[i] = self.visit(calll.arguments[i])
-        return calll
