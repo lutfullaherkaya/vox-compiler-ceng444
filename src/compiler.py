@@ -57,6 +57,11 @@ https://github.com/riscv-non-isa/riscv-asm-manual/blob/master/riscv-asm.md
     
     print(a) çalışmıyor
     
+    todo: const globalleri direkt literal olarak yaz.
+    
+    optimizasyon döngüsü çok uzun sürerse bıraksın onu ayarla. mesela 1 sn sürerse döngüden çıksın.
+    reaching definition kullanmadığım için propogation çok verimli olmayabilir.
+    
     
     
 
@@ -561,11 +566,9 @@ class Compiler:
             constant_folder = optimizer.ConstantFoldingVisitor()
             constant_folder.visit(self.ast)
             changes_made = constant_folder.changes_made
-            if not changes_made:
-                break
             constant_propagator = optimizer.ConstantPropogationVisitor()
             constant_propagator.visit(self.ast)
-            changes_made = constant_propagator.changes_made
+            changes_made = changes_made or constant_propagator.changes_made
 
         olu_kod_oldurucu = optimizer.OluKodOldurucuVisitor()
         olu_kod_oldurucu.visit(self.ast)

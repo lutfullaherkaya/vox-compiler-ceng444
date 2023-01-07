@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Dict, Optional, Union, List, Tuple, TypedDict
+from typing import Dict, Optional, Union, List, Tuple, TypedDict, Any
 from ast_tools import *
 import sys
 import compiler_utils as cu
@@ -14,10 +14,11 @@ class ActivationRecord:
     def __init__(self):
         self.degisken_sayilari: Dict[str, int] = {}
         self.degisken_goreli_adresleri: Dict[Tuple[str, int], int] = {}
+        self.degisken_compile_time_degerleri: Dict[Tuple[str, int], Any] = {}
         self.tmp_count = 0
         self.son_goreli_adres = 0
 
-    def degisken_ekle(self, degisken_adi: str):
+    def degisken_ekle(self, degisken_adi: str, compile_time_degeri: Any = None):
         if degisken_adi not in self.degisken_sayilari:
             self.degisken_sayilari[degisken_adi] = 1
         else:
@@ -28,11 +29,12 @@ class ActivationRecord:
         ad, var_id = degisken_ad_ve_id['name'], degisken_ad_ve_id['id']
 
         self.degisken_goreli_adresleri[(ad, var_id)] = self.son_goreli_adres
+        self.degisken_compile_time_degerleri[(ad, var_id)] = compile_time_degeri
         self.son_goreli_adres += 16
         return degisken_ad_ve_id
 
-    def vektor_degiskeni_ekle(self, degisken_adi: str, vektor_uzunlugu: int):
-        degisken_ad_ve_id = self.degisken_ekle(degisken_adi)
+    def vektor_degiskeni_ekle(self, degisken_adi: str, vektor_uzunlugu: int, compile_time_degeri: Any = None):
+        degisken_ad_ve_id = self.degisken_ekle(degisken_adi, compile_time_degeri)
         self.son_goreli_adres += 16 * vektor_uzunlugu + 8
         return degisken_ad_ve_id
 
@@ -65,12 +67,14 @@ class AraDilScope:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.drop_symbol_table()
 
-    def add(self, identifier: Identifier, vector_length: Optional[int] = None) -> NameIdPair:
+    def add(self, identifier: Identifier, vector_length: Optional[int] = None,
+            compile_time_degeri: Any = None) -> NameIdPair:
         if identifier.name not in self.symbol_table:
             if vector_length is None:
-                degisken_ad_ve_id = self.activation_record.degisken_ekle(identifier.name)
+                degisken_ad_ve_id = self.activation_record.degisken_ekle(identifier.name, compile_time_degeri)
             else:
-                degisken_ad_ve_id = self.activation_record.vektor_degiskeni_ekle(identifier.name, vector_length)
+                degisken_ad_ve_id = self.activation_record.vektor_degiskeni_ekle(identifier.name, vector_length,
+                                                                                 compile_time_degeri)
             self.symbol_table[identifier.name] = Symbol(identifier, degisken_ad_ve_id['id'])
             return degisken_ad_ve_id
 
@@ -159,17 +163,15 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
         self.labels: Labels = Labels()
         self.global_vars: Dict[str, VarDecl] = {}
         self.global_string_to_label: Dict[str, str] = {}
+        self.current_func = 'main'
 
         self._fonksiyon_tanimlaniyor = False
         self.main_activation_record: ActivationRecord = ActivationRecord()
 
     def visit_SLiteral(self, sliteral: SLiteral):
-        # todo: optimisation: add seperate instructions for literals instead of putting them in a variable
         if sliteral.value not in self.global_string_to_label:
             self.global_string_to_label[sliteral.value] = self.labels.create_string()
-        name_id = self.current_scope.generate_tmp()
-        self._ara_dile_ekle([['copy', name_id, sliteral.value]])
-        return name_id
+        return sliteral.value
 
     def visit_Program(self, program: Program):
         self._ara_dile_ekle(['fun', 'main', 'main()', 0])
@@ -207,7 +209,7 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
             degisken_ad_ve_id = self.current_scope.add(vardecl.identifier)
             self._ara_dile_ekle([['copy', degisken_ad_ve_id]])
         else:
-            degisken_ad_ve_id = self.current_scope.add(vardecl.identifier)
+            degisken_ad_ve_id = self.current_scope.add(vardecl.identifier, None, vardecl.initializer)
             self._ara_dile_ekle(['copy', degisken_ad_ve_id, self.visit(vardecl.initializer)])
 
         return degisken_ad_ve_id
@@ -235,6 +237,7 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
     def visit_FunDecl(self, fundecl: FunDecl):
         self._fonksiyon_tanimlaniyor = True
         func_label = fundecl.identifier.name
+        self.current_func = fundecl.identifier.name
         self._ara_dile_ekle(['fun', func_label, self.get_func_signature(fundecl), len(fundecl.params)])
 
         main_scope = self.current_scope
@@ -254,6 +257,7 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
             self.current_scope = main_scope
         self._ara_dile_ekle(['endfun'])
         self._fonksiyon_tanimlaniyor = False
+        self.current_func = 'main'
 
     def visit_Assign(self, assign: Assign):
         rhs_ad_ve_id = self.visit(assign.expr)
@@ -403,12 +407,10 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
 
     def visit_AUMinus(self, auminus: AUMinus):
         result_name_id = self.current_scope.generate_tmp()
-        left_name_id = self.current_scope.generate_tmp()
         right_name_id = self.visit(auminus.right)
 
-        self._ara_dile_ekle([['copy', left_name_id, 0],
-                             ['arg_count', 2],
-                             ['arg', left_name_id, 0],
+        self._ara_dile_ekle([['arg_count', 2],
+                             ['arg', 0, 0],
                              ['arg', right_name_id, 1],
                              ['call', result_name_id, f'__vox_sub__']])
         return result_name_id

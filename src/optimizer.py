@@ -3,6 +3,92 @@ from abc import ABC
 import compiler_utils as cu
 from ast_tools import *
 from typing import Dict, Optional, Union, List, Tuple, TypedDict
+from AraDilYapici import NameIdPair, ActivationRecord, AraDilScope, Symbol
+
+
+class YanEtkiVarMiVisitor(ASTNodeVisitor):
+    def __init__(self):
+        super().__init__()
+
+    def visit_SLiteral(self, sliteral: SLiteral):
+        return False
+
+    def visit_Program(self, program: Program):
+        return True
+
+    def visit_ErrorStmt(self, errorstmt: ErrorStmt):
+        return True
+
+    def visit_VarDecl(self, vardecl: VarDecl):
+        return True
+
+    def visit_FunDecl(self, fundecl: FunDecl):
+        return True
+
+    def visit_Assign(self, assign: Assign):
+        return True
+
+    def visit_SetVector(self, setvector: SetVector):
+        return True
+
+    def visit_ForLoop(self, forloop: ForLoop):
+        return True
+
+    def visit_Return(self, returnn: Return):
+        return True
+
+    def visit_WhileLoop(self, whileloop: WhileLoop):
+        return True
+
+    def visit_Block(self, block: Block):
+        if any(self.visit(var_decl) for var_decl in block.var_decls):
+            return True
+        if any(self.visit(stmt) for stmt in block.statements):
+            return True
+        return False
+
+    def visit_Print(self, printt: Print):
+        return True
+
+    def visit_IfElse(self, ifelse: IfElse):
+        if self.visit(ifelse.condition) or self.visit(ifelse.if_branch):
+            return True
+        if ifelse.else_branch is not None:
+            return self.visit(ifelse.else_branch)
+        return False
+
+    def visit_LBinary(self, lbinary: LBinary):
+        return self.visit(lbinary.left) or self.visit(lbinary.right)
+
+    def visit_Comparison(self, comparison: Comparison):
+        return self.visit(comparison.left) or self.visit(comparison.right)
+
+    def visit_LLiteral(self, lliteral: LLiteral):
+        return False
+
+    def visit_LPrimary(self, lprimary: LPrimary):
+        return self.visit(lprimary.primary)
+
+    def visit_GetVector(self, getvector: GetVector):
+        return self.visit(getvector.vector_index)
+
+    def visit_Variable(self, variable: Variable):
+        return False
+
+    def visit_LNot(self, lnot: LNot):
+        return self.visit(lnot.right)
+
+    def visit_ABinary(self, abinary: ABinary):
+        return self.visit(abinary.left) or self.visit(abinary.right)
+
+    def visit_AUMinus(self, auminus: AUMinus):
+        return self.visit(auminus.right)
+
+    def visit_ALiteral(self, aliteral: ALiteral):
+        return False
+
+    def visit_Call(self, calll: Call):
+        return True  # asıl önemli kısım. fonksiyon çağrısı varsa yan etki vardır, ölü kod saymamalıyız o kodu.
 
 
 class OptimizerVisitor(ASTNodeVisitor):
@@ -203,6 +289,7 @@ class ConstantFoldingVisitor(OptimizerVisitor):
     def visit_ABinary(self, abinary: ABinary):
         abinary.left = self.visit(abinary.left)
         abinary.right = self.visit(abinary.right)
+        # todo: add operations for constant vectors with literal values
         if isinstance(abinary.left, ALiteral) and isinstance(abinary.right, ALiteral):
             self.changes_made = True
             if abinary.op == '+':
@@ -261,91 +348,179 @@ class ConstantFoldingVisitor(OptimizerVisitor):
 class ConstantPropogationVisitor(OptimizerVisitor):
     def __init__(self):
         super().__init__()
+        self.current_scope: Optional[AraDilScope] = None
+        self.func_activation_records: Dict[str, ActivationRecord] = {}
+        # vox_lib functions. can be overwritten by programmer.
+        self.fun_decls: Dict[str, FunDecl] = {
+            'len': FunDecl(Identifier('len', -1, -1), [Identifier('object', -1, -1)], Block([], [])),
+            'type': FunDecl(Identifier('type', -1, -1), [Identifier('object', -1, -1)], Block([], [])),
+        }
 
+        self.global_vars: Dict[str, VarDecl] = {}
+        self.global_string_to_label: Dict[str, str] = {}
+        self.current_func = 'main'
 
-class YanEtkiVarMiVisitor(ASTNodeVisitor):
-    def __init__(self):
-        super().__init__()
+        self._fonksiyon_tanimlaniyor = False
+        self.main_activation_record: ActivationRecord = ActivationRecord()
 
-    def visit_SLiteral(self, sliteral: SLiteral):
-        return False
+    def get_var_compile_time_value(self, idf: Identifier):
+        var_name_id = self.current_scope.get_name_id_pair(idf)
+        value = None
+        if var_name_id['id'] == -1:
+            value = self.global_vars[var_name_id['name']].initializer
+        else:
+            value = self.func_activation_records[self.current_func].degisken_compile_time_degerleri[
+                (var_name_id['name'], var_name_id['id'])]
+
+        if value is not None and isinstance(value, (ALiteral, LLiteral, SLiteral)):
+            return value
+        else:
+            return None
 
     def visit_Program(self, program: Program):
-        return True
+        for i, fundecl in enumerate(program.fun_decls):
+            if fundecl.identifier.name == 'main':
+                fundecl.identifier.name = 'main.fake'
+            self.func_activation_records[fundecl.identifier.name] = ActivationRecord()
+            self.fun_decls[fundecl.identifier.name] = fundecl
+        self.func_activation_records['main'] = self.main_activation_record
 
-    def visit_ErrorStmt(self, errorstmt: ErrorStmt):
-        return True
+        with AraDilScope(None, None, self.main_activation_record) as scope:
+            self.current_scope = scope
+            for i in range(len(program.var_decls)):
+                program.var_decls[i] = self.visit_global_var_decl(program.var_decls[i])
+            for i in range(len(program.fun_decls)):
+                program.fun_decls[i] = self.visit(program.fun_decls[i])
+            for i in range(len(program.statements)):
+                program.statements[i] = self.visit(program.statements[i])
+            self.current_scope = scope.parent
+        return program
 
     def visit_VarDecl(self, vardecl: VarDecl):
-        return True
+        if type(vardecl.initializer) == list:
+            degisken_ad_ve_id = self.current_scope.add(vardecl.identifier, len(vardecl.initializer))
+            for i in range(len(vardecl.initializer)):
+                vardecl.initializer[i] = self.visit(vardecl.initializer[i])
+        elif vardecl.initializer is None:
+            degisken_ad_ve_id = self.current_scope.add(vardecl.identifier)
+        else:
+            degisken_ad_ve_id = self.current_scope.add(vardecl.identifier, None, vardecl.initializer)
+            vardecl.initializer = self.visit(vardecl.initializer)
+
+        return vardecl
+
+    def visit_global_var_decl(self, vardecl: VarDecl):
+        degisken_ad_ve_id = {'name': vardecl.identifier.name, 'id': -1}
+
+        if type(vardecl.initializer) == list:
+            self.global_vars[vardecl.identifier.name] = vardecl
+            for i in range(len(vardecl.initializer)):
+                vardecl.initializer[i] = self.visit(vardecl.initializer[i])
+        elif vardecl.initializer is None:
+            self.global_vars[vardecl.identifier.name] = vardecl
+        else:
+            self.global_vars[vardecl.identifier.name] = vardecl
+            vardecl.initializer = self.visit(vardecl.initializer)
+        return vardecl
 
     def visit_FunDecl(self, fundecl: FunDecl):
-        return True
+        self._fonksiyon_tanimlaniyor = True
+        func_label = fundecl.identifier.name
+        self.current_func = fundecl.identifier.name
 
-    def visit_Assign(self, assign: Assign):
-        return True
+        main_scope = self.current_scope
 
-    def visit_SetVector(self, setvector: SetVector):
-        return True
+        # here we cut the scope tree. function cant see caller scope.
+        # since globals are not in any scope, they are hidden from all functions here but
+        # seeing globals is handled in compiler part.
+        with AraDilScope(None, None, self.func_activation_records[func_label]) as func_scope:
+            self.current_scope = func_scope
 
-    def visit_ForLoop(self, forloop: ForLoop):
-        return True
+            for i, param in enumerate(fundecl.params):
+                degisken_ad_ve_id = self.current_scope.add(param)
 
-    def visit_Return(self, returnn: Return):
-        return True
+            fundecl.body = self.visit(fundecl.body)
 
-    def visit_WhileLoop(self, whileloop: WhileLoop):
-        return True
+            self.current_scope = main_scope
+        self._fonksiyon_tanimlaniyor = False
+        self.current_func = 'main'
+        return fundecl
 
     def visit_Block(self, block: Block):
-        if any(self.visit(var_decl) for var_decl in block.var_decls):
-            return True
-        if any(self.visit(stmt) for stmt in block.statements):
-            return True
-        return False
-
-    def visit_Print(self, printt: Print):
-        return True
-
-    def visit_IfElse(self, ifelse: IfElse):
-        if self.visit(ifelse.condition) or self.visit(ifelse.if_branch):
-            return True
-        if ifelse.else_branch is not None:
-            return self.visit(ifelse.else_branch)
-        return False
+        with AraDilScope(self.current_scope) as block_scope:
+            self.current_scope = block_scope
+            for i in range(len(block.var_decls)):
+                block.var_decls[i] = self.visit(block.var_decls[i])
+            for i in range(len(block.statements)):
+                block.statements[i] = self.visit(block.statements[i])
+            self.current_scope = block_scope.parent
+        return block
 
     def visit_LBinary(self, lbinary: LBinary):
-        return self.visit(lbinary.left) or self.visit(lbinary.right)
+        result_name_id_pair = self.current_scope.generate_tmp()  # may be unneccesary
+
+        lbinary.left = self.visit(lbinary.left)
+        lbinary.right = self.visit(lbinary.right)
+
+        return lbinary
 
     def visit_Comparison(self, comparison: Comparison):
-        return self.visit(comparison.left) or self.visit(comparison.right)
+        result_name_id = self.current_scope.generate_tmp()
+        comparison.left = self.visit(comparison.left)
+        comparison.right = self.visit(comparison.right)
+        return comparison
 
     def visit_LLiteral(self, lliteral: LLiteral):
-        return False
-
-    def visit_LPrimary(self, lprimary: LPrimary):
-        return self.visit(lprimary.primary)
+        return lliteral
 
     def visit_GetVector(self, getvector: GetVector):
-        return self.visit(getvector.vector_index)
+        result = self.current_scope.generate_tmp()
+        getvector.vector_index = self.visit(getvector.vector_index)
+        return getvector
 
     def visit_Variable(self, variable: Variable):
-        return False
+        var_compile_time_value = self.get_var_compile_time_value(variable.identifier)
+        if var_compile_time_value is not None:
+            return var_compile_time_value
+        return variable
 
     def visit_LNot(self, lnot: LNot):
-        return self.visit(lnot.right)
+        result_name_id = self.current_scope.generate_tmp()
+        lnot.right = self.visit(lnot.right)
+        return lnot
 
     def visit_ABinary(self, abinary: ABinary):
-        return self.visit(abinary.left) or self.visit(abinary.right)
+        result_name_id = self.current_scope.generate_tmp()
+        abinary.left = self.visit(abinary.left)
+        abinary.right = self.visit(abinary.right)
+        return abinary
 
     def visit_AUMinus(self, auminus: AUMinus):
-        return self.visit(auminus.right)
+        result_name_id = self.current_scope.generate_tmp()
+        auminus.right = self.visit(auminus.right)
+        return auminus
 
-    def visit_ALiteral(self, aliteral: ALiteral):
-        return False
+    def visit_Call(self, call: Call):
+        if call.callee.name == 'main':
+            call.callee.name = 'main.fake'
 
-    def visit_Call(self, calll: Call):
-        return True  # asıl önemli kısım. fonksiyon çağrısı varsa yan etki vardır, ölü kod saymamalıyız o kodu.
+        if call.callee.name not in self.fun_decls:
+            if call.callee.name == 'main.fake':
+                call.callee.name = 'main'
+            cu.compilation_error(f"Function identifier '{call.callee.name}' referenced without being declared.",
+                                 call.callee.lineno)
+
+        param_count = len(self.fun_decls[call.callee.name].params)
+        ret_val_name_id_pair = self.current_scope.generate_tmp()
+
+        for i in range(len(call.arguments)):
+            call.arguments[i] = self.visit(call.arguments[i])
+        return call
+
+    def get_func_signature(self, fundecl: Union[FunDecl, str]):
+        if isinstance(fundecl, str):
+            fundecl = self.fun_decls[fundecl]
+        return f'{fundecl.identifier.name}({", ".join([param.name for param in fundecl.params])})'
 
 
 class OluKodOldurucuVisitor(OptimizerVisitor):
