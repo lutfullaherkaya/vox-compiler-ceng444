@@ -54,6 +54,8 @@ https://github.com/riscv-non-isa/riscv-asm-manual/blob/master/riscv-asm.md
     Optimizasyon belki
     string + işlemi
     
+    print(a) çalışmıyor
+    
     
     
 

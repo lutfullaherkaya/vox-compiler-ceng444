@@ -49,6 +49,7 @@ class OptimizerVisitor(ASTNodeVisitor):
 
     def visit_SetVector(self, setvector: SetVector) -> ASTNode:
         setvector.vector_index = self.visit(setvector.vector_index)
+        setvector.expr = self.visit(setvector.expr)
         return setvector
 
     def visit_ForLoop(self, forloop: ForLoop) -> ASTNode:
@@ -58,6 +59,7 @@ class OptimizerVisitor(ASTNodeVisitor):
             forloop.condition = self.visit(forloop.condition)
         if forloop.increment is not None:
             forloop.increment = self.visit(forloop.increment)
+        forloop.body = self.visit(forloop.body)
         return forloop
 
     def visit_Return(self, returnn: Return) -> ASTNode:
@@ -365,6 +367,7 @@ class OluKodOldurucuVisitor(OptimizerVisitor):
                 return Block([], [])
         if forloop.increment is not None:
             forloop.increment = self.visit(forloop.increment)
+        forloop.body = self.visit(forloop.body)
         return forloop
 
     def visit_WhileLoop(self, whileloop: WhileLoop):
