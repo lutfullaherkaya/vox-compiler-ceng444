@@ -79,6 +79,8 @@ class YanEtkiVarMiVisitor(ASTNodeVisitor):
         return self.visit(lnot.right)
 
     def visit_ABinary(self, abinary: ABinary):
+        if abinary.op == '/':  # division by zero can be an exception in some machines.
+            return True
         return self.visit(abinary.left) or self.visit(abinary.right)
 
     def visit_AUMinus(self, auminus: AUMinus):
