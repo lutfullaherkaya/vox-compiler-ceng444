@@ -101,6 +101,20 @@ class AraDilScope:
         self.activation_record.tmp_count += 1
         return self.add(Identifier(tmp, -1, 1))
 
+    def get_var_compile_time_value(self, idf: Identifier, global_vars: Dict[str, VarDecl]):
+        var_name_id = self.get_name_id_pair(idf)
+        value = None
+        if var_name_id['id'] == -1:
+            value = global_vars[var_name_id['name']].initializer
+        else:
+            value = self.activation_record.degisken_compile_time_degerleri[
+                (var_name_id['name'], var_name_id['id'])]
+
+        if value is not None and isinstance(value, (ALiteral, LLiteral, SLiteral)):
+            return value
+        else:
+            return None
+
     def drop_symbol_table(self):
         self.symbol_table = {}
 
@@ -230,7 +244,8 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
             self.global_vars[vardecl.identifier.name] = vardecl
         else:
             self.global_vars[vardecl.identifier.name] = vardecl
-            self._ara_dile_ekle([['copy', degisken_ad_ve_id, self.visit(vardecl.initializer)]])
+            if not isinstance(vardecl.initializer, (ALiteral, SLiteral, LLiteral)):
+                self._ara_dile_ekle([['copy', degisken_ad_ve_id, self.visit(vardecl.initializer)]])
 
         return degisken_ad_ve_id
 

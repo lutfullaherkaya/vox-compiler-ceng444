@@ -263,7 +263,7 @@ class ConstantFoldingVisitor(OptimizerVisitor):
     def visit_Comparison(self, comparison: Comparison):
         comparison.left = self.visit(comparison.left)
         comparison.right = self.visit(comparison.right)
-        if isinstance(comparison.left, LLiteral) and isinstance(comparison.right, LLiteral):
+        if isinstance(comparison.left, ALiteral) and isinstance(comparison.right, ALiteral):
             self.changes_made = True
             if comparison.op == '==':
                 return LLiteral(comparison.left.value == comparison.right.value)
@@ -363,20 +363,6 @@ class ConstantPropogationVisitor(OptimizerVisitor):
         self._fonksiyon_tanimlaniyor = False
         self.main_activation_record: ActivationRecord = ActivationRecord()
 
-    def get_var_compile_time_value(self, idf: Identifier):
-        var_name_id = self.current_scope.get_name_id_pair(idf)
-        value = None
-        if var_name_id['id'] == -1:
-            value = self.global_vars[var_name_id['name']].initializer
-        else:
-            value = self.func_activation_records[self.current_func].degisken_compile_time_degerleri[
-                (var_name_id['name'], var_name_id['id'])]
-
-        if value is not None and isinstance(value, (ALiteral, LLiteral, SLiteral)):
-            return value
-        else:
-            return None
-
     def visit_Program(self, program: Program):
         for i, fundecl in enumerate(program.fun_decls):
             if fundecl.identifier.name == 'main':
@@ -473,14 +459,21 @@ class ConstantPropogationVisitor(OptimizerVisitor):
     def visit_LLiteral(self, lliteral: LLiteral):
         return lliteral
 
+    def visit_LPrimary(self, lprimary: LPrimary) -> ASTNode:
+        lprimary.primary = self.visit(lprimary.primary)
+        if type(lprimary.primary) == LLiteral:
+            return lprimary.primary
+        return lprimary
+
     def visit_GetVector(self, getvector: GetVector):
         result = self.current_scope.generate_tmp()
         getvector.vector_index = self.visit(getvector.vector_index)
         return getvector
 
     def visit_Variable(self, variable: Variable):
-        var_compile_time_value = self.get_var_compile_time_value(variable.identifier)
+        var_compile_time_value = self.current_scope.get_var_compile_time_value(variable.identifier, self.global_vars)
         if var_compile_time_value is not None:
+            self.changes_made = True
             return var_compile_time_value
         return variable
 

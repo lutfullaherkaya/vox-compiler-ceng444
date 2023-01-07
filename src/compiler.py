@@ -56,13 +56,12 @@ https://github.com/riscv-non-isa/riscv-asm-manual/blob/master/riscv-asm.md
     vector negatif index, belki pythondaki gibi atlamali seyler
     
     print(a) çalışmıyor
-    
-    todo: const globalleri direkt literal olarak yaz.
-    
+        
     optimizasyon döngüsü çok uzun sürerse bıraksın onu ayarla. mesela 1 sn sürerse döngüden çıksın.
     reaching definition kullanmadığım için propogation çok verimli olmayabilir.
     
-    
+    sabit vektörleri de compile timede propogate et
+    vektor[i] leri de compile timede propogate et
     
 
 """
@@ -174,17 +173,34 @@ class RiscVAssemblyYapici(AssemblyYapici):
             assembly_lines.extend(['',
                                    '  .data'])
         for name, vardecl in self.global_vars.items():
-            if vardecl.initializer is not None and type(vardecl.initializer) == list:
-                global_vector_name = get_global_vector_name(name)
-                assembly_lines.extend([f'{get_global_type_name(name)}:    .quad {self.tip_rakamlari["vector"]}',
-                                       f'{get_global_value_name(name)}:   .quad {global_vector_name}',
-                                       f'{get_global_length_name(name)}:  .quad {len(vardecl.initializer)}',
-                                       f'{global_vector_name}:'])
-                for i in range(len(vardecl.initializer)):
-                    assembly_lines.append('  .quad 0, 0')
-                assembly_lines.append('')
+            if vardecl.initializer is not None:
+                if type(vardecl.initializer) == list:
+                    global_vector_name = get_global_vector_name(name)
+                    assembly_lines.extend([f'{get_global_type_name(name)}:    .quad {self.tip_rakamlari["vector"]}',
+                                           f'{get_global_value_name(name)}:   .quad {global_vector_name}',
+                                           f'{get_global_length_name(name)}:  .quad {len(vardecl.initializer)}',
+                                           f'{global_vector_name}:'])
+                    for i in range(len(vardecl.initializer)):
+                        assembly_lines.append('  .quad 0, 0')
+                    assembly_lines.append('')
+                elif isinstance(vardecl.initializer, ast_tools.ALiteral):
+                    assembly_lines.extend([f'{get_global_type_name(name)}:   .quad {self.tip_rakamlari["int"]}',
+                                           f'{get_global_value_name(name)}:  .quad {int(vardecl.initializer.value)}',
+                                           f''])
+                elif isinstance(vardecl.initializer, ast_tools.SLiteral):
+                    assembly_lines.extend([f'{get_global_type_name(name)}:   .quad {self.tip_rakamlari["string"]}',
+                                           f'{get_global_value_name(name)}:  .quad {self.global_string_to_label[vardecl.initializer.value]}',
+                                           f''])
+                elif isinstance(vardecl.initializer, ast_tools.LLiteral):
+                    assembly_lines.extend([f'{get_global_type_name(name)}:   .quad {self.tip_rakamlari["bool"]}',
+                                           f'{get_global_value_name(name)}:  .quad {int(vardecl.initializer.value)}',
+                                           f''])
+                else:
+                    assembly_lines.extend([f'{get_global_type_name(name)}:   .quad {self.tip_rakamlari["int"]}',
+                                           f'{get_global_value_name(name)}:  .quad 0',
+                                           f''])
             else:
-                assembly_lines.extend([f'{get_global_type_name(name)}:   .quad 0',
+                assembly_lines.extend([f'{get_global_type_name(name)}:   .quad {self.tip_rakamlari["int"]}',
                                        f'{get_global_value_name(name)}:  .quad 0',
                                        f''])
 
@@ -565,13 +581,15 @@ class Compiler:
         while changes_made:
             constant_folder = optimizer.ConstantFoldingVisitor()
             constant_folder.visit(self.ast)
-            changes_made = constant_folder.changes_made
+
             constant_propagator = optimizer.ConstantPropogationVisitor()
             constant_propagator.visit(self.ast)
-            changes_made = changes_made or constant_propagator.changes_made
 
-        olu_kod_oldurucu = optimizer.OluKodOldurucuVisitor()
-        olu_kod_oldurucu.visit(self.ast)
+            olu_kod_oldurucu = optimizer.OluKodOldurucuVisitor()
+            olu_kod_oldurucu.visit(self.ast)
+
+            changes_made = olu_kod_oldurucu.changes_made or constant_propagator.changes_made or constant_folder.changes_made
+            print(ast_tools.PrintVisitor().visit(self.ast))
 
     def ara_dil_optimize_et(self):
         pass
