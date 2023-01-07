@@ -3,7 +3,8 @@
 //var c = [1,3,4,"bes"];
 
 // sabiti temp degisken yapmama testi
-var a = [0,1,2];
+var x = 5;
+var a = [0,false,x];
 fun f() {
     var a;
     for (a = 0; a < 10; a = a + 1) {

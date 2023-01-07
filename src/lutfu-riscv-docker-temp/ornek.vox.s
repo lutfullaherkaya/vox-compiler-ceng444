@@ -10,24 +10,30 @@ main:
   sd ra, 24(sp)
   sd fp, 16(sp)
   addi fp, sp, 32
+            # global x
+            # copy global_x, 5
+  li t0, 0
+  li t1, 5
+  la t2, x_type
+  sd t0, (t2)
+  sd t1, 8(t2)
             # global a
             # vector_set global_a, 0, 0
   li t0, 0
   li t1, 0
   ld t2, a_value
-  addi t2, t2, 0
   sd t0, 0(t2)
   sd t1, 8(t2)
-            # vector_set global_a, 1, 1
-  li t0, 0
-  li t1, 1
+            # vector_set global_a, 1, False
+  li t0, 2
+  li t1, 0
   ld t2, a_value
   addi t2, t2, 16
   sd t0, 0(t2)
   sd t1, 8(t2)
-            # vector_set global_a, 2, 2
-  li t0, 0
-  li t1, 2
+            # vector_set global_a, 2, global_x
+  ld t0, x_type
+  ld t1, x_value
   ld t2, a_value
   addi t2, t2, 32
   sd t0, 0(t2)
@@ -36,7 +42,6 @@ main:
   li t0, 0
   li t1, 19
   ld t2, a_value
-  addi t2, t2, 0
   sd t0, 0(t2)
   sd t1, 8(t2)
             # arg_count 0
@@ -121,6 +126,9 @@ f:
   ret
 
   .data
+x_type:   .quad 0
+x_value:  .quad 0
+
 a_type:    .quad 1
 a_value:   .quad a_vector
 a_length:  .quad 3

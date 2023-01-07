@@ -53,6 +53,7 @@ https://github.com/riscv-non-isa/riscv-asm-manual/blob/master/riscv-asm.md
     type checking lazım illa. mesela vektör işlemlerinde vektörlerin tipi sayı olmalı. 
     Optimizasyon belki
     string + işlemi
+    vector negatif index, belki pythondaki gibi atlamali seyler
     
     print(a) çalışmıyor
     
@@ -271,7 +272,8 @@ class RiscVAssemblyYapici(AssemblyYapici):
         asm = []
         asm.extend(self.asm_var_or_const_to_reg(vector_name_id, None, addr_reg))
         if type(index) == int:
-            asm.extend([f'  addi {addr_reg}, {addr_reg}, {index * 16}'])
+            if index > 0:
+                asm.extend([f'  addi {addr_reg}, {addr_reg}, {index * 16}'])
         else:
             asm.extend(self.asm_var_or_const_to_reg(index, None, tmp_reg))
             asm.extend([f'  slli {tmp_reg}, {tmp_reg}, 4',
