@@ -360,9 +360,7 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
         return self.binary_op(comparison)
 
     def visit_LLiteral(self, lliteral: LLiteral):
-        name_id_pair = self.current_scope.generate_tmp()
-        self._ara_dile_ekle([['copy', name_id_pair, lliteral.value]])
-        return name_id_pair
+        return lliteral.value
 
     def visit_LPrimary(self, lprimary: LPrimary):
         return self.visit(lprimary.primary)
@@ -416,10 +414,7 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
         return result_name_id
 
     def visit_ALiteral(self, aliteral: ALiteral):
-        # todo: optimisation: add seperate instructions for literals instead of putting them in a variable
-        name_id = self.current_scope.generate_tmp()
-        self._ara_dile_ekle([['copy', name_id, aliteral.value]])
-        return name_id
+        return aliteral.value
 
     def visit_Call(self, call: Call):
         if call.callee.name == 'main':
@@ -442,9 +437,7 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
                 name_ad_ve_id = self.visit(call.arguments[i])
                 self._ara_dile_ekle(['arg', name_ad_ve_id, i])
             else:
-                name_ad_ve_id = self.current_scope.generate_tmp()
-                self._ara_dile_ekle(['copy', name_ad_ve_id, 0])
-                self._ara_dile_ekle(['arg', name_ad_ve_id, i])
+                self._ara_dile_ekle(['arg', 0, i])
 
         ret_val_name_id_pair = self.current_scope.generate_tmp()
         self._ara_dile_ekle(['call', ret_val_name_id_pair, call.callee.name])

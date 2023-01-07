@@ -207,23 +207,39 @@ class RiscVAssemblyYapici(AssemblyYapici):
                 self.current_fun_callee_saved_regs[reg] = True
                 self.fp_extra_offset += 8
 
-    def asm_var_to_reg(self, var_name_id, type_reg=None, value_reg=None):
+    def asm_var_or_const_to_reg(self, var_name_id, type_reg=None, value_reg=None):
         # asm = [f'      # asm_var_to_reg(var:{var_name}, type_reg:{type_reg}, value_reg:{value_reg})']
         asm = []
-        type_addr = self._type_addr(var_name_id)
-        value_addr = self._value_addr(var_name_id)
-        if type_addr is not None:  # local
+        if type(var_name_id) == int:
             if type_reg is not None:
-                asm.append(f'  ld {type_reg}, {type_addr}')
+                asm.append(f'  li {type_reg}, {self.tip_rakamlari["int"]}')
             if value_reg is not None:
-                asm.append(f'  ld {value_reg}, {value_addr}')
-        elif var_name_id["name"] in self.global_vars:
+                asm.append(f'  li {value_reg}, {var_name_id}')
+        elif type(var_name_id) == bool:
             if type_reg is not None:
-                asm.append(f'  ld {type_reg}, {get_global_type_name(var_name_id["name"])}')
+                asm.append(f'  li {type_reg}, {self.tip_rakamlari["bool"]}')
             if value_reg is not None:
-                asm.append(f'  ld {value_reg}, {get_global_value_name(var_name_id["name"])}')
+                asm.append(f'  li {value_reg}, {int(var_name_id)}')
+        elif type(var_name_id) == str:
+            if type_reg is not None:
+                asm.append(f'  li {type_reg}, {self.tip_rakamlari["string"]}')
+            if value_reg is not None:
+                asm.append(f'  la {value_reg}, {self.global_string_to_label[var_name_id]}')
         else:
-            cu.compilation_error(f'Unknown variable {var_name_id["name"]}')
+            type_addr = self._type_addr(var_name_id)
+            value_addr = self._value_addr(var_name_id)
+            if type_addr is not None:  # local
+                if type_reg is not None:
+                    asm.append(f'  ld {type_reg}, {type_addr}')
+                if value_reg is not None:
+                    asm.append(f'  ld {value_reg}, {value_addr}')
+            elif var_name_id["name"] in self.global_vars:
+                if type_reg is not None:
+                    asm.append(f'  ld {type_reg}, {get_global_type_name(var_name_id["name"])}')
+                if value_reg is not None:
+                    asm.append(f'  ld {value_reg}, {get_global_value_name(var_name_id["name"])}')
+            else:
+                cu.compilation_error(f'Unknown variable {var_name_id["name"]}')
         return asm
 
     def asm_reg_to_var(self, temp_reg, var_name_id, type_reg=None, value_reg=None):
@@ -251,11 +267,11 @@ class RiscVAssemblyYapici(AssemblyYapici):
 
     def asm_get_vector_elm_addr(self, tmp_reg, addr_reg, vector_name_id, index):
         asm = []
-        asm.extend(self.asm_var_to_reg(vector_name_id, None, addr_reg))
+        asm.extend(self.asm_var_or_const_to_reg(vector_name_id, None, addr_reg))
         if type(index) == int:
             asm.extend([f'  addi {addr_reg}, {addr_reg}, {index * 16}'])
         else:
-            asm.extend(self.asm_var_to_reg(index, None, tmp_reg))
+            asm.extend(self.asm_var_or_const_to_reg(index, None, tmp_reg))
             asm.extend([f'  slli {tmp_reg}, {tmp_reg}, 4',
                         f'  add {addr_reg}, {addr_reg}, {tmp_reg}'])
         return asm
@@ -271,17 +287,16 @@ class RiscVAssemblyYapici(AssemblyYapici):
         return asm
 
     def cevir_arg(self, komut):
-        # todo: optimizasyon: komut[1] int, bool, float olabilmeli
         arg_name_id = komut[1]
         arg_index = komut[2]
         asm = []
         if arg_index <= 3:
-            asm.extend(self.asm_var_to_reg(arg_name_id,
-                                           f'a{2 * arg_index}',
-                                           f'a{2 * arg_index + 1}'))
+            asm.extend(self.asm_var_or_const_to_reg(arg_name_id,
+                                                    f'a{2 * arg_index}',
+                                                    f'a{2 * arg_index + 1}'))
         else:
             non_reg_index = arg_index - 4
-            asm.extend(self.asm_var_to_reg(arg_name_id, 't0', 't1'))
+            asm.extend(self.asm_var_or_const_to_reg(arg_name_id, 't0', 't1'))
             asm.extend([f'  sd t0, {16 * non_reg_index}(sp)',
                         f'  sd t1, {16 * non_reg_index + 8}(sp)'])
 
@@ -306,21 +321,8 @@ class RiscVAssemblyYapici(AssemblyYapici):
         if len(komut) < 3:
             asm.extend(self.asm_reg_to_var('t0', komut[1], 'zero', 'zero'))
         else:
-            if type(komut[2]) == int:  # immediate
-                asm.extend([f'  li t0, {komut[2]}'])
-                asm.extend(self.asm_reg_to_var('t1', komut[1], 'zero', 't0'))
-            elif type(komut[2]) == bool:
-                asm.extend([f'  li t1, {self.tip_rakamlari["bool"]}',
-                            f'  li t2, {int(komut[2])}'])
-                asm.extend(self.asm_reg_to_var('t0', komut[1], 't1', 't2'))
-            elif type(komut[2]) == str:
-                asm.extend([f'  li t1, {self.tip_rakamlari["string"]}',
-                            f'  la t2, {self.global_string_to_label[komut[2]]}'])
-                asm.extend(self.asm_reg_to_var('t0', komut[1], 't1', 't2'))
-
-            else:  # değişken parametre için
-                asm.extend(self.asm_var_to_reg(komut[2], 't0', 't1'))
-                asm.extend(self.asm_reg_to_var('t2', komut[1], 't0', 't1'))
+            asm.extend(self.asm_var_or_const_to_reg(komut[2], 't0', 't1'))
+            asm.extend(self.asm_reg_to_var('t2', komut[1], 't0', 't1'))
 
         return asm
 
@@ -354,7 +356,7 @@ class RiscVAssemblyYapici(AssemblyYapici):
         index = komut[2]
         expr_name_id = komut[3]
         asm = []
-        asm.extend(self.asm_var_to_reg(expr_name_id, 't0', 't1'))
+        asm.extend(self.asm_var_or_const_to_reg(expr_name_id, 't0', 't1'))
         asm.extend(self.asm_get_vector_elm_addr('t3', 't2', vector_name_id, index))
         asm.extend([f'  sd t0, 0(t2)',
                     f'  sd t1, 8(t2)'])
@@ -424,7 +426,7 @@ class RiscVAssemblyYapici(AssemblyYapici):
         return asm
 
     def cevir_ret(self, komut):
-        asm = self.asm_var_to_reg(komut[1], 'a0', 'a1')
+        asm = self.asm_var_or_const_to_reg(komut[1], 'a0', 'a1')
         return asm
 
     def cevir_endfun(self, komut):
@@ -442,13 +444,13 @@ class RiscVAssemblyYapici(AssemblyYapici):
 
     def cevir_branch_if_true(self, komut):
         asm = []
-        asm.extend(self.asm_var_to_reg(komut[1], None, 't0'))
+        asm.extend(self.asm_var_or_const_to_reg(komut[1], None, 't0'))
         asm.extend([f'  bne t0, zero, {komut[2]}'])
         return asm
 
     def cevir_branch_if_false(self, komut):
         asm = []
-        asm.extend(self.asm_var_to_reg(komut[1], None, 't0'))
+        asm.extend(self.asm_var_or_const_to_reg(komut[1], None, 't0'))
         asm.extend([f'  beq t0, zero, {komut[2]}'])
         return asm
 
@@ -458,10 +460,10 @@ class RiscVAssemblyYapici(AssemblyYapici):
         operand0_name = komut[2]
 
         asm = []
-        asm.extend(self.asm_var_to_reg(operand0_name, None, 't0'))
+        asm.extend(self.asm_var_or_const_to_reg(operand0_name, None, 't0'))
         if komut[0] in ['and', 'or']:
             operand1_name = komut[3]
-            asm.extend(self.asm_var_to_reg(operand1_name, None, 't1'))
+            asm.extend(self.asm_var_or_const_to_reg(operand1_name, None, 't1'))
             asm.extend([f'  {komut[0]} t0, t0, t1'])
         elif komut[0] == '!':
             asm.extend([f'  xori t0, t0, 1'])
@@ -483,8 +485,8 @@ class RiscVAssemblyYapici(AssemblyYapici):
         operand1_name = komut[3]
 
         asm = []
-        asm.extend(self.asm_var_to_reg(operand0_name, None, 't0'))
-        asm.extend(self.asm_var_to_reg(operand1_name, None, 't1'))
+        asm.extend(self.asm_var_or_const_to_reg(operand0_name, None, 't0'))
+        asm.extend(self.asm_var_or_const_to_reg(operand1_name, None, 't1'))
 
         if komut[0] == '<':
             asm.extend([f'  slt t2, t0, t1'])
