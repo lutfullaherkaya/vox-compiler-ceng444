@@ -428,7 +428,8 @@ class RiscVAssemblyYapici(AssemblyYapici):
         param_count = komut[3]
 
         self.current_fun_label = label
-        self.fun_infos[self.current_fun_label].add_to_saved_regs(['ra', 'fp'])
+        if self.fun_infos[self.current_fun_label].activation_record.calls_another_fun:
+            self.fun_infos[self.current_fun_label].add_to_saved_regs(['ra'])
         total_stack_size = self.fun_infos[self.current_fun_label].get_total_stack_size()
         asm = [f'',
                f'# fun {signature};',
@@ -438,7 +439,6 @@ class RiscVAssemblyYapici(AssemblyYapici):
 
         for i, reg_to_save in enumerate(self.fun_infos[self.current_fun_label].callee_saved_regs):
             asm.append(f'  sd {reg_to_save}, {total_stack_size - 8 * (i + 1)}(sp)')
-        asm.append(f'  addi fp, sp, {total_stack_size}')
 
         return asm
 
@@ -472,6 +472,8 @@ class RiscVAssemblyYapici(AssemblyYapici):
             asm.append(f'  ld {reg_to_save}, {total_stack_size - 8 * (i + 1)}(sp)')
         if total_stack_size > 0:
             asm.extend([f'  addi sp, sp, {total_stack_size}'])
+        if self.current_fun_label == 'main':
+            asm.append('  li a0, 0')
         asm.append(f'  ret')
         return asm
 

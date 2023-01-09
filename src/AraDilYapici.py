@@ -18,6 +18,7 @@ class ActivationRecord:
         self.tmp_count = 0
         self.son_goreli_adres = 0
         self.arg_count = arg_count
+        self.calls_another_fun = False
 
     def degisken_ekle(self, degisken_adi: str, compile_time_degeri: Any = None):
         if degisken_adi not in self.degisken_sayilari:
@@ -473,10 +474,14 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
 
         if not (len(hedef_ara_dil_sozleri) and hedef_ara_dil_sozleri[-1][0] == 'return' and sozler[0] == 'return'):
             # fonksiyon bitirirken ve return ederken return deyince ust uste biniyor eğer return sondaysa
-            if isinstance(sozler[0], list) or isinstance(sozler[0], tuple):
-                hedef_ara_dil_sozleri.extend(sozler)
-            elif isinstance(sozler[0], str):
-                hedef_ara_dil_sozleri.append(sozler)
+            if isinstance(sozler[0], str):
+                sozler = [sozler]
+            for soz in sozler:
+                komut = soz[0]
+                if komut == 'call':
+                    self.func_activation_records[self.current_func].calls_another_fun = True
+            hedef_ara_dil_sozleri.extend(sozler)
+
 
     def get_func_signature(self, fundecl: Union[FunDecl, str]):
         if isinstance(fundecl, str):
