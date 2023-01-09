@@ -11,12 +11,13 @@ class NameIdPair(TypedDict):
 
 
 class ActivationRecord:
-    def __init__(self):
+    def __init__(self, arg_count: int = 0):
         self.degisken_sayilari: Dict[str, int] = {}
         self.degisken_goreli_adresleri: Dict[Tuple[str, int], int] = {}
         self.degisken_compile_time_degerleri: Dict[Tuple[str, int], Any] = {}
         self.tmp_count = 0
         self.son_goreli_adres = 0
+        self.arg_count = arg_count
 
     def degisken_ekle(self, degisken_adi: str, compile_time_degeri: Any = None):
         if degisken_adi not in self.degisken_sayilari:
@@ -193,7 +194,7 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
         for i, fundecl in enumerate(program.fun_decls):
             if fundecl.identifier.name == 'main':
                 fundecl.identifier.name = 'main.fake'
-            self.func_activation_records[fundecl.identifier.name] = ActivationRecord()
+            self.func_activation_records[fundecl.identifier.name] = ActivationRecord(len(fundecl.params))
             self.fun_decls[fundecl.identifier.name] = fundecl
         self.func_activation_records['main'] = self.main_activation_record
 
@@ -206,7 +207,7 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
             for stmt in program.statements:
                 self.visit(stmt)
             self.current_scope = scope.parent
-        self._ara_dile_ekle(['endfun'])
+        self._ara_dile_ekle(['return'])
         self.ara_dil_sozleri.extend(self._ara_dil_fonksiyon_tanim_sozleri)
 
     def visit_ErrorStmt(self, errorstmt: ErrorStmt):
@@ -263,14 +264,14 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
         with AraDilScope(None, None, self.func_activation_records[func_label]) as func_scope:
             self.current_scope = func_scope
 
-            for i, param in enumerate(fundecl.params):
+            for param in fundecl.params:
                 degisken_ad_ve_id = self.current_scope.add(param)
-                self._ara_dile_ekle(['param', degisken_ad_ve_id, i])
+                self._ara_dile_ekle(['param', degisken_ad_ve_id])
 
             self.visit(fundecl.body)
 
             self.current_scope = main_scope
-        self._ara_dile_ekle(['endfun'])
+        self._ara_dile_ekle(['return'])
         self._fonksiyon_tanimlaniyor = False
         self.current_func = 'main'
 
@@ -305,8 +306,7 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
         if not self._fonksiyon_tanimlaniyor:
             cu.compilation_error("Return statement can only be used inside a function.")
         ad_ve_id = self.visit(returnn.expr)
-        self._ara_dile_ekle(['ret', ad_ve_id])
-        self._ara_dile_ekle(['endfun'])
+        self._ara_dile_ekle(['return', ad_ve_id])
         return ad_ve_id
 
     def visit_WhileLoop(self, whileloop: WhileLoop):
@@ -329,8 +329,7 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
 
     def visit_Print(self, printt: Print):
         name_id = self.visit(printt.expr)
-        self._ara_dile_ekle([['arg_count', 1],
-                             ['arg', name_id, 0],
+        self._ara_dile_ekle([['arg', name_id],
                              ['call', None, '__vox_print__']])
 
     def visit_IfElse(self, ifelse: IfElse):
@@ -414,9 +413,8 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
             '/': 'div',
         }
 
-        self._ara_dile_ekle([['arg_count', 2],
-                             ['arg', left_name_id, 0],
-                             ['arg', right_name_id, 1],
+        self._ara_dile_ekle([['arg', left_name_id],
+                             ['arg', right_name_id],
                              ['call', result_name_id, f'__vox_{op_to_instruction[abinary.op]}__']])
         return result_name_id
 
@@ -424,9 +422,8 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
         result_name_id = self.current_scope.generate_tmp()
         right_name_id = self.visit(auminus.right)
 
-        self._ara_dile_ekle([['arg_count', 2],
-                             ['arg', 0, 0],
-                             ['arg', right_name_id, 1],
+        self._ara_dile_ekle([['arg', 0],
+                             ['arg', right_name_id],
                              ['call', result_name_id, f'__vox_sub__']])
         return result_name_id
 
@@ -448,13 +445,12 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
             cu.compilation_warning(f'Function {call.callee.name} expects {param_count} arguments, '
                                    f'but {len(call.arguments)} were given. Empty arguments are set to 0. '
                                    f'Redundant arguments will not be evaluated.', call.callee.lineno)
-        self._ara_dile_ekle(['arg_count', param_count])
         for i in range(param_count):
             if i < len(call.arguments):
                 name_ad_ve_id = self.visit(call.arguments[i])
-                self._ara_dile_ekle(['arg', name_ad_ve_id, i])
+                self._ara_dile_ekle(['arg', name_ad_ve_id])
             else:
-                self._ara_dile_ekle(['arg', 0, i])
+                self._ara_dile_ekle(['arg', 0])
 
         ret_val_name_id_pair = self.current_scope.generate_tmp()
         self._ara_dile_ekle(['call', ret_val_name_id_pair, call.callee.name])
@@ -475,8 +471,8 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
         else:
             hedef_ara_dil_sozleri = self.ara_dil_sozleri
 
-        if not (len(hedef_ara_dil_sozleri) and hedef_ara_dil_sozleri[-1][0] == 'endfun' and sozler[0] == 'endfun'):
-            # fonksiyon bitirirken ve return ederken endfun deyince ust uste biniyor eğer return sondaysa
+        if not (len(hedef_ara_dil_sozleri) and hedef_ara_dil_sozleri[-1][0] == 'return' and sozler[0] == 'return'):
+            # fonksiyon bitirirken ve return ederken return deyince ust uste biniyor eğer return sondaysa
             if isinstance(sozler[0], list) or isinstance(sozler[0], tuple):
                 hedef_ara_dil_sozleri.extend(sozler)
             elif isinstance(sozler[0], str):

@@ -10,57 +10,95 @@ main:
   sd ra, 24(sp)
   sd fp, 16(sp)
   addi fp, sp, 32
-            # arg_count 0
-            # call .tmp0, f
-  call f
+            # arg 4
+  li a0, 0
+  li a1, 4
+            # call .tmp0, faktoriyel
+  call faktoriyel
   sd a0, 0(sp)
   sd a1, 8(sp)
-            # arg_count 1
-            # arg .tmp0, 0
+            # arg .tmp0
   ld a0, 0(sp)
   ld a1, 8(sp)
             # call __vox_print__
   call __vox_print__
-            # endfun 
+            # return 
   ld ra, 24(sp)
   ld fp, 16(sp)
   addi sp, sp, 32
   ret
 
-# fun f();
-f:
-  addi sp, sp, -80
-  sd ra, 72(sp)
-  sd fp, 64(sp)
-  addi fp, sp, 80
-            # copy bes_x_2_arti_4, 14
-  li t0, 0
-  li t1, 14
-  sd t0, 0(sp)
-  sd t1, 8(sp)
-            # copy toplam, 12
-  li t0, 0
-  li t1, 12
-  sd t0, 16(sp)
-  sd t1, 24(sp)
-            # copy dogru, True
-  li t0, 2
+# fun faktoriyel(n);
+faktoriyel:
+  addi sp, sp, -96
+  sd ra, 88(sp)
+  sd fp, 80(sp)
+  addi fp, sp, 96
+            # param n
+  sd a0, 0(sp)
+  sd a1, 8(sp)
+            # <= .tmp0, n, 1
+  ld t0, 8(sp)
   li t1, 1
-  sd t0, 32(sp)
-  sd t1, 40(sp)
-            # copy yanlis, False
-  li t0, 2
-  li t1, 0
-  sd t0, 48(sp)
-  sd t1, 56(sp)
-            # arg_count 1
-            # arg True, 0
-  li a0, 2
+  slt t2, t0, t1
+  sub t0, t0, t1
+  seqz t0, t0
+  or t2, t2, t0
+  li t1, 2
+  sd t1, 16(sp)
+  sd t2, 24(sp)
+            # branch_if_false .tmp0, .L_endif1
+  ld t0, 24(sp)
+  beq t0, zero, .L_endif1
+            # return 1
+  li a0, 0
   li a1, 1
-            # call __vox_print__
-  call __vox_print__
-            # endfun 
-  ld ra, 72(sp)
-  ld fp, 64(sp)
-  addi sp, sp, 80
+  ld ra, 88(sp)
+  ld fp, 80(sp)
+  addi sp, sp, 96
+  ret
+            # branch .L_endelse1
+  j .L_endelse1
+            # label .L_endif1
+.L_endif1:
+            # arg n
+  ld a0, 0(sp)
+  ld a1, 8(sp)
+            # arg 1
+  li a2, 0
+  li a3, 1
+            # call .tmp2, __vox_sub__
+  call __vox_sub__
+  sd a0, 48(sp)
+  sd a1, 56(sp)
+            # arg .tmp2
+  ld a0, 48(sp)
+  ld a1, 56(sp)
+            # call .tmp3, faktoriyel
+  call faktoriyel
+  sd a0, 64(sp)
+  sd a1, 72(sp)
+            # arg n
+  ld a0, 0(sp)
+  ld a1, 8(sp)
+            # arg .tmp3
+  ld a2, 64(sp)
+  ld a3, 72(sp)
+            # call .tmp1, __vox_mul__
+  call __vox_mul__
+  sd a0, 32(sp)
+  sd a1, 40(sp)
+            # return .tmp1
+  ld a0, 32(sp)
+  ld a1, 40(sp)
+  ld ra, 88(sp)
+  ld fp, 80(sp)
+  addi sp, sp, 96
+  ret
+            # label .L_endelse1
+.L_endelse1:
+            # return 
+  ld ra, 88(sp)
+  ld fp, 80(sp)
+  addi sp, sp, 96
   ret

@@ -94,17 +94,17 @@ class AssemblyYapici(ABC):
                  global_string_to_label: Dict[str, str],
                  ara_dil_satirlari: List[List[Any]]):
         self.global_vars: Dict[str, VarDecl] = global_vars
-        self.func_activation_records: Dict[str, ActivationRecord] = func_activation_records
+        self.fun_records: Dict[str, ActivationRecord] = func_activation_records
         self.global_string_to_label: Dict[str, str] = global_string_to_label
         self.aradil_sozlugu: Dict[str, Callable[[List[Any]], List[str]]] = {}
         self.ara_dil_satirlari: List[List[Any]] = ara_dil_satirlari
 
-    def aradilden_asm(self, komut):
+    def aradilden_asm(self, komut, komut_indeksi):
         if komut[0] in self.aradil_sozlugu:
             asm = []
             if komut[0] != 'fun':
                 asm.append('            # ' + cu.komut_stringi_yap(komut))
-            asm.extend(self.aradil_sozlugu[komut[0]](komut))
+            asm.extend(self.aradil_sozlugu[komut[0]](komut, komut_indeksi))
             return asm
         else:
             return f'ERROR! Unknown IL {komut}'
@@ -114,6 +114,34 @@ class AssemblyYapici(ABC):
         pass
 
 
+class RiscVFunctionInfo:
+    def __init__(self, activation_record: ActivationRecord):
+        self.callee_saved_regs: Dict[str, bool] = {}
+        self.activation_record: ActivationRecord = activation_record
+        self.current_stack_size = activation_record.son_goreli_adres
+        self.sp_extra_offset = 0
+        self.fp_extra_offset = 0
+
+    def get_total_stack_size(self):
+        return self.sp_extra_offset + self.fp_extra_offset + self.current_stack_size
+
+    def get_non_reg_arg_count(self):
+        return min(self.activation_record.arg_count - 4, 0)
+
+    def add_to_saved_regs(self, regs: Union[str, List[str]]):
+        """
+
+        :param regs:registers to be saved when declaring a function and restored when exiting
+        :return:
+        """
+        if isinstance(regs, str):
+            regs = [regs]
+        for reg in regs:
+            if reg not in self.callee_saved_regs:
+                self.callee_saved_regs[reg] = True
+                self.fp_extra_offset += 8
+
+
 class RiscVAssemblyYapici(AssemblyYapici):
     def __init__(self,
                  global_vars: Dict[str, VarDecl],
@@ -121,15 +149,13 @@ class RiscVAssemblyYapici(AssemblyYapici):
                  global_string_to_label: Dict[str, str],
                  ara_dil_satirlari: List[List[Any]]):
         super().__init__(global_vars, func_activation_records, global_string_to_label, ara_dil_satirlari)
-        self.sp_extra_offset = 0
-        self.fp_extra_offset = 0
-        self.current_stack_size = 0
+        self.fun_infos: Dict[str, RiscVFunctionInfo] = {fun_name: RiscVFunctionInfo(self.fun_records[fun_name])
+                                                        for fun_name in self.fun_records}
         self.current_fun_label = ''
-        self.current_fun_callee_saved_regs: Dict[str, bool] = {}
-        self.current_fun_non_reg_arg_count = 0
+        self.current_arg_index = -1
+        self.current_param_index = -1
         self.aradil_sozlugu: Dict[str, Callable[[List[Any]], List[str]]] = {
             'call': self.cevir_call,
-            'arg_count': self.cevir_arg_count,
             'arg': self.cevir_arg,
             'copy': self.cevir_copy,
             'vector': self.cevir_vector,
@@ -142,8 +168,7 @@ class RiscVAssemblyYapici(AssemblyYapici):
             'label': self.cevir_label,
             'fun': self.cevir_fun,
             'param': self.cevir_param,
-            'ret': self.cevir_ret,
-            'endfun': self.cevir_endfun,
+            'return': self.cevir_return,
             'and': self.ceviriler_mantiksal,
             'or': self.ceviriler_mantiksal,
             '!': self.ceviriler_mantiksal,
@@ -165,8 +190,8 @@ class RiscVAssemblyYapici(AssemblyYapici):
         assembly_lines = []
         assembly_lines.extend(self.get_on_soz())
 
-        for komut in self.ara_dil_satirlari:
-            assembly_lines.extend(self.aradilden_asm(komut))
+        for i, komut in enumerate(self.ara_dil_satirlari):
+            assembly_lines.extend(self.aradilden_asm(komut, i))
 
         if len(self.global_vars) > 0 or \
                 len(self.global_string_to_label):
@@ -217,19 +242,6 @@ class RiscVAssemblyYapici(AssemblyYapici):
                   f'  .text',
                   f'  .align 2']
         return on_soz
-
-    def add_to_saved_regs(self, regs: Union[str, List[str]]):
-        """
-
-        :param regs:registers to be saved when declaring a function and restored when exiting
-        :return:
-        """
-        if isinstance(regs, str):
-            regs = [regs]
-        for reg in regs:
-            if reg not in self.current_fun_callee_saved_regs:
-                self.current_fun_callee_saved_regs[reg] = True
-                self.fp_extra_offset += 8
 
     def asm_var_or_const_to_reg(self, var_name_id, type_reg=None, value_reg=None):
         # asm = [f'      # asm_var_to_reg(var:{var_name}, type_reg:{type_reg}, value_reg:{value_reg})']
@@ -301,47 +313,47 @@ class RiscVAssemblyYapici(AssemblyYapici):
                         f'  add {addr_reg}, {addr_reg}, {tmp_reg}'])
         return asm
 
-    def cevir_arg_count(self, komut):
-        asm = []
-        non_reg_arg_count = komut[1] - 4
-        if non_reg_arg_count > 0:
-            self.current_fun_non_reg_arg_count = non_reg_arg_count
-            self.sp_extra_offset += 16 * non_reg_arg_count
-            asm.append(f'  addi sp, sp, -{16 * non_reg_arg_count}')
-
-        return asm
-
-    def cevir_arg(self, komut):
+    def cevir_arg(self, komut, komut_indeksi):
         arg_name_id = komut[1]
-        arg_index = komut[2]
         asm = []
-        if arg_index <= 3:
+        if self.current_arg_index == -1:  # first arg
+            arg_count = 1
+            while self.ara_dil_satirlari[komut_indeksi + arg_count][0] != 'call':
+                arg_count += 1
+
+            non_reg_arg_cnt = min(arg_count - 4, 0)
+            if non_reg_arg_cnt > 0:
+                self.fun_infos[self.current_fun_label].sp_extra_offset += 16 * non_reg_arg_cnt
+                asm.append(f'  addi sp, sp, -{16 * non_reg_arg_cnt}')
+        self.current_arg_index += 1
+        if self.current_arg_index <= 3:
             asm.extend(self.asm_var_or_const_to_reg(arg_name_id,
-                                                    f'a{2 * arg_index}',
-                                                    f'a{2 * arg_index + 1}'))
+                                                    f'a{2 * self.current_arg_index}',
+                                                    f'a{2 * self.current_arg_index + 1}'))
         else:
-            non_reg_index = arg_index - 4
+            non_reg_index = self.current_arg_index - 4
             asm.extend(self.asm_var_or_const_to_reg(arg_name_id, 't0', 't1'))
             asm.extend([f'  sd t0, {16 * non_reg_index}(sp)',
                         f'  sd t1, {16 * non_reg_index + 8}(sp)'])
 
         return asm
 
-    def cevir_call(self, komut):
+    def cevir_call(self, komut, komut_indeksi):
         ret_val_name_id = komut[1]
         func_name = komut[2]
+        self.current_arg_index = -1
+        non_reg_arg_count = self.fun_infos[self.current_fun_label].get_non_reg_arg_count()
         asm = [f'  call {func_name}']
-        if self.current_fun_non_reg_arg_count > 0:
-            asm.append(f'  addi sp, sp, {16 * self.current_fun_non_reg_arg_count}')
-            self.sp_extra_offset -= 16 * self.current_fun_non_reg_arg_count
-        self.current_fun_non_reg_arg_count = 0
+        if non_reg_arg_count > 0:
+            asm.append(f'  addi sp, sp, {16 * non_reg_arg_count}')
+            self.fun_infos[self.current_fun_label].sp_extra_offset -= 16 * non_reg_arg_count
 
         if ret_val_name_id is not None:
             asm.extend(self.asm_reg_to_var('t0', ret_val_name_id, 'a0', 'a1'))
 
         return asm
 
-    def cevir_copy(self, komut):
+    def cevir_copy(self, komut, komut_indeksi):
         asm = []
         if len(komut) < 3:
             asm.extend(self.asm_reg_to_var('t0', komut[1], 'zero', 'zero'))
@@ -351,7 +363,7 @@ class RiscVAssemblyYapici(AssemblyYapici):
 
         return asm
 
-    def cevir_vector(self, komut):
+    def cevir_vector(self, komut, komut_indeksi):
         name_id = komut[1]
         length = komut[2]
 
@@ -376,7 +388,7 @@ class RiscVAssemblyYapici(AssemblyYapici):
 
         return asm
 
-    def cevir_vector_set(self, komut):
+    def cevir_vector_set(self, komut, komut_indeksi):
         vector_name_id = komut[1]
         index = komut[2]
         expr_name_id = komut[3]
@@ -387,7 +399,7 @@ class RiscVAssemblyYapici(AssemblyYapici):
                     f'  sd t1, 8(t2)'])
         return asm
 
-    def cevir_vector_get(self, komut):
+    def cevir_vector_get(self, komut, komut_indeksi):
         result_name_id = komut[1]
         vector_name_id = komut[2]
         index = komut[3]
@@ -399,87 +411,81 @@ class RiscVAssemblyYapici(AssemblyYapici):
 
         return asm
 
-    def cevir_global(self, komut):
+    def cevir_global(self, komut, komut_indeksi):
         # Compiler sınıfı oluşturur globalleri
         return []
 
-    def cevir_branch(self, komut):
+    def cevir_branch(self, komut, komut_indeksi):
         return [f'  j {komut[1]}']
 
-    def cevir_label(self, komut):
+    def cevir_label(self, komut, komut_indeksi):
         return [f'{komut[1]}:']
 
-    def cevir_fun(self, komut):
+    def cevir_fun(self, komut, komut_indeksi):
         label = komut[1]
         signature = komut[2]
         param_count = komut[3]
 
         self.current_fun_label = label
-        self.add_to_saved_regs(['ra', 'fp'])
-
-        self.current_stack_size = self.func_activation_records[label].son_goreli_adres
-        total_stack_size = self.current_stack_size + self.sp_extra_offset + self.fp_extra_offset
-
+        self.fun_infos[self.current_fun_label].add_to_saved_regs(['ra', 'fp'])
+        total_stack_size = self.fun_infos[self.current_fun_label].get_total_stack_size()
         asm = [f'',
                f'# fun {signature};',
                f'{label}:']
         if total_stack_size > 0:
             asm.append(f'  addi sp, sp, -{total_stack_size}')
 
-        for i, reg_to_save in enumerate(self.current_fun_callee_saved_regs):
+        for i, reg_to_save in enumerate(self.fun_infos[self.current_fun_label].callee_saved_regs):
             asm.append(f'  sd {reg_to_save}, {total_stack_size - 8 * (i + 1)}(sp)')
         asm.append(f'  addi fp, sp, {total_stack_size}')
 
         return asm
 
-    def cevir_param(self, komut):
+    def cevir_param(self, komut, komut_indeksi):
         param_name_id = komut[1]
-        param_index = komut[2]
+        self.current_param_index += 1
         asm = []
-        if param_index <= 3:
+        if self.current_param_index <= 3:
             asm.extend(self.asm_reg_to_var('t0', param_name_id,
-                                           f'a{2 * param_index}',
-                                           f'a{2 * param_index + 1}'))
+                                           f'a{2 * self.current_param_index}',
+                                           f'a{2 * self.current_param_index + 1}'))
         else:
-            non_reg_index = param_index - 4
+            non_reg_index = self.current_param_index - 4
             asm.extend([f'  ld t1, {16 * non_reg_index}(fp)',
                         f'  ld t2, {16 * non_reg_index + 8}(fp)'])
             asm.extend(self.asm_reg_to_var('t0', param_name_id,
                                            't1',
                                            't2'))
-
+        if self.current_param_index == self.fun_infos[self.current_fun_label].activation_record.arg_count - 1:
+            self.current_param_index = -1
         return asm
 
-    def cevir_ret(self, komut):
-        asm = self.asm_var_or_const_to_reg(komut[1], 'a0', 'a1')
-        return asm
-
-    def cevir_endfun(self, komut):
-        total_stack_size = self.current_stack_size + self.sp_extra_offset + self.fp_extra_offset
+    def cevir_return(self, komut, komut_indeksi):
         asm = []
-        for i, reg_to_save in enumerate(self.current_fun_callee_saved_regs):
+        if len(komut) >= 2:
+            asm.extend(self.asm_var_or_const_to_reg(komut[1], 'a0', 'a1'))
+
+        total_stack_size = self.fun_infos[self.current_fun_label].get_total_stack_size()
+        for i, reg_to_save in enumerate(self.fun_infos[self.current_fun_label].callee_saved_regs):
             asm.append(f'  ld {reg_to_save}, {total_stack_size - 8 * (i + 1)}(sp)')
         if total_stack_size > 0:
             asm.extend([f'  addi sp, sp, {total_stack_size}'])
         asm.append(f'  ret')
-        self.sp_extra_offset = 0
-        self.fp_extra_offset = 0
-        self.current_fun_callee_saved_regs = {}
         return asm
 
-    def cevir_branch_if_true(self, komut):
+    def cevir_branch_if_true(self, komut, komut_indeksi):
         asm = []
         asm.extend(self.asm_var_or_const_to_reg(komut[1], None, 't0'))
         asm.extend([f'  bne t0, zero, {komut[2]}'])
         return asm
 
-    def cevir_branch_if_false(self, komut):
+    def cevir_branch_if_false(self, komut, komut_indeksi):
         asm = []
         asm.extend(self.asm_var_or_const_to_reg(komut[1], None, 't0'))
         asm.extend([f'  beq t0, zero, {komut[2]}'])
         return asm
 
-    def ceviriler_mantiksal(self, komut):
+    def ceviriler_mantiksal(self, komut, komut_indeksi):
         # assuming type is 3 (bool)
         result_name = komut[1]
         operand0_name = komut[2]
@@ -498,7 +504,7 @@ class RiscVAssemblyYapici(AssemblyYapici):
 
         return asm
 
-    def ceviriler_karsilastirma(self, komut):
+    def ceviriler_karsilastirma(self, komut, komut_indeksi):
         if komut[0] == '>':
             return self.ceviriler_karsilastirma(['<', komut[1], komut[3], komut[2]])
         elif komut[0] == '>=':
@@ -529,18 +535,18 @@ class RiscVAssemblyYapici(AssemblyYapici):
         return asm
 
     def _type_addr(self, place: NameIdPair):
-        degisken_adresleri = self.func_activation_records[self.current_fun_label].degisken_goreli_adresleri
+        degisken_adresleri = self.fun_records[self.current_fun_label].degisken_goreli_adresleri
         key = (place['name'], place['id'])
         if key in degisken_adresleri:
-            return str(self.sp_extra_offset + degisken_adresleri[key]) + '(sp)'
+            return str(self.fun_infos[self.current_fun_label].sp_extra_offset + degisken_adresleri[key]) + '(sp)'
         else:
             return None
 
     def _value_addr(self, place: NameIdPair):
-        degisken_adresleri = self.func_activation_records[self.current_fun_label].degisken_goreli_adresleri
+        degisken_adresleri = self.fun_records[self.current_fun_label].degisken_goreli_adresleri
         key = (place['name'], place['id'])
         if key in degisken_adresleri:
-            return str(self.sp_extra_offset + degisken_adresleri[key] + 8) + '(sp)'
+            return str(self.fun_infos[self.current_fun_label].sp_extra_offset + degisken_adresleri[key] + 8) + '(sp)'
         else:
             return None
 
@@ -548,10 +554,10 @@ class RiscVAssemblyYapici(AssemblyYapici):
         """
         only works right after vector variable initialization since variable vector address can change.
         """
-        degisken_adresleri = self.func_activation_records[self.current_fun_label].degisken_goreli_adresleri
+        degisken_adresleri = self.fun_records[self.current_fun_label].degisken_goreli_adresleri
         key = (place['name'], place['id'])
         if key in degisken_adresleri:
-            return str(self.sp_extra_offset + degisken_adresleri[key] + 16) + '(sp)'
+            return str(self.fun_infos[self.current_fun_label].sp_extra_offset + degisken_adresleri[key] + 16) + '(sp)'
         else:
             return None
 
@@ -559,10 +565,10 @@ class RiscVAssemblyYapici(AssemblyYapici):
         """
         only works right after vector variable initialization since variable vector address can change.
         """
-        degisken_adresleri = self.func_activation_records[self.current_fun_label].degisken_goreli_adresleri
+        degisken_adresleri = self.fun_records[self.current_fun_label].degisken_goreli_adresleri
         key = (place['name'], place['id'])
         if key in degisken_adresleri:
-            return self.sp_extra_offset + degisken_adresleri[key] + 24
+            return self.fun_infos[self.current_fun_label].sp_extra_offset + degisken_adresleri[key] + 24
         else:
             return None
 
@@ -609,7 +615,7 @@ class Compiler:
         self.assembly_lines = self.asm_yapici.yap()
 
     def compile(self):
-        self.ast_optimize_et()
+        # self.ast_optimize_et()
         self.ara_dil_yap()
         self.ara_dil_optimize_et()
         self.ara_dildeki_floatlari_int_yap()

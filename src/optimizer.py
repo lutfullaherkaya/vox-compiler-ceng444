@@ -553,7 +553,7 @@ class OluKodOldurucuVisitor(OptimizerVisitor):
             block.var_decls[i] = self.visit(block.var_decls[i])
         for i in range(len(block.statements)):
             block.statements[i] = self.visit(block.statements[i])
-            if isinstance(block.statements[i], Return):
+            if isinstance(block.statements[i], Return) and i + 1 < len(block.statements):
                 self.changes_made = True
                 del block.statements[i + 1:]
                 break
