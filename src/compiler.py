@@ -99,7 +99,7 @@ class AssemblyYapici(ABC):
         self.aradil_sozlugu: Dict[str, Callable[[List[Any]], List[str]]] = {}
         self.ara_dil_satirlari: List[List[Any]] = ara_dil_satirlari
 
-    def aradilden_asm(self, komut, komut_indeksi):
+    def aradilden_asm(self, komut, komut_indeksi=None):
         if komut[0] in self.aradil_sozlugu:
             asm = []
             if komut[0] != 'fun':
@@ -313,7 +313,7 @@ class RiscVAssemblyYapici(AssemblyYapici):
                         f'  add {addr_reg}, {addr_reg}, {tmp_reg}'])
         return asm
 
-    def cevir_arg(self, komut, komut_indeksi):
+    def cevir_arg(self, komut, komut_indeksi=None):
         arg_name_id = komut[1]
         asm = []
         if self.current_arg_index == -1:  # first arg
@@ -338,7 +338,7 @@ class RiscVAssemblyYapici(AssemblyYapici):
 
         return asm
 
-    def cevir_call(self, komut, komut_indeksi):
+    def cevir_call(self, komut, komut_indeksi=None):
         ret_val_name_id = komut[1]
         func_name = komut[2]
 
@@ -354,7 +354,7 @@ class RiscVAssemblyYapici(AssemblyYapici):
 
         return asm
 
-    def cevir_copy(self, komut, komut_indeksi):
+    def cevir_copy(self, komut, komut_indeksi=None):
         asm = []
         if len(komut) < 3:
             asm.extend(self.asm_reg_to_var('t0', komut[1], 'zero', 'zero'))
@@ -364,7 +364,7 @@ class RiscVAssemblyYapici(AssemblyYapici):
 
         return asm
 
-    def cevir_vector(self, komut, komut_indeksi):
+    def cevir_vector(self, komut, komut_indeksi=None):
         name_id = komut[1]
         length = komut[2]
 
@@ -389,7 +389,7 @@ class RiscVAssemblyYapici(AssemblyYapici):
 
         return asm
 
-    def cevir_vector_set(self, komut, komut_indeksi):
+    def cevir_vector_set(self, komut, komut_indeksi=None):
         vector_name_id = komut[1]
         index = komut[2]
         expr_name_id = komut[3]
@@ -400,7 +400,7 @@ class RiscVAssemblyYapici(AssemblyYapici):
                     f'  sd t1, 8(t2)'])
         return asm
 
-    def cevir_vector_get(self, komut, komut_indeksi):
+    def cevir_vector_get(self, komut, komut_indeksi=None):
         result_name_id = komut[1]
         vector_name_id = komut[2]
         index = komut[3]
@@ -412,17 +412,17 @@ class RiscVAssemblyYapici(AssemblyYapici):
 
         return asm
 
-    def cevir_global(self, komut, komut_indeksi):
+    def cevir_global(self, komut, komut_indeksi=None):
         # Compiler sınıfı oluşturur globalleri
         return []
 
-    def cevir_branch(self, komut, komut_indeksi):
+    def cevir_branch(self, komut, komut_indeksi=None):
         return [f'  j {komut[1]}']
 
-    def cevir_label(self, komut, komut_indeksi):
+    def cevir_label(self, komut, komut_indeksi=None):
         return [f'{komut[1]}:']
 
-    def cevir_fun(self, komut, komut_indeksi):
+    def cevir_fun(self, komut, komut_indeksi=None):
         label = komut[1]
         signature = komut[2]
         param_count = komut[3]
@@ -442,7 +442,7 @@ class RiscVAssemblyYapici(AssemblyYapici):
 
         return asm
 
-    def cevir_param(self, komut, komut_indeksi):
+    def cevir_param(self, komut, komut_indeksi=None):
         param_name_id = komut[1]
         self.current_param_index += 1
         asm = []
@@ -462,7 +462,7 @@ class RiscVAssemblyYapici(AssemblyYapici):
             self.current_param_index = -1
         return asm
 
-    def cevir_return(self, komut, komut_indeksi):
+    def cevir_return(self, komut, komut_indeksi=None):
         asm = []
         if len(komut) >= 2:
             asm.extend(self.asm_var_or_const_to_reg(komut[1], 'a0', 'a1'))
@@ -475,19 +475,19 @@ class RiscVAssemblyYapici(AssemblyYapici):
         asm.append(f'  ret')
         return asm
 
-    def cevir_branch_if_true(self, komut, komut_indeksi):
+    def cevir_branch_if_true(self, komut, komut_indeksi=None):
         asm = []
         asm.extend(self.asm_var_or_const_to_reg(komut[1], None, 't0'))
         asm.extend([f'  bne t0, zero, {komut[2]}'])
         return asm
 
-    def cevir_branch_if_false(self, komut, komut_indeksi):
+    def cevir_branch_if_false(self, komut, komut_indeksi=None):
         asm = []
         asm.extend(self.asm_var_or_const_to_reg(komut[1], None, 't0'))
         asm.extend([f'  beq t0, zero, {komut[2]}'])
         return asm
 
-    def ceviriler_mantiksal(self, komut, komut_indeksi):
+    def ceviriler_mantiksal(self, komut, komut_indeksi=None):
         # assuming type is 3 (bool)
         result_name = komut[1]
         operand0_name = komut[2]
@@ -506,7 +506,7 @@ class RiscVAssemblyYapici(AssemblyYapici):
 
         return asm
 
-    def ceviriler_karsilastirma(self, komut, komut_indeksi):
+    def ceviriler_karsilastirma(self, komut, komut_indeksi=None):
         if komut[0] == '>':
             return self.ceviriler_karsilastirma(['<', komut[1], komut[3], komut[2]])
         elif komut[0] == '>=':
@@ -590,14 +590,15 @@ class Compiler:
             constant_folder = optimizer.ConstantFoldingVisitor()
             constant_folder.visit(self.ast)
 
-            constant_propagator = optimizer.ConstantPropogationVisitor()
-            constant_propagator.visit(self.ast)
+            # todo: bu calismiyor.  reaching definition analysis lazım.
+            # constant_propagator = optimizer.ConstantPropogationVisitor()
+            # constant_propagator.visit(self.ast)
 
             olu_kod_oldurucu = optimizer.OluKodOldurucuVisitor()
             olu_kod_oldurucu.visit(self.ast)
 
-            changes_made = olu_kod_oldurucu.changes_made or constant_propagator.changes_made or constant_folder.changes_made
-            #print(ast_tools.PrintVisitor().visit(self.ast))
+            changes_made = olu_kod_oldurucu.changes_made or constant_folder.changes_made  # or constant_propagator.changes_made
+            # print(ast_tools.PrintVisitor().visit(self.ast))
 
     def ara_dil_optimize_et(self):
         pass
