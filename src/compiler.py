@@ -126,7 +126,7 @@ class RiscVFunctionInfo:
         return self.sp_extra_offset + self.fp_extra_offset + self.current_stack_size
 
     def get_non_reg_arg_count(self):
-        return min(self.activation_record.arg_count - 4, 0)
+        return max(self.activation_record.arg_count - 4, 0)
 
     def add_to_saved_regs(self, regs: Union[str, List[str]]):
         """
@@ -321,7 +321,7 @@ class RiscVAssemblyYapici(AssemblyYapici):
             while self.ara_dil_satirlari[komut_indeksi + arg_count][0] != 'call':
                 arg_count += 1
 
-            non_reg_arg_cnt = min(arg_count - 4, 0)
+            non_reg_arg_cnt = max(arg_count - 4, 0)
             if non_reg_arg_cnt > 0:
                 self.fun_infos[self.current_fun_label].sp_extra_offset += 16 * non_reg_arg_cnt
                 asm.append(f'  addi sp, sp, -{16 * non_reg_arg_cnt}')
@@ -341,8 +341,9 @@ class RiscVAssemblyYapici(AssemblyYapici):
     def cevir_call(self, komut, komut_indeksi):
         ret_val_name_id = komut[1]
         func_name = komut[2]
+
+        non_reg_arg_count = max(self.current_arg_index + 1 - 4, 0)
         self.current_arg_index = -1
-        non_reg_arg_count = self.fun_infos[self.current_fun_label].get_non_reg_arg_count()
         asm = [f'  call {func_name}']
         if non_reg_arg_count > 0:
             asm.append(f'  addi sp, sp, {16 * non_reg_arg_count}')
@@ -450,9 +451,10 @@ class RiscVAssemblyYapici(AssemblyYapici):
                                            f'a{2 * self.current_param_index}',
                                            f'a{2 * self.current_param_index + 1}'))
         else:
+            total_stack_size = self.fun_infos[self.current_fun_label].get_total_stack_size()
             non_reg_index = self.current_param_index - 4
-            asm.extend([f'  ld t1, {16 * non_reg_index}(fp)',
-                        f'  ld t2, {16 * non_reg_index + 8}(fp)'])
+            asm.extend([f'  ld t1, {16 * non_reg_index + total_stack_size}(sp)',
+                        f'  ld t2, {16 * non_reg_index + 8 + total_stack_size}(sp)'])
             asm.extend(self.asm_reg_to_var('t0', param_name_id,
                                            't1',
                                            't2'))
@@ -595,7 +597,7 @@ class Compiler:
             olu_kod_oldurucu.visit(self.ast)
 
             changes_made = olu_kod_oldurucu.changes_made or constant_propagator.changes_made or constant_folder.changes_made
-            print(ast_tools.PrintVisitor().visit(self.ast))
+            #print(ast_tools.PrintVisitor().visit(self.ast))
 
     def ara_dil_optimize_et(self):
         pass
