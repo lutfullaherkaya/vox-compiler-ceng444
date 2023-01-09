@@ -615,7 +615,7 @@ class Compiler:
         self.assembly_lines = self.asm_yapici.yap()
 
     def compile(self):
-        # self.ast_optimize_et()
+        self.ast_optimize_et()
         self.ara_dil_yap()
         self.ara_dil_optimize_et()
         self.ara_dildeki_floatlari_int_yap()

@@ -6,7 +6,6 @@ fun faktoriyel(n) {
     }
 }
 
-
 print faktoriyel(4);
 
 
