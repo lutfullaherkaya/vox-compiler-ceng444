@@ -49,6 +49,7 @@ https://github.com/riscv-non-isa/riscv-asm-manual/blob/master/riscv-asm.md
     sadece fonksiyon içerisinde değiştirilen registerler savelensin.
     compiler utils compilation error quit yapmamalı, sadece sonunda dosyaya assembly yazılmasını engellemelidir.
     
+    vector_set işlemi ve vector_get işlemi grafı bozabilir dikkat et sayfa 538 dragon
     
     parametrelerden ayrıca local değişken yapmama gerek yok, direkt stackte var zaten parametreler (a reglerine sığmayan)
     type checking lazım illa. mesela vektör işlemlerinde vektörlerin tipi sayı olmalı. 
@@ -361,12 +362,8 @@ class RiscVAssemblyYapici(AssemblyYapici):
 
     def cevir_copy(self, komut, komut_indeksi=None):
         asm = []
-        if len(komut) < 3:
-            asm.extend(self.asm_reg_to_var('t0', komut[1], 'zero', 'zero'))
-        else:
-            asm.extend(self.asm_var_or_const_to_reg(komut[2], 't0', 't1'))
-            asm.extend(self.asm_reg_to_var('t2', komut[1], 't0', 't1'))
-
+        asm.extend(self.asm_var_or_const_to_reg(komut[2], 't0', 't1'))
+        asm.extend(self.asm_reg_to_var('t2', komut[1], 't0', 't1'))
         return asm
 
     def cevir_vector(self, komut, komut_indeksi=None):
@@ -602,21 +599,24 @@ class BasicBlock:
 
 
 class DAGNode:
-    def __init__(self, label=None, identifiers=None, left: "DAGNode" = None, right: "DAGNode" = None):
+    def __init__(self, label=None, identifiers=None, left: "DAGNode" = None, right: "DAGNode" = None,
+                 third: "DAGNode" = None, ):
         self.label = label
+        self.killed = False
         if identifiers is None:
             self.identifiers = []
         else:
             self.identifiers = identifiers
         self.left: Optional[DAGNode] = left
         self.right: Optional[DAGNode] = right
+        self.third: Optional[DAGNode] = third
 
 
 class DAGBlock:
     def __init__(self, block: BasicBlock):
         self.block: BasicBlock = block
-        self.vars_to_node = {}
-        binary_ops = ['add', 'sub', 'mul', 'div', 'and', 'or', '<', '>', '<=', '>=', '==', '!=']
+        self.var_to_node = {}
+        binary_ops = ['add', 'sub', 'mul', 'div', 'and', 'or', '<', '>', '<=', '>=', '==', '!=', 'vector_get']
         unary_ops = ['!']
         self.nodes: List[DAGNode] = []
 
@@ -625,35 +625,75 @@ class DAGBlock:
                 x = komut[1]
                 y = komut[2]
                 n = None
-                if y not in self.vars_to_node:
-                    self.vars_to_node[y] = DAGNode(identifiers=[y])
-                    self.nodes.append(self.vars_to_node[y])
+                if y not in self.var_to_node:
+                    self.var_to_node[y] = DAGNode(identifiers=[y])
+                    self.nodes.append(self.var_to_node[y])
                 if komut[0] in binary_ops:  # case 1
                     op = komut[0]
                     z = komut[3]
-                    if z not in self.vars_to_node:
-                        self.vars_to_node[z] = DAGNode(identifiers=[z])
-                        self.nodes.append(self.vars_to_node[z])
-                    n = DAGNode(op, left=self.vars_to_node[y], right=self.vars_to_node[z])
-                    self.nodes.append(n)
+                    if z not in self.var_to_node:
+                        self.var_to_node[z] = DAGNode(identifiers=[z])
+                        self.nodes.append(self.var_to_node[z])
+                    for node in self.nodes:
+                        if not node.killed and node.label == op and node.left is self.var_to_node[y] and node.right is \
+                                self.var_to_node[z]:
+                            n = node
+                            break
+                    if n is None:
+                        n = DAGNode(label=op, left=self.var_to_node[y], right=self.var_to_node[z])
+                        self.nodes.append(n)
+
                 elif komut[0] in unary_ops:  # case 2
                     op = komut[0]
 
                     for node in self.nodes:
-                        if node.label == op and node.right is None and node.left is self.vars_to_node[y]:
+                        if not node.killed and node.label == op and node.right is None and node.left is \
+                                self.var_to_node[y]:
                             n = node
                             break
                     if n is None:
-                        n = DAGNode(label=op, left=self.vars_to_node[y])
+                        n = DAGNode(label=op, left=self.var_to_node[y])
                         self.nodes.append(n)
-                elif komut[0] == 'copy':  # case 3
-                    n = self.vars_to_node[y]
-                if x in self.vars_to_node:
-                    self.vars_to_node[x].identifiers.remove(x)
-                    self.vars_to_node.pop(x)
+                elif komut[0] == 'copy':  # case 3 x = y
+                    n = self.var_to_node[y]
+                if x in self.var_to_node:
+                    self.var_to_node[x].identifiers.remove(x)
+                    self.var_to_node.pop(x)
 
                 n.identifiers.append(x)
-                self.vars_to_node[x] = n
+                self.var_to_node[x] = n
+            elif komut[0] == 'vector_set':  # case 3 gibi x[y] = z
+                x = komut[1]
+                y = komut[2]
+                z = komut[3]
+                op = komut[0]
+                n = None
+                if z not in self.var_to_node:
+                    self.var_to_node[z] = DAGNode(identifiers=[z])
+                    self.nodes.append(self.var_to_node[z])
+                if x not in self.var_to_node:
+                    self.var_to_node[x] = DAGNode(identifiers=[x])
+                    self.nodes.append(self.var_to_node[x])
+                if y not in self.var_to_node:
+                    self.var_to_node[y] = DAGNode(identifiers=[y])
+                    self.nodes.append(self.var_to_node[y])
+                # gerekli mi?
+                # for node in self.nodes:
+                #    if not node.killed and node.label == op and node.left is self.var_to_node[x] and node.right is \
+                #            self.var_to_node[y] and node.third is self.var_to_node[z]:
+                #        n = node
+                #        break
+                if n is None:
+                    n = DAGNode(label=op, left=self.var_to_node[x], right=self.var_to_node[y],
+                                third=self.var_to_node[z])
+                    self.nodes.append(n)
+                self.kill_nodes_dependent_on(self.var_to_node[x])
+
+    def kill_nodes_dependent_on(self, x):
+        if x is not None:
+            for node in self.nodes:
+                if x in [node.left, node.right, node.third]:
+                    node.killed = True
 
 
 class DAG:
@@ -755,11 +795,14 @@ class Compiler:
 
 if __name__ == '__main__':
     bb = BasicBlock()
-    bb.add(['mul', 'a', 'b', 'c'])
-    bb.add(['copy', 'd', 'b'])
-    bb.add(['mul', 'e', 'd', 'c'])
-    bb.add(['copy', 'b', 'e'])
-    bb.add(['add', 'f', 'b', 'c'])
-    bb.add(['add', 'g', 'd', 'f'])
+    #bb.add(['mul', 'a', 'b', 'c'])
+    #bb.add(['copy', 'd', 'b'])
+    #bb.add(['mul', 'e', 'd', 'c'])
+    #bb.add(['copy', 'b', 'e'])
+    #bb.add(['add', 'f', 'b', 'c'])
+    #bb.add(['add', 'g', 'd', 'f'])
+    bb.add(['vector_get', 'x', 'a', 'i'])
+    bb.add(['vector_set', 'a', 'j', 'y'])
+    bb.add(['vector_get', 'z', 'a', 'i'])
     block = DAGBlock(bb)
     print(1)

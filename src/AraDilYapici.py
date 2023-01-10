@@ -223,7 +223,7 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
                 self._ara_dile_ekle([['vector_set', degisken_ad_ve_id, i, elem_ad_ve_id]])
         elif vardecl.initializer is None:
             degisken_ad_ve_id = self.current_scope.add(vardecl.identifier)
-            self._ara_dile_ekle([['copy', degisken_ad_ve_id]])
+            self._ara_dile_ekle([['copy', degisken_ad_ve_id, 0]])
         else:
             degisken_ad_ve_id = self.current_scope.add(vardecl.identifier, None, vardecl.initializer)
             self._ara_dile_ekle(['copy', degisken_ad_ve_id, self.visit(vardecl.initializer)])
