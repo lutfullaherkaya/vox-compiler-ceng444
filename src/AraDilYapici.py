@@ -413,13 +413,17 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
             '*': 'mul',
             '/': 'div',
         }
+        # vox_add falan kullandığı için
+        self.func_activation_records[self.current_func].calls_another_fun = True
         self._ara_dile_ekle([op_to_instruction[abinary.op], result_name_id, left_name_id, right_name_id])
         return result_name_id
 
     def visit_AUMinus(self, auminus: AUMinus):
         result_name_id = self.current_scope.generate_tmp()
         right_name_id = self.visit(auminus.right)
+        # vox_add falan kullandığı için
 
+        self.func_activation_records[self.current_func].calls_another_fun = True
         self._ara_dile_ekle(['sub', result_name_id, 0, right_name_id])
         return result_name_id
 
@@ -441,12 +445,16 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
             cu.compilation_warning(f'Function {call.callee.name} expects {param_count} arguments, '
                                    f'but {len(call.arguments)} were given. Empty arguments are set to 0. '
                                    f'Redundant arguments will not be evaluated.', call.callee.lineno)
+
+        arg_name_ids = []
         for i in range(param_count):
             if i < len(call.arguments):
-                name_ad_ve_id = self.visit(call.arguments[i])
-                self._ara_dile_ekle(['arg', name_ad_ve_id])
+                arg_name_ids.append(self.visit(call.arguments[i]))
+
             else:
-                self._ara_dile_ekle(['arg', 0])
+                arg_name_ids.append(0)
+        for name_id in arg_name_ids:
+            self._ara_dile_ekle(['arg', name_id])
 
         ret_val_name_id_pair = self.current_scope.generate_tmp()
         self._ara_dile_ekle(['call', ret_val_name_id_pair, call.callee.name])

@@ -6,7 +6,7 @@ fun g(a,b,c) {
     return a * b * c;
 }
 
-print f(1,2,3);
+print f(g(1,2,3),g(1,2,3),g(1,2,3));
 
 //var a = 5;
 //var b = a;
