@@ -20,7 +20,8 @@ https://github.com/riscv-non-isa/riscv-asm-manual/blob/master/riscv-asm.md
     değişken structuna yazsam olabilirdi, mesela 4 byte type deyip 4 byte vector length diyebilirdim ama demedim. 
     not: vektörler type ve değer çifti tutar, doğal olarak heterojen olurlar.
     
-    
+    https://www.geeksforgeeks.org/basic-blocks-in-compiler-design/
+    https://www.geeksforgeeks.org/directed-acyclic-graph-in-compiler-design-with-examples/
     
     
     Bonus:
@@ -155,9 +156,11 @@ class RiscVAssemblyYapici(AssemblyYapici):
         self.current_arg_index = -1
         self.current_param_index = -1
         self.aradil_sozlugu = {
+            'fun': self.cevir_fun,
+            'return': self.cevir_return,
             'call': self.cevir_call,
-            'arg': self.cevir_arg,
             'copy': self.cevir_copy,
+            'arg': self.cevir_arg,
             'vector': self.cevir_vector,
             'vector_set': self.cevir_vector_set,
             'vector_get': self.cevir_vector_get,
@@ -166,11 +169,13 @@ class RiscVAssemblyYapici(AssemblyYapici):
             'branch_if_true': self.cevir_branch_if_true,
             'branch_if_false': self.cevir_branch_if_false,
             'label': self.cevir_label,
-            'fun': self.cevir_fun,
             'param': self.cevir_param,
-            'return': self.cevir_return,
             'and': self.ceviriler_mantiksal,
             'or': self.ceviriler_mantiksal,
+            'add': self.ceviriler_aritmetik,
+            'sub': self.ceviriler_aritmetik,
+            'mul': self.ceviriler_aritmetik,
+            'div': self.ceviriler_aritmetik,
             '!': self.ceviriler_mantiksal,
             '<': self.ceviriler_karsilastirma,
             '>': self.ceviriler_karsilastirma,
@@ -508,6 +513,17 @@ class RiscVAssemblyYapici(AssemblyYapici):
 
         return asm
 
+    def ceviriler_aritmetik(self, komut, komut_indeksi=None):
+        result_name_id = komut[1]
+        left_name_id = komut[2]
+        right_name_id = komut[3]
+        asm = []
+        asm.extend(self.asm_var_or_const_to_reg(left_name_id, 'a0', 'a1'))
+        asm.extend(self.asm_var_or_const_to_reg(right_name_id, 'a2', 'a3'))
+        asm.extend([f'  call __vox_{komut[0]}__'])
+        asm.extend(self.asm_reg_to_var('t0', result_name_id, 'a0', 'a1'))
+        return asm
+
     def ceviriler_karsilastirma(self, komut, komut_indeksi=None):
         if komut[0] == '>':
             return self.ceviriler_karsilastirma(['<', komut[1], komut[3], komut[2]])
@@ -577,6 +593,35 @@ class RiscVAssemblyYapici(AssemblyYapici):
             return None
 
 
+class BasicBlock:
+    def __init__(self):
+        self.komutlar: List[List[Any]] = []
+
+    def add(self, komut):
+        self.komutlar.append(komut)
+
+
+class DAG:
+    def __init__(self, ara_dil_satirlari: List[List[Any]]):
+        self.ara_dil_satirlari: List[List[Any]] = ara_dil_satirlari
+        self.fun_basic_blocks: Dict[str, List[BasicBlock]] = {}
+
+    def generate_basic_blocks(self):
+        current_func = None
+        for komut in self.ara_dil_satirlari:
+            if komut[0] == 'fun':
+                current_func = komut[1]
+                self.fun_basic_blocks[current_func] = [BasicBlock()]
+            if komut[0] in ['label']:
+                self.fun_basic_blocks[current_func].append(BasicBlock())
+                self.fun_basic_blocks[current_func][-1].add(komut)
+            elif komut[0] in ['branch_if_true', 'branch_if_false', 'branch', 'call', 'return']:
+                self.fun_basic_blocks[current_func][-1].add(komut)
+                self.fun_basic_blocks[current_func].append(BasicBlock())
+            else:
+                self.fun_basic_blocks[current_func][-1].add(komut)
+
+
 class Compiler:
     def __init__(self, ast: ast_tools.Program, asm_yapici_cls: Type[AssemblyYapici]):
         self.ast: ast_tools.Program = ast
@@ -623,6 +668,8 @@ class Compiler:
         self.ast_optimize_et()
         self.ara_dil_yap()
         self.ara_dil_optimize_et()
+        dag = DAG(self.ara_dil_satirlari)
+        dag.generate_basic_blocks()
         self.ara_dildeki_floatlari_int_yap()
         self.assembly_yap()
         self.assembly_optimize_et()

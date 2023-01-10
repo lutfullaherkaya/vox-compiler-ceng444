@@ -413,19 +413,14 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
             '*': 'mul',
             '/': 'div',
         }
-
-        self._ara_dile_ekle([['arg', left_name_id],
-                             ['arg', right_name_id],
-                             ['call', result_name_id, f'__vox_{op_to_instruction[abinary.op]}__']])
+        self._ara_dile_ekle([op_to_instruction[abinary.op], result_name_id, left_name_id, right_name_id])
         return result_name_id
 
     def visit_AUMinus(self, auminus: AUMinus):
         result_name_id = self.current_scope.generate_tmp()
         right_name_id = self.visit(auminus.right)
 
-        self._ara_dile_ekle([['arg', 0],
-                             ['arg', right_name_id],
-                             ['call', result_name_id, f'__vox_sub__']])
+        self._ara_dile_ekle(['sub', result_name_id, 0, right_name_id])
         return result_name_id
 
     def visit_ALiteral(self, aliteral: ALiteral):
