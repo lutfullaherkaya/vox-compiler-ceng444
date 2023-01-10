@@ -96,7 +96,7 @@ class AssemblyYapici(ABC):
         self.global_vars: Dict[str, VarDecl] = global_vars
         self.fun_records: Dict[str, ActivationRecord] = func_activation_records
         self.global_string_to_label: Dict[str, str] = global_string_to_label
-        self.aradil_sozlugu: Dict[str, Callable[[List[Any]], List[str]]] = {}
+        self.aradil_sozlugu: Dict[str, Callable[[List[Any], int], List[str]]] = {}
         self.ara_dil_satirlari: List[List[Any]] = ara_dil_satirlari
 
     def aradilden_asm(self, komut, komut_indeksi=None):
@@ -128,7 +128,7 @@ class RiscVFunctionInfo:
     def get_non_reg_arg_count(self):
         return max(self.activation_record.arg_count - 4, 0)
 
-    def add_to_saved_regs(self, regs: Union[str, List[str]]):
+    def add_to_callee_saved_regs(self, regs: Union[str, List[str]]):
         """
 
         :param regs:registers to be saved when declaring a function and restored when exiting
@@ -154,7 +154,7 @@ class RiscVAssemblyYapici(AssemblyYapici):
         self.current_fun_label = ''
         self.current_arg_index = -1
         self.current_param_index = -1
-        self.aradil_sozlugu: Dict[str, Callable[[List[Any]], List[str]]] = {
+        self.aradil_sozlugu = {
             'call': self.cevir_call,
             'arg': self.cevir_arg,
             'copy': self.cevir_copy,
@@ -394,8 +394,8 @@ class RiscVAssemblyYapici(AssemblyYapici):
         index = komut[2]
         expr_name_id = komut[3]
         asm = []
+        asm.extend(self.asm_get_vector_elm_addr('t0', 't2', vector_name_id, index))
         asm.extend(self.asm_var_or_const_to_reg(expr_name_id, 't0', 't1'))
-        asm.extend(self.asm_get_vector_elm_addr('t3', 't2', vector_name_id, index))
         asm.extend([f'  sd t0, 0(t2)',
                     f'  sd t1, 8(t2)'])
         return asm
@@ -429,7 +429,7 @@ class RiscVAssemblyYapici(AssemblyYapici):
 
         self.current_fun_label = label
         if self.fun_infos[self.current_fun_label].activation_record.calls_another_fun:
-            self.fun_infos[self.current_fun_label].add_to_saved_regs(['ra'])
+            self.fun_infos[self.current_fun_label].add_to_callee_saved_regs(['ra'])
         total_stack_size = self.fun_infos[self.current_fun_label].get_total_stack_size()
         asm = [f'',
                f'# fun {signature};',

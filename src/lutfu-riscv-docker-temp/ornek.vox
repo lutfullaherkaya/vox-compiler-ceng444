@@ -1,8 +1,14 @@
+var v = [1,2,3];
+var v2 = [4,5];
 fun g(a) {}
 
 fun main() {
     return 4;
 }
+v[0] = "hello world";
+v2[1] = "icice";
+v[1] = v2;
+print v;
 //var i = 0;
 //fun modulo(number, i) {
 //    return number - (number / i) * i;
