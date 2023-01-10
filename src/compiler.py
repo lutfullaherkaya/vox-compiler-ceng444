@@ -22,8 +22,8 @@ https://github.com/riscv-non-isa/riscv-asm-manual/blob/master/riscv-asm.md
     
     https://www.geeksforgeeks.org/basic-blocks-in-compiler-design/
     https://www.geeksforgeeks.org/directed-acyclic-graph-in-compiler-design-with-examples/
-    
-    
+    https://www.codingninjas.com/codestudio/library/dag-representation
+    https://www.javatpoint.com/dag-representation-for-basic-blocks
     Bonus:
     
     After you are done with all of the compulsory steps, you can also implement optional features you'd like Vox to have. 
@@ -601,10 +601,66 @@ class BasicBlock:
         self.komutlar.append(komut)
 
 
+class DAGNode:
+    def __init__(self, label=None, identifiers=None, left: "DAGNode" = None, right: "DAGNode" = None):
+        self.label = label
+        if identifiers is None:
+            self.identifiers = []
+        else:
+            self.identifiers = identifiers
+        self.left: Optional[DAGNode] = left
+        self.right: Optional[DAGNode] = right
+
+
+class DAGBlock:
+    def __init__(self, block: BasicBlock):
+        self.block: BasicBlock = block
+        self.vars_to_node = {}
+        binary_ops = ['add', 'sub', 'mul', 'div', 'and', 'or', '<', '>', '<=', '>=', '==', '!=']
+        unary_ops = ['!']
+        self.nodes: List[DAGNode] = []
+
+        for komut in block.komutlar:
+            if komut[0] in binary_ops + unary_ops + ['copy']:
+                x = komut[1]
+                y = komut[2]
+                n = None
+                if y not in self.vars_to_node:
+                    self.vars_to_node[y] = DAGNode(identifiers=[y])
+                    self.nodes.append(self.vars_to_node[y])
+                if komut[0] in binary_ops:  # case 1
+                    op = komut[0]
+                    z = komut[3]
+                    if z not in self.vars_to_node:
+                        self.vars_to_node[z] = DAGNode(identifiers=[z])
+                        self.nodes.append(self.vars_to_node[z])
+                    n = DAGNode(op, left=self.vars_to_node[y], right=self.vars_to_node[z])
+                    self.nodes.append(n)
+                elif komut[0] in unary_ops:  # case 2
+                    op = komut[0]
+
+                    for node in self.nodes:
+                        if node.label == op and node.right is None and node.left is self.vars_to_node[y]:
+                            n = node
+                            break
+                    if n is None:
+                        n = DAGNode(label=op, left=self.vars_to_node[y])
+                        self.nodes.append(n)
+                elif komut[0] == 'copy':  # case 3
+                    n = self.vars_to_node[y]
+                if x in self.vars_to_node:
+                    self.vars_to_node[x].identifiers.remove(x)
+                    self.vars_to_node.pop(x)
+
+                n.identifiers.append(x)
+                self.vars_to_node[x] = n
+
+
 class DAG:
     def __init__(self, ara_dil_satirlari: List[List[Any]]):
         self.ara_dil_satirlari: List[List[Any]] = ara_dil_satirlari
         self.fun_basic_blocks: Dict[str, List[BasicBlock]] = {}
+        self.fun_dags: Dict[str, List[DAGBlock]] = {}
 
     def generate_basic_blocks(self):
         current_func = None
@@ -620,6 +676,13 @@ class DAG:
                 self.fun_basic_blocks[current_func].append(BasicBlock())
             else:
                 self.fun_basic_blocks[current_func][-1].add(komut)
+
+    def generate_dag(self):
+        for fun_name in self.fun_basic_blocks:
+            self.fun_dags[fun_name] = []
+            for block in self.fun_basic_blocks[fun_name]:
+                if len(block.komutlar) > 0:
+                    self.fun_dags[fun_name].append(DAGBlock(block))
 
 
 class Compiler:
@@ -688,3 +751,15 @@ class Compiler:
             for i, arg in enumerate(komut):
                 if type(arg) == float:
                     komut[i] = int(arg)
+
+
+if __name__ == '__main__':
+    bb = BasicBlock()
+    bb.add(['mul', 'a', 'b', 'c'])
+    bb.add(['copy', 'd', 'b'])
+    bb.add(['mul', 'e', 'd', 'c'])
+    bb.add(['copy', 'b', 'e'])
+    bb.add(['add', 'f', 'b', 'c'])
+    bb.add(['add', 'g', 'd', 'f'])
+    block = DAGBlock(bb)
+    print(1)

@@ -1,27 +1,37 @@
-var a = 5;
-var b = a;
-var ab = 55;
-fun x(ab) {
-    var a = 6;
-}
-fun main() {
-    return 0;
+fun f(x,y,z) {
+    return x + y + z;
 }
 
-fun y(ab) {
-    var a = 7;
-    if (#a) {
-        var a = 8;
-    }
+fun g(a,b,c) {
+    return a * b * c;
 }
 
-if (true) {
-    var c = [1,2,3];
-    ab = 53;
-    ab = ab + 231;
+print f(1,2,3);
 
-    print ab * c * c *c * c * ab;
-}
+//var a = 5;
+//var b = a;
+//var ab = 55;
+//fun x(ab) {
+//    var a = 6;
+//}
+//fun main() {
+//    return 0;
+//}
+
+//fun y(ab) {
+//    var a = 7;
+//    if (#a) {
+//        var a = 8;
+//    }
+//}
+
+//if (true) {
+//    var c = [1,2,3];
+//    ab = 53;
+//    ab = ab + 231;
+
+//    print ab * c * c *c * c * ab;
+//}
 
 //var i = 0;
 //fun modulo(number, i) {
