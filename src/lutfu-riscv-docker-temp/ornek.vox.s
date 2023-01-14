@@ -55,9 +55,9 @@ main:
             # call .tmp0, cok_parali
   call cok_parali
   addi sp, sp, 32
+            # arg .tmp0
   mv t3, a0
   mv t4, a1
-            # arg .tmp0
   mv a0, t3
   mv a1, t4
             # call __vox_print__
@@ -79,93 +79,99 @@ cok_parali:
   addi sp, sp, -264
   sd ra, 256(sp)
             # param a1
-  mv t3, a0
-  mv t4, a1
             # param a2
-  mv t5, a2
-  mv t6, a3
             # param a3
-  mv s1, a4
-  mv s2, a5
             # param a4
-  mv s3, a6
-  mv s4, a7
             # param a5
-  ld s5, 264(sp)
-  ld s6, 272(sp)
+  ld t3, 264(sp)
+  ld t4, 272(sp)
             # param a6
-  ld s7, 280(sp)
-  ld s8, 288(sp)
+  ld t5, 280(sp)
+  ld t6, 288(sp)
             # copy x, a1
             # copy y, a2
             # copy z, a3
             # copy t, a4
             # add .tmp2, x, y
-  mv a0, t3
-  mv a1, t4
-  mv a2, t5
-  mv a3, t6
-  call __vox_add__
-  mv s9, a0
-  mv s10, a1
-            # add .tmp1, .tmp2, z
-  mv a0, s9
-  mv a1, s10
-  mv a2, s1
-  mv a3, s2
-  call __vox_add__
-  mv s5, a0
-  mv s6, a1
-            # add .tmp0, .tmp1, t
-  mv a0, s5
-  mv a1, s6
+  mv s1, a0
+  mv s2, a1
+  mv s3, a2
+  mv s4, a3
+  mv a0, s1
+  mv a1, s2
   mv a2, s3
   mv a3, s4
   call __vox_add__
+            # add .tmp1, .tmp2, z
+  mv s5, a0
+  mv s6, a1
+  mv a0, s5
+  mv a1, s6
+  mv a2, a4
+  mv a3, a5
+  call __vox_add__
+            # add .tmp0, .tmp1, t
   mv s7, a0
   mv s8, a1
-            # arg .tmp0
   mv a0, s7
   mv a1, s8
+  mv a2, a6
+  mv a3, a7
+  call __vox_add__
+            # arg .tmp0
+  mv s9, a0
+  mv s10, a1
+  mv a0, s9
+  mv a1, s10
             # call __vox_print__
-  addi sp, sp, -32
+  addi sp, sp, -64
   sd t3, 0(sp)
   sd t4, 8(sp)
   sd t5, 16(sp)
   sd t6, 24(sp)
+  sd a4, 32(sp)
+  sd a5, 40(sp)
+  sd a6, 48(sp)
+  sd a7, 56(sp)
   call __vox_print__
   ld t3, 0(sp)
   ld t4, 8(sp)
   ld t5, 16(sp)
   ld t6, 24(sp)
-  addi sp, sp, 32
+  ld a4, 32(sp)
+  ld a5, 40(sp)
+  ld a6, 48(sp)
+  ld a7, 56(sp)
+  addi sp, sp, 64
             # add .tmp5, x, y
-  mv a0, t3
-  mv a1, t4
-  mv a2, t5
-  mv a3, t6
-  call __vox_add__
-  mv t3, a0
-  mv t4, a1
-            # add .tmp4, .tmp5, z
-  mv a0, t3
-  mv a1, t4
-  mv a2, s1
-  mv a3, s2
-  call __vox_add__
-  mv s9, a0
-  mv s10, a1
-            # add .tmp3, .tmp4, t
-  mv a0, s9
-  mv a1, s10
+  mv a0, s1
+  mv a1, s2
   mv a2, s3
   mv a3, s4
   call __vox_add__
-  mv s5, a0
-  mv s6, a1
+            # add .tmp4, .tmp5, z
+  mv a2, a0
+  mv a3, a1
+  mv a0, a2
+  mv a1, a3
+  mv a0, a0
+  mv a1, a1
+  mv a2, a4
+  mv a3, a5
+  call __vox_add__
+            # add .tmp3, .tmp4, t
+  mv a2, a0
+  mv a3, a1
+  mv a0, a2
+  mv a1, a3
+  mv a0, a0
+  mv a1, a1
+  mv a2, a6
+  mv a3, a7
+  call __vox_add__
             # return .tmp3
-  mv a0, s5
-  mv a1, s6
+  mv a0, a0
+  mv a1, a1
   ld ra, 256(sp)
   addi sp, sp, 264
   ret

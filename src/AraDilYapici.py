@@ -419,6 +419,10 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
         # vox_add falan kullandığı için
         self.func_activation_records[self.current_func].calls_another_fun = True
         self._ara_dile_ekle([op_to_instruction[abinary.op], result_name_id, left_name_id, right_name_id])
+
+        #self._ara_dile_ekle([['arg', left_name_id],
+        #                     ['arg', right_name_id],
+        #                     ['call', result_name_id, f'__vox_{op_to_instruction[abinary.op]}__']])
         return result_name_id
 
     def visit_AUMinus(self, auminus: AUMinus):

@@ -11,7 +11,8 @@ import optimizer
 import compiler_utils as cu
 import sys
 
-# todo: add a0-a7 to caller-saved and update cevir_param cevir_arg accordingly.
+# todo: ÖNEMLİ: hocaya iki farklı sürüm sun. birisi register allocation olmadan, diğeri register allocation ile.
+# todo: ÖNEMLİ: allocaiton olmayan sürümde propogation varsa sil.
 
 """
 ÖNEMLİ: flow grapha falan girme. direkt register problemini çöz sadece.
@@ -64,6 +65,7 @@ https://github.com/riscv-non-isa/riscv-asm-manual/blob/master/riscv-asm.md
     sadece fonksiyon içerisinde değiştirilen registerler savelensin.
     compiler utils compilation error quit yapmamalı, sadece sonunda dosyaya assembly yazılmasını engellemelidir.
     
+    
     vector_set işlemi ve vector_get işlemi grafı bozabilir dikkat et sayfa 538 dragon
     
     parametrelerden ayrıca local değişken yapmama gerek yok, direkt stackte var zaten parametreler (a reglerine sığmayan)
@@ -73,6 +75,8 @@ https://github.com/riscv-non-isa/riscv-asm-manual/blob/master/riscv-asm.md
     vector negatif index, belki pythondaki gibi atlamali seyler
     
     print(a) çalışmıyor
+    
+    argumanli ilk call tespit edilip argumanlari herhangi register yerine ax'lara yazilabilir. 
     
     __vox ile başlayan fonksiyonlarda globalleri spillemeye gerek yok sonuçta o fonksiyonların global
     kullanmadığını biliyoruz. hatta call ile çağrılan fonksiyon global kullanıyor mu kontrol edilebilir,
@@ -165,20 +169,27 @@ class RiscVFunctionInfo:
 
 
 class RiscVRegPair:
-    def __init__(self, type_reg: Optional[str], value_reg: Optional[str]):
+    def __init__(self, type_reg: Optional[str], value_reg: Optional[str], is_spillable=True):
         self.type: Optional[str] = type_reg
         self.val: Optional[str] = value_reg
         self.vars: List[NameIdPair] = []
+        self.is_spillable: bool = is_spillable  # for example arg is not spillable
 
 
 class RiscVRegController:
     def __init__(self):
+        # todo: check if  t0, t1, t2 are used for purposes other than storing vars
         self.callee_saved_regs = ['s1', 's2', 's3', 's4', 's5', 's6', 's7', 's8', 's9', 's10', 's11']
-        self.caller_saved_regs = ['t3', 't4', 't5', 't6']  # t0, t1, t2 are used for purposes other than storing vars
+        self.caller_saved_regs = ['t3', 't4', 't5', 't6', 'a0', 'a1', 'a2', 'a3', 'a4', 'a5', 'a6', 'a7']
         self.reg_pairs: List[RiscVRegPair] = [  # frees -> least-recently-used -> most-recently-used
             # important: dont mix caller saved and callee saved registers here.
+            # todo: use calle saved registers first
             RiscVRegPair('t3', 't4'),
             RiscVRegPair('t5', 't6'),
+            RiscVRegPair('a0', 'a1'),
+            RiscVRegPair('a2', 'a3'),
+            RiscVRegPair('a4', 'a5'),
+            RiscVRegPair('a6', 'a7'),
             RiscVRegPair('s1', 's2'),
             RiscVRegPair('s3', 's4'),
             RiscVRegPair('s5', 's6'),
@@ -187,18 +198,26 @@ class RiscVRegController:
         ]
         self.var_name_id_to_reg: Dict[Tuple[str, int], RiscVRegPair] = {}
 
-    def asm_get_free_reg_pair(self):
+    def asm_get_free_reg_pair(self, asm_to_extend):
         asm = []
         for reg_pair in self.reg_pairs:
             if not reg_pair.vars:
-                return asm, reg_pair
+                asm_to_extend.extend(asm)
+                return reg_pair
 
-        reg_to_spill = self.get_reg_with_least_vars_and_least_recently_used()
+        reg_to_spill = self.get_reg_to_spill()
         asm.extend(self.asm_spill_reg_pair(reg_to_spill))
         self.mark_as_recently_used(reg_to_spill)
-        return asm, reg_to_spill
+        asm_to_extend.extend(asm)
+        return reg_to_spill
 
-    def get_reg_with_least_vars_and_least_recently_used(self):
+    def get_reg_with_type(self, reg_type: str):
+        for reg_pair in self.reg_pairs:
+            if reg_pair.type == reg_type:
+                return reg_pair
+        return None
+
+    def get_reg_to_spill(self):
         """
         :return: decided to just return the least recently used because i use registers with assumption that
         for example for using and on two registers, i can request three registers consecutively and use them
@@ -207,11 +226,46 @@ class RiscVRegController:
         """
         least_var_count = len(self.reg_pairs[0].vars)
         least_var_count_reg_pair = self.reg_pairs[0]
-        # for reg_pair in self.reg_pairs:
-        #    if len(reg_pair.vars) < least_var_count:
-        #        least_var_count = len(reg_pair.vars)
-        #        least_var_count_reg_pair = reg_pair
+        for reg_pair in self.reg_pairs:
+            if reg_pair.is_spillable:
+                return reg_pair
+        # if len(reg_pair.vars) < least_var_count:
+        #     least_var_count = len(reg_pair.vars)
+        #     least_var_count_reg_pair = reg_pair
         return least_var_count_reg_pair
+
+    def asm_clear_first_n_args(self, arg_count, asm_to_extend):
+        asm = []
+        if arg_count < 1:
+            arg_count = 1 # always clear return registers a0 and a1
+        for i in range(arg_count):
+            reg_pair = self.get_reg_with_type(f'a{i*2}')
+            if reg_pair:
+                reg_pair.is_spillable = False
+                if reg_pair.vars:
+                    self.asm_move_and_clear_reg_to_new_reg(reg_pair, asm)
+        asm_to_extend.extend(asm)
+
+    def mark_first_n_args_as_spillable(self, arg_count):
+        if arg_count < 1:
+            arg_count = 1 # always clear return registers a0 and a1
+        for i in range(arg_count):
+            reg_pair = self.get_reg_with_type(f'a{i*2}')
+            if reg_pair:
+                reg_pair.is_spillable = True
+
+    def asm_move_and_clear_reg_to_new_reg(self, reg_pair: RiscVRegPair, asm_to_extend):
+        asm = []
+        new_reg_pair = self.asm_get_free_reg_pair(asm)
+        new_reg_pair.vars.extend(reg_pair.vars)
+        reg_pair.vars.clear()
+        for var_name_tpl in self.var_name_id_to_reg:
+            if self.var_name_id_to_reg[var_name_tpl] == reg_pair:
+                self.var_name_id_to_reg[var_name_tpl] = new_reg_pair
+        asm.append(f'  mv {new_reg_pair.type}, {reg_pair.type}')
+        asm.append(f'  mv {new_reg_pair.val}, {reg_pair.val}')
+
+        asm_to_extend.extend(asm)
 
     def asm_spill_reg_pair(self, reg_pair: RiscVRegPair):
         """ sayfa 548 dragon book
@@ -233,6 +287,8 @@ class RiscVRegController:
         :return:
         """
         asm = []
+
+        raise Exception("noti mplemented spill register")
         # todo: spill all vars
         reg_pair.vars.clear()
         return asm
@@ -385,8 +441,7 @@ class RiscVAssemblyYapici(AssemblyYapici):
         asm = []
         if type(var_name_id) in [int, bool, str]:
             # todo: add support for literal value registers and check if same literal exists here
-            reg_pair_asm, reg_pair = self.get_current_fun_reg_controller().asm_get_free_reg_pair()
-            asm.extend(reg_pair_asm)
+            reg_pair = self.get_current_fun_reg_controller().asm_get_free_reg_pair(asm)
             asm.extend(self.asm_var_in_mem_or_const_to_reg(var_name_id, reg_pair.type, reg_pair.val))
         elif type(var_name_id) == dict:
             var_name_id_tpl = name_id_to_tuple(var_name_id)
@@ -394,8 +449,7 @@ class RiscVAssemblyYapici(AssemblyYapici):
                 reg_pair = self.get_current_fun_reg_controller().var_name_id_to_reg[var_name_id_tpl]
                 self.get_current_fun_reg_controller().mark_as_recently_used(reg_pair)
             else:
-                reg_pair_asm, reg_pair = self.get_current_fun_reg_controller().asm_get_free_reg_pair()
-                asm.extend(reg_pair_asm)
+                reg_pair = self.get_current_fun_reg_controller().asm_get_free_reg_pair(asm)
 
                 if var_name_id not in reg_pair.vars:
                     reg_pair.vars.append(var_name_id)
@@ -409,6 +463,7 @@ class RiscVAssemblyYapici(AssemblyYapici):
 
     def asm_var_or_const_to_reg(self, var_name_id: Union[NameIdPair, int, bool, str], reg_pair: RiscVRegPair):
         """
+            get_reg ile çok benziyor
             if var in memory: load directly into reg
             if var in reg: just mv reg_pair, var_reg
         """
@@ -521,11 +576,13 @@ class RiscVAssemblyYapici(AssemblyYapici):
             arg_count = 1
             while self.ara_dil_satirlari[komut_indeksi + arg_count][0] != 'call':
                 arg_count += 1
+            self.get_current_fun_reg_controller().asm_clear_first_n_args(arg_count, asm)
 
             non_reg_arg_cnt = max(arg_count - 4, 0)
             if non_reg_arg_cnt > 0:
                 self.fun_infos[self.current_fun_label].sp_extra_offset += 16 * non_reg_arg_cnt
                 asm.append(f'  addi sp, sp, -{16 * non_reg_arg_cnt}')
+
         self.current_arg_index += 1
         if self.current_arg_index <= 3:
             asm.extend(self.asm_var_or_const_to_reg(arg_name_id, RiscVRegPair(
@@ -557,8 +614,8 @@ class RiscVAssemblyYapici(AssemblyYapici):
 
         ret_val_name_id = komut[1]
         func_name = komut[2]
-
-        non_reg_arg_count = max(self.current_arg_index + 1 - 4, 0)
+        arg_count = self.current_arg_index + 1
+        non_reg_arg_count = max(arg_count - 4, 0)
         self.current_arg_index = -1
         asm.extend([f'  call {func_name}'])
 
@@ -569,8 +626,11 @@ class RiscVAssemblyYapici(AssemblyYapici):
             self.fun_infos[self.current_fun_label].sp_extra_offset -= 16 * non_reg_arg_count + caller_saved_size
 
         if ret_val_name_id is not None:
-            ret_reg = self.get_reg(ret_val_name_id, asm, False)
-            self.asm_reg_to_reg(ret_reg, RiscVRegPair('a0', 'a1'), asm)
+            return_reg = self.get_current_fun_reg_controller().get_reg_with_type('a0')
+            return_reg.vars.append(ret_val_name_id)
+            self.get_current_fun_reg_controller().var_name_id_to_reg[name_id_to_tuple(ret_val_name_id)] = return_reg
+
+        self.get_current_fun_reg_controller().mark_first_n_args_as_spillable(arg_count)
         return asm
 
     def cevir_copy(self, komut, komut_indeksi=None):
@@ -671,12 +731,14 @@ class RiscVAssemblyYapici(AssemblyYapici):
         param_name_id = komut[1]
         self.current_param_index += 1
         asm = []
-        param_reg = self.get_reg(param_name_id, asm, False)
         if self.current_param_index <= 3:
-            self.asm_reg_to_reg(param_reg, RiscVRegPair(f'a{2 * self.current_param_index}',
-                                                        f'a{2 * self.current_param_index + 1}'),
-                                asm)
+            type_reg = f'a{2 * self.current_param_index}'
+            param_reg = self.get_current_fun_reg_controller().get_reg_with_type(type_reg)
+            param_reg.vars.append(param_name_id)
+            self.get_current_fun_reg_controller().var_name_id_to_reg[name_id_to_tuple(param_name_id)] = param_reg
+
         else:
+            param_reg = self.get_reg(param_name_id, asm, False)
             total_stack_size = self.fun_infos[self.current_fun_label].get_total_stack_size()
             non_reg_index = self.current_param_index - 4
             asm.extend([f'  ld {param_reg.type}, {16 * non_reg_index + total_stack_size}(sp)',
@@ -689,8 +751,7 @@ class RiscVAssemblyYapici(AssemblyYapici):
         asm = []
         self.get_current_fun_reg_controller().asm_spill_all_globals(asm)
         if len(komut) >= 2:
-            ret_val_reg = self.get_reg(komut[1], asm, True)
-            self.asm_reg_to_reg(RiscVRegPair('a0', 'a1'), ret_val_reg, asm)
+            asm.extend(self.asm_var_or_const_to_reg(komut[1], RiscVRegPair('a0', 'a1')))
 
         total_stack_size = self.fun_infos[self.current_fun_label].get_total_stack_size()
         for i, reg_to_save in enumerate(self.fun_infos[self.current_fun_label].callee_saved_regs):
@@ -738,6 +799,7 @@ class RiscVAssemblyYapici(AssemblyYapici):
         return asm
 
     def ceviriler_aritmetik(self, komut, komut_indeksi=None):
+        # todo: add this to intermediate language as function call.
         asm = []
         op0_name = komut[2]
         op1_name = komut[3]
@@ -745,12 +807,16 @@ class RiscVAssemblyYapici(AssemblyYapici):
 
         self.get_current_fun_reg_controller().remove_var_from_regs(result_name)
 
-        result_reg = self.get_reg(result_name, asm, False)
+
+        self.get_current_fun_reg_controller().asm_clear_first_n_args(2, asm)
 
         asm.extend(self.asm_var_or_const_to_reg(op0_name, RiscVRegPair('a0', 'a1')))
         asm.extend(self.asm_var_or_const_to_reg(op1_name, RiscVRegPair('a2', 'a3')))
         asm.extend([f'  call __vox_{komut[0]}__'])
-        asm.extend(self.asm_reg_to_var(result_name, RiscVRegPair('a0', 'a1')))
+        result_reg = self.get_current_fun_reg_controller().get_reg_with_type('a0')
+        result_reg.vars.append(result_name)
+        self.get_current_fun_reg_controller().var_name_id_to_reg[name_id_to_tuple(result_name)] = result_reg
+        self.get_current_fun_reg_controller().mark_first_n_args_as_spillable(2)
         return asm
 
     def ceviriler_karsilastirma(self, komut, komut_indeksi=None):
