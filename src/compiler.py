@@ -14,12 +14,13 @@ import sys
 # todo: ÖNEMLİ: hocaya iki farklı sürüm sun. birisi register allocation olmadan, diğeri register allocation ile.
 # todo: ÖNEMLİ: allocaiton olmayan sürümde propogation varsa sil.
 # todo: ÖNEMLİ: her şeyi test etmen lazım
+# todo: currently I allocate stack for all variables and callee saved registers even if I don't actually use it.
 """
 ÖNEMLİ: flow grapha falan girme. direkt register problemini çöz sadece.
 todo: dag'den geri 3 adress kod donusumu gerekiyor.
 http://epgp.inflibnet.ac.in/epgpdata/uploads/epgp_content/S000007CS/P001069/M020249/ET/1495622012Module32_Content_final.pdf
 
-    todo: currently I allocate stack for all variables and callee saved registers even if I don't actually use it.
+    
 
  
 
@@ -142,13 +143,13 @@ class AssemblyYapici(ABC):
 
 
 class RiscVFunctionInfo:
-    def __init__(self, activation_record: ActivationRecord):
+    def __init__(self, activation_record: ActivationRecord, risc_v_assembly_yapici: "RiscVAssemblyYapici"):
         self.callee_saved_regs: Dict[str, bool] = {}
         self.activation_record: ActivationRecord = activation_record
         self.current_stack_size = activation_record.son_goreli_adres
         self.sp_extra_offset = 0
         self.fp_extra_offset = 0
-        self.reg_controller = RiscVRegController()
+        self.reg_controller = RiscVRegController(risc_v_assembly_yapici)
 
     def get_total_stack_size(self):
         return self.sp_extra_offset + self.fp_extra_offset + self.current_stack_size
@@ -179,7 +180,7 @@ class RiscVRegPair:
 
 
 class RiscVRegController:
-    def __init__(self):
+    def __init__(self, risc_v_assembly_yapici: "RiscVAssemblyYapici"):
         # todo: check if  t0, t1, t2 are used for purposes other than storing vars
         self.callee_saved_regs = ['s1', 's2', 's3', 's4', 's5', 's6', 's7', 's8', 's9', 's10', 's11']
         self.callee_saved_regs_used: Dict[str, bool] = {}
@@ -200,16 +201,17 @@ class RiscVRegController:
             RiscVRegPair('a6', 'a7'),
         ]
         self.var_name_id_to_reg: Dict[Tuple[str, int], RiscVRegPair] = {}
+        self.risc_v_assembly_yapici: "RiscVAssemblyYapici" = risc_v_assembly_yapici
 
     def asm_get_free_reg_pair(self, asm_to_extend):
         asm = []
         for reg_pair in self.reg_pairs:
-            if not reg_pair.vars:
+            if not reg_pair.vars and reg_pair.is_spillable:
                 asm_to_extend.extend(asm)
                 return reg_pair
 
         reg_to_spill = self.get_reg_to_spill()
-        asm.extend(self.asm_spill_reg_pair(reg_to_spill))
+        self.asm_spill_reg_pair(reg_to_spill, asm)
         self.reg_pairs.remove(reg_to_spill)
         self.reg_pairs.append(reg_to_spill)
         asm_to_extend.extend(asm)
@@ -239,13 +241,16 @@ class RiscVRegController:
         return least_var_count_reg_pair
 
     def asm_clear_first_n_args(self, arg_count, asm_to_extend):
-        asm = []
+        asm = [f'    #b: clear first {arg_count} args']
         if arg_count < 1:
             arg_count = 1  # always clear return registers a0 and a1
         for i in range(arg_count):
             reg_pair = self.get_reg_with_type(f'a{i * 2}')
             if reg_pair:
                 reg_pair.is_spillable = False
+        for i in range(arg_count):
+            reg_pair = self.get_reg_with_type(f'a{i * 2}')
+            if reg_pair:
                 if reg_pair.vars:
                     self.asm_move_and_clear_reg_to_new_reg(reg_pair, asm)
         asm_to_extend.extend(asm)
@@ -266,36 +271,19 @@ class RiscVRegController:
         for var_name_tpl in self.var_name_id_to_reg:
             if self.var_name_id_to_reg[var_name_tpl] == reg_pair:
                 self.var_name_id_to_reg[var_name_tpl] = new_reg_pair
-        asm.append(f'  mv {new_reg_pair.type}, {reg_pair.type}')
-        asm.append(f'  mv {new_reg_pair.val}, {reg_pair.val}')
+        asm.append(f'  mv {new_reg_pair.type}, {reg_pair.type}  #b: clearing arg {reg_pair.type}')
+        asm.append(f'  mv {new_reg_pair.val}, {reg_pair.val}  #b: clearing arg {reg_pair.val}')
 
         asm_to_extend.extend(asm)
 
-    def asm_spill_reg_pair(self, reg_pair: RiscVRegPair):
-        """ sayfa 548 dragon book
-        todo: implement
-
-            (a) If the address descriptor for v says that v is somewhere besides R,
-        then we are OK.
-            (b) If v is x, the variable being computed by instruction I, and x is not
-        also one of the other operands of instruction I (z in this example),
-        then we are OK. The reason is that in this case, we know this value
-        of x is never again going to be used, so we are free to ignore it.
-            (c) Otherwise, if v is not used later (that is, after the instruction I, there
-        are no further uses of v, and if v is live on exit from the block, then
-        v is recomputed within the block), then we are OK.
-            (d) If we are not OK by one of the rst three cases, then we need to
-        generate the store instruction ST v;R to place a copy of v in its own
-        memory location. This operation is called a spill.
-
-        :return:
-        """
+    def asm_spill_reg_pair(self, reg_pair: RiscVRegPair, asm_to_extend):
         asm = []
-
-        raise Exception("noti mplemented spill register")
-        # todo: spill all vars
+        for var in reg_pair.vars:
+            asm.extend([f'    #b: spilling {var["name"]}'])
+            asm.extend(self.risc_v_assembly_yapici.asm_reg_to_var_in_mem('t0', var, reg_pair.type, reg_pair.val))
+            self.var_name_id_to_reg.pop((var['name'], var['id']))
         reg_pair.vars.clear()
-        return asm
+        asm_to_extend.extend(asm)
 
     def asm_mark_as_recently_used(self, reg_pair: RiscVRegPair, total_stack_size: int, asm_to_extend):
         """
@@ -330,7 +318,7 @@ class RiscVRegController:
                 if var['id'] == -1:
                     global_vars.append(var)
             for var in global_vars:
-                asm.append(f'  la t0, {get_global_type_name(var["name"])}')
+                asm.append(f'  la t0, {get_global_type_name(var["name"])}  #b: global spill')
                 asm.append(f'  sd {reg_pair.type}, (t0)')
                 asm.append(f'  sd {reg_pair.val}, 8(t0)')
                 reg_pair.vars.remove(var)
@@ -347,13 +335,14 @@ class RiscVRegController:
             if reg not in self.callee_saved_regs_used:
                 self.callee_saved_regs_used[reg] = True
                 reg_index = self.callee_saved_regs.index(reg) + 1
-                asm.append(f'  sd {reg}, {total_stack_size - 8 * (reg_index + 1)}(sp)')
+                asm.append(f'  sd {reg}, {total_stack_size - 8 * (reg_index + 1)}(sp)  #b: callee save {reg}')
 
         asm_to_extend.extend(asm)
 
     def callee_load_all(self, total_stack_size: int, asm_to_extend):
         asm = []
-        for i, reg_to_save in enumerate(self.callee_saved_regs_used):
+        asm.append(f'    #b: callee load {list(self.callee_saved_regs_used.keys())}')
+        for i, reg_to_save in enumerate(self.callee_saved_regs):
             if reg_to_save in self.callee_saved_regs_used:
                 asm.append(f'  ld {reg_to_save}, {total_stack_size - 8 * (i + 1 + 1)}(sp)')
         asm_to_extend.extend(asm)
@@ -366,7 +355,7 @@ class RiscVAssemblyYapici(AssemblyYapici):
                  global_string_to_label: Dict[str, str],
                  ara_dil_satirlari: List[List[Any]]):
         super().__init__(global_vars, func_activation_records, global_string_to_label, ara_dil_satirlari)
-        self.fun_infos: Dict[str, RiscVFunctionInfo] = {fun_name: RiscVFunctionInfo(self.fun_records[fun_name])
+        self.fun_infos: Dict[str, RiscVFunctionInfo] = {fun_name: RiscVFunctionInfo(self.fun_records[fun_name], self)
                                                         for fun_name in self.fun_records}
         self.current_fun_label = ''
         self.current_arg_index = -1
@@ -752,7 +741,7 @@ class RiscVAssemblyYapici(AssemblyYapici):
         self.fun_infos[self.current_fun_label].add_to_callee_saved_regs(
             self.get_current_fun_reg_controller().callee_saved_regs)
 
-        total_stack_size = self.fun_infos[self.current_fun_label].get_total_stack_size()
+        total_stack_size = self.get_ttl_stack_size()
         asm = [f'',
                f'# fun {signature};',
                f'{label}:']
@@ -777,8 +766,9 @@ class RiscVAssemblyYapici(AssemblyYapici):
 
         else:
             param_reg = self.get_reg(param_name_id, asm, False)
-            total_stack_size = self.fun_infos[self.current_fun_label].get_total_stack_size()
+            total_stack_size = self.get_ttl_stack_size()
             non_reg_index = self.current_param_index - 4
+            self.get_current_fun_reg_controller().asm_mark_as_recently_used(param_reg, self.get_ttl_stack_size(), asm)
             asm.extend([f'  ld {param_reg.type}, {16 * non_reg_index + total_stack_size}(sp)',
                         f'  ld {param_reg.val}, {16 * non_reg_index + 8 + total_stack_size}(sp)'])
         if self.current_param_index == self.fun_infos[self.current_fun_label].activation_record.arg_count - 1:
@@ -791,10 +781,10 @@ class RiscVAssemblyYapici(AssemblyYapici):
         if len(komut) >= 2:
             asm.extend(self.asm_var_or_const_to_reg(komut[1], RiscVRegPair('a0', 'a1')))
 
-        total_stack_size = self.fun_infos[self.current_fun_label].get_total_stack_size()
+        total_stack_size = self.get_ttl_stack_size()
         asm.append(f'  ld ra, {total_stack_size - 8}(sp)')
         self.get_current_fun_reg_controller().callee_load_all(
-            self.fun_infos[self.current_fun_label].get_total_stack_size(), asm)
+            self.get_ttl_stack_size(), asm)
         if total_stack_size > 0:
             asm.extend([f'  addi sp, sp, {total_stack_size}'])
         if self.current_fun_label == 'main':
@@ -927,6 +917,9 @@ class RiscVAssemblyYapici(AssemblyYapici):
             return self.fun_infos[self.current_fun_label].sp_extra_offset + degisken_adresleri[key] + 24
         else:
             return None
+
+    def get_ttl_stack_size(self):
+        return self.fun_infos[self.current_fun_label].get_total_stack_size()
 
 
 class BasicBlock:
