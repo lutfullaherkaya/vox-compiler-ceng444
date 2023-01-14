@@ -10,6 +10,10 @@ class NameIdPair(TypedDict):
     id: int  # -1 means global variable
 
 
+def name_id_to_tuple(name_id: NameIdPair) -> Tuple[str, int]:
+    return name_id['name'], name_id['id']
+
+
 class ActivationRecord:
     def __init__(self, arg_count: int = 0):
         self.degisken_sayilari: Dict[str, int] = {}
@@ -350,7 +354,6 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
 
     def visit_LBinary(self, lbinary: LBinary):
         result_name_id_pair = self.current_scope.generate_tmp()
-
         left_name = self.visit(lbinary.left)
         if lbinary.op == 'and':
             short_label, label = self.labels.create_and()
@@ -484,7 +487,6 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
                 if komut == 'call':
                     self.func_activation_records[self.current_func].calls_another_fun = True
             hedef_ara_dil_sozleri.extend(sozler)
-
 
     def get_func_signature(self, fundecl: Union[FunDecl, str]):
         if isinstance(fundecl, str):

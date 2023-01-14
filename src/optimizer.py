@@ -520,6 +520,7 @@ class ConstantPropogationVisitor(OptimizerVisitor):
 
 class OluKodOldurucuVisitor(OptimizerVisitor):
     """
+    todo: implement visit_lbinary
     Removes statements after return
     Removes if true/false, while false, for ;false;
     """
