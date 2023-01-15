@@ -11,6 +11,8 @@ import optimizer
 import compiler_utils as cu
 import sys
 
+# SORUN: AYNI REGDE BİRDEN COK DEGİSKEN TUTUYORSUN AMA FOR FALAN OLUNCA SIÇIYOR. BASİC BLOCK BİTİNCE AYIRMAN LAZIM REGLERİ
+
 # todo: ÖNEMLİ: hocaya iki farklı sürüm sun. birisi register allocation olmadan, diğeri register allocation ile.
 # todo: ÖNEMLİ: allocaiton olmayan sürümde propogation varsa sil.
 # todo: ÖNEMLİ: her şeyi test etmen lazım
@@ -207,13 +209,13 @@ class RiscVRegController:
         asm = []
         for reg_pair in self.reg_pairs:
             if not reg_pair.vars and reg_pair.is_spillable:
+                self.asm_mark_as_recently_used(reg_pair, asm)
                 asm_to_extend.extend(asm)
                 return reg_pair
 
         reg_to_spill = self.get_reg_to_spill()
         self.asm_spill_reg_pair(reg_to_spill, asm)
-        self.reg_pairs.remove(reg_to_spill)
-        self.reg_pairs.append(reg_to_spill)
+        self.asm_mark_as_recently_used(reg_to_spill, asm)
         asm_to_extend.extend(asm)
         return reg_to_spill
 
@@ -285,13 +287,9 @@ class RiscVRegController:
         reg_pair.vars.clear()
         asm_to_extend.extend(asm)
 
-    def asm_mark_as_recently_used(self, reg_pair: RiscVRegPair, total_stack_size: int, asm_to_extend):
-        """
-        :param reg_pair:
-        :param total_stack_size: for saving the callee saved register
-        :return:
-        """
+    def asm_mark_as_recently_used(self, reg_pair: RiscVRegPair, asm_to_extend):
         asm = []
+        total_stack_size = self.risc_v_assembly_yapici.get_ttl_stack_size()
         if reg_pair.type in self.callee_saved_regs:
             self.callee_save(reg_pair, total_stack_size, asm)
         self.reg_pairs.remove(reg_pair)
@@ -466,8 +464,7 @@ class RiscVAssemblyYapici(AssemblyYapici):
             var_name_id_tpl = name_id_to_tuple(var_name_id)
             if var_name_id_tpl in self.get_current_fun_reg_controller().var_name_id_to_reg:
                 reg_pair = self.get_current_fun_reg_controller().var_name_id_to_reg[var_name_id_tpl]
-                self.get_current_fun_reg_controller().asm_mark_as_recently_used(reg_pair, self.fun_infos[
-                    self.current_fun_label].get_total_stack_size(), asm)
+                self.get_current_fun_reg_controller().asm_mark_as_recently_used(reg_pair, asm)
             else:
                 reg_pair = self.get_current_fun_reg_controller().asm_get_free_reg_pair(asm)
 
@@ -493,10 +490,10 @@ class RiscVAssemblyYapici(AssemblyYapici):
         elif type(var_name_id) == dict:
             if name_id_to_tuple(var_name_id) in self.get_current_fun_reg_controller().var_name_id_to_reg:
                 var_reg_pair = self.get_current_fun_reg_controller().var_name_id_to_reg[name_id_to_tuple(var_name_id)]
-                self.get_current_fun_reg_controller().asm_mark_as_recently_used(var_reg_pair, self.fun_infos[
-                    self.current_fun_label].get_total_stack_size(), asm)
+                self.get_current_fun_reg_controller().asm_mark_as_recently_used(var_reg_pair, asm)
                 self.asm_reg_to_reg(reg_pair, var_reg_pair, asm)
             else:
+                # todo: maybe add to register first
                 asm.extend(self.asm_var_in_mem_or_const_to_reg(var_name_id, reg_pair.type, reg_pair.val))
 
         return asm
@@ -506,8 +503,7 @@ class RiscVAssemblyYapici(AssemblyYapici):
 
         if name_id_to_tuple(var_name_id) in self.get_current_fun_reg_controller().var_name_id_to_reg:
             var_reg_pair = self.get_current_fun_reg_controller().var_name_id_to_reg[name_id_to_tuple(var_name_id)]
-            self.get_current_fun_reg_controller().asm_mark_as_recently_used(var_reg_pair, self.fun_infos[
-                self.current_fun_label].get_total_stack_size(), asm)
+            self.get_current_fun_reg_controller().asm_mark_as_recently_used(var_reg_pair, asm)
             self.asm_reg_to_reg(var_reg_pair, reg_pair, asm)
         else:
             asm.extend(self.asm_reg_to_var_in_mem('t0', var_name_id, reg_pair.type, reg_pair.val))
@@ -580,8 +576,16 @@ class RiscVAssemblyYapici(AssemblyYapici):
         return asm
 
     def asm_get_vector_elm_addr(self, tmp_reg, addr_reg, vector_name_id, index):
+        """
+
+        :param tmp_reg: can't be same as addr_reg
+        :param addr_reg:
+        :param vector_name_id:
+        :param index:
+        :return:
+        """
         asm = []
-        asm.extend(self.asm_var_in_mem_or_const_to_reg(vector_name_id, None, addr_reg))
+        asm.extend(self.asm_var_or_const_to_reg(vector_name_id, RiscVRegPair(None, addr_reg)))
         if type(index) == int:
             if index > 0:
                 asm.extend([f'  addi {addr_reg}, {addr_reg}, {index * 16}'])
@@ -660,32 +664,24 @@ class RiscVAssemblyYapici(AssemblyYapici):
         komut[1] = komut[2]
         """
         asm = []
-        self.get_current_fun_reg_controller().remove_var_from_regs(komut[1])
-        komut2_reg_pair = self.get_reg(komut[2], asm)
-        self.get_current_fun_reg_controller().var_name_id_to_reg[name_id_to_tuple(komut[1])] = komut2_reg_pair
-        if komut[1] in komut2_reg_pair.vars:
-            pass
-        else:
-            if komut[1] not in komut2_reg_pair.vars:
-                komut2_reg_pair.vars.append(komut[1])
+
+        komut1_reg = self.get_reg(komut[1], asm, False)
+        komut2_reg = self.get_reg(komut[2], asm)
+        self.asm_reg_to_reg(komut1_reg, komut2_reg, asm)
 
         return asm
 
     def cevir_vector(self, komut, komut_indeksi=None):
         name_id = komut[1]
         length = komut[2]
-
         type_addr = self._type_addr(name_id)
-
         asm = []
-
         if type_addr is not None:  # local
             length_addr = self._length_addr(name_id)
             i_first_elm = self._vector_first_elm_sp_index(name_id)
-            asm.extend([f'  li t1, {self.tip_rakamlari["vector"]}',
-                        f'  add t2, sp, {i_first_elm}'])
-            asm.extend(self.asm_reg_to_var_in_mem('t0', name_id, 't1', 't2'))
-
+            reg = self.get_reg(name_id, asm)
+            asm.extend([f'  li {reg.type}, {self.tip_rakamlari["vector"]}',
+                        f'  add {reg.val}, sp, {i_first_elm}'])
             asm.extend([f'  li t0, {length}',
                         f'  sd t0, {length_addr}'])
         elif name_id["name"] in self.global_vars:
@@ -701,10 +697,10 @@ class RiscVAssemblyYapici(AssemblyYapici):
         index = komut[2]
         expr_name_id = komut[3]
         asm = []
-        asm.extend(self.asm_get_vector_elm_addr('t0', 't2', vector_name_id, index))
-        asm.extend(self.asm_var_in_mem_or_const_to_reg(expr_name_id, 't0', 't1'))
-        asm.extend([f'  sd t0, 0(t2)',
-                    f'  sd t1, 8(t2)'])
+        asm.extend(self.asm_get_vector_elm_addr('t0', 't1', vector_name_id, index))
+        expr_reg = self.get_reg(expr_name_id, asm)
+        asm.extend([f'  sd {expr_reg.type}, 0(t1)',
+                    f'  sd {expr_reg.val}, 8(t1)'])
         return asm
 
     def cevir_vector_get(self, komut, komut_indeksi=None):
@@ -713,10 +709,9 @@ class RiscVAssemblyYapici(AssemblyYapici):
         index = komut[3]
         asm = []
         asm.extend(self.asm_get_vector_elm_addr('t0', 't1', vector_name_id, index))
-        asm.extend([f'  ld t0, 0(t1)',
-                    f'  ld t1, 8(t1)'])
-        asm.extend(self.asm_reg_to_var_in_mem('t2', result_name_id, 't0', 't1'))
-
+        result_reg = self.get_reg(result_name_id, asm)
+        asm.extend([f'  ld {result_reg.type}, 0(t1)',
+                    f'  ld {result_reg.val}, 8(t1)'])
         return asm
 
     def cevir_global(self, komut, komut_indeksi=None):
@@ -768,7 +763,7 @@ class RiscVAssemblyYapici(AssemblyYapici):
             param_reg = self.get_reg(param_name_id, asm, False)
             total_stack_size = self.get_ttl_stack_size()
             non_reg_index = self.current_param_index - 4
-            self.get_current_fun_reg_controller().asm_mark_as_recently_used(param_reg, self.get_ttl_stack_size(), asm)
+            self.get_current_fun_reg_controller().asm_mark_as_recently_used(param_reg, asm)
             asm.extend([f'  ld {param_reg.type}, {16 * non_reg_index + total_stack_size}(sp)',
                         f'  ld {param_reg.val}, {16 * non_reg_index + 8 + total_stack_size}(sp)'])
         if self.current_param_index == self.fun_infos[self.current_fun_label].activation_record.arg_count - 1:

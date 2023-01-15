@@ -1,27 +1,30 @@
 
 
-var a = 5;
-var b = a;
-
-fun cok_parali(a1, a2, a3, a4, a5, a6) {
-    var x = a1;
-    var y = a2;
-    var z = a3;
-    var t = a4;
-    print x + y + z + t;
-    return x + y + z + t;
-}
-
-print b;
-print a;
-
-print cok_parali(1,2,3,4,5,6);
+//var a = 5;
+//var b = a;
+//
+//fun cok_parali(a1, a2, a3, a4, a5, a6) {
+//    var x = a1;
+//    var y = a2;
+//    var z = a3;
+//    var t = a4;
+//    print x + y + z + t;
+//    return x + y + z + t;
+//}
+//
+//print b;
+//print a;
+//
+//print cok_parali(1,2,3,4,5,6);
 
 
 
 //var dizi = [1,2,3];
 //
 //fun kare(n) {
+//    var dizi2 = [5,6,"merhaba"];
+//    dizi2[1] = false;
+//    print dizi2;
 //    return n * n;
 //}
 //
@@ -37,7 +40,13 @@ print cok_parali(1,2,3,4,5,6);
 //
 //
 //print kareler_toplami(dizi);
-//print dizi * dizi;
+
+var i;
+for (i = 0; i < 5; i = i + 1) {
+    print i;
+}
+
+
 //var a = 5;
 //var b = a;
 //var ab = 55;
