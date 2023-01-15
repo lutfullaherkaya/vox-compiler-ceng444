@@ -1,12 +1,17 @@
-fun f(x,y,z) {
-    return x + y + z;
-}
+var i = 767676;
+    var j = "hello world";
 
-fun g(a,b,c) {
-    return a * b * c;
-}
+for (i = 0; i < 10; i = i + 1) {
+    print i;
 
-print f(g(1,2,3),g(1,2,3),g(1,2,3));
+    if (#i) {
+        var i = 123;
+        if (#i) {
+            var i = 456;
+        }
+    }
+}
+print j;
 
 //var a = 5;
 //var b = a;

@@ -248,6 +248,9 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
             self.global_vars[vardecl.identifier.name] = vardecl
             if not isinstance(vardecl.initializer, (ALiteral, SLiteral, LLiteral)):
                 self._ara_dile_ekle([['copy', degisken_ad_ve_id, self.visit(vardecl.initializer)]])
+            if isinstance(vardecl.initializer, SLiteral):
+                if vardecl.initializer.value not in self.global_string_to_label:
+                    self.global_string_to_label[vardecl.initializer.value] = self.labels.create_string()
 
         return degisken_ad_ve_id
 
