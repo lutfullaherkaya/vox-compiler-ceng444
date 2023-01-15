@@ -10,6 +10,18 @@ class NameIdPair(TypedDict):
     id: int  # -1 means global variable
 
 
+def to_tpl(t: Union[NameIdPair, int, str, bool]) -> Union[Tuple[str, int], str, int, bool]:
+    if isinstance(t, dict):
+        return (t['name'], t['id'])
+    else:
+        return t
+
+def to_name_id(t: Union[Tuple[str, int], str, int, bool]) -> Union[NameIdPair, int, str, bool]:
+    if isinstance(t, tuple):
+        return {'name': t[0], 'id': t[1]}
+    else:
+        return t
+
 class ActivationRecord:
     def __init__(self, arg_count: int = 0):
         self.degisken_sayilari: Dict[str, int] = {}
@@ -487,7 +499,6 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
                 if komut == 'call':
                     self.func_activation_records[self.current_func].calls_another_fun = True
             hedef_ara_dil_sozleri.extend(sozler)
-
 
     def get_func_signature(self, fundecl: Union[FunDecl, str]):
         if isinstance(fundecl, str):

@@ -1,28 +1,15 @@
-var i = 767676;
-    var j = "hello world";
 
-for (i = 0; i < 10; i = i + 1) {
-    print i;
-
-    if (#i) {
-        var i = 123;
-        if (#i) {
-            var i = 456;
-        }
-    }
+var a = 5;
+var b = a;
+var ab = 55;
+fun x(ab) {
+    var a = 6;
+    return a + ab;
 }
-print j;
-
-//var a = 5;
-//var b = a;
-//var ab = 55;
-//fun x(ab) {
-//    var a = 6;
-//}
-//fun main() {
-//    return 0;
-//}
-
+fun main() {
+    return 0;
+}
+print x(22);
 //fun y(ab) {
 //    var a = 7;
 //    if (#a) {

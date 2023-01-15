@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 import misc
 from AraDilYapici import AraDilYapiciVisitor
 from AraDilYapici import ActivationRecord
-from AraDilYapici import NameIdPair
+from AraDilYapici import NameIdPair, to_tpl, to_name_id
 import optimizer
 import compiler_utils as cu
 import sys
@@ -615,22 +615,52 @@ class DAGNode:
 class DAGBlock:
     def __init__(self, block: BasicBlock):
         self.block: BasicBlock = block
-        self.var_to_node = {}
-        binary_ops = ['add', 'sub', 'mul', 'div', 'and', 'or', '<', '>', '<=', '>=', '==', '!=', 'vector_get']
-        unary_ops = ['!']
-        self.nodes: List[DAGNode] = []
+        self.selef_komutlar = []
+        self.dag_komutlari = []
+        self.halef_komutlar = []
 
-        for komut in block.komutlar:
-            if komut[0] in binary_ops + unary_ops + ['copy']:
-                x = komut[1]
-                y = komut[2]
+        self.binary_ops = ['add', 'sub', 'mul', 'div', 'and', 'or', '<', '>', '<=', '>=', '==', '!=', 'vector_get']
+        self.unary_ops = ['!']
+
+        # todo: vector
+        """
+        fun
+        param...
+        
+        arg...
+        call
+        
+        return
+        """
+        # eksikler: ['branch', 'branch_if_true', 'branch_if_false']
+        self.nodes: List[DAGNode] = []
+        self.var_to_node = {}
+
+        self.create_dag_graph()
+        self.reassemble_from_dag()
+
+    def kill_nodes_dependent_on(self, x):
+        if x is not None:
+            for node in self.nodes:
+                if x in [node.left, node.right, node.third]:
+                    node.killed = True
+
+    def create_dag_graph(self):
+        for komut in self.block.komutlar:
+            if komut[0] in ['fun', 'param', 'label']:
+                self.selef_komutlar.append(komut)
+            elif komut[0] in ['arg', 'call', 'return']:
+                self.halef_komutlar.append(komut)
+            if komut[0] in self.binary_ops + self.unary_ops + ['copy']:
+                x = to_tpl(komut[1])
+                y = to_tpl(komut[2])
                 n = None
                 if y not in self.var_to_node:
                     self.var_to_node[y] = DAGNode(identifiers=[y])
                     self.nodes.append(self.var_to_node[y])
-                if komut[0] in binary_ops:  # case 1
+                if komut[0] in self.binary_ops:  # case 1
                     op = komut[0]
-                    z = komut[3]
+                    z = to_tpl(komut[3])
                     if z not in self.var_to_node:
                         self.var_to_node[z] = DAGNode(identifiers=[z])
                         self.nodes.append(self.var_to_node[z])
@@ -643,7 +673,7 @@ class DAGBlock:
                         n = DAGNode(label=op, left=self.var_to_node[y], right=self.var_to_node[z])
                         self.nodes.append(n)
 
-                elif komut[0] in unary_ops:  # case 2
+                elif komut[0] in self.unary_ops:  # case 2
                     op = komut[0]
 
                     for node in self.nodes:
@@ -663,9 +693,9 @@ class DAGBlock:
                 n.identifiers.append(x)
                 self.var_to_node[x] = n
             elif komut[0] == 'vector_set':  # case 3 gibi x[y] = z
-                x = komut[1]
-                y = komut[2]
-                z = komut[3]
+                x = to_tpl(komut[1])
+                y = to_tpl(komut[2])
+                z = to_tpl(komut[3])
                 op = komut[0]
                 n = None
                 if z not in self.var_to_node:
@@ -689,11 +719,32 @@ class DAGBlock:
                     self.nodes.append(n)
                 self.kill_nodes_dependent_on(self.var_to_node[x])
 
-    def kill_nodes_dependent_on(self, x):
-        if x is not None:
-            for node in self.nodes:
-                if x in [node.left, node.right, node.third]:
-                    node.killed = True
+    def add_dag_komutu(self, komut):
+        yeni_komut = []
+        for sozcuk in komut:
+            if type(sozcuk) is tuple:
+                yeni_komut.append(to_name_id(sozcuk))
+            else:
+                yeni_komut.append(sozcuk)
+        self.dag_komutlari.append(yeni_komut)
+
+
+    def reassemble_from_dag(self):
+        for node in self.nodes:
+            if node.label is None:
+                pass
+            elif node.label in self.binary_ops:
+                self.add_dag_komutu(
+                    [node.label, node.identifiers[0], node.left.identifiers[0], node.right.identifiers[0]])
+            elif node.label in self.unary_ops:
+                self.add_dag_komutu([node.label, node.identifiers[0], node.left.identifiers[0]])
+            elif node.label == 'vector_set':
+                self.add_dag_komutu(
+                    [node.label, node.left.identifiers[0], node.right.identifiers[0], node.third.identifiers[0]])
+        for node in self.nodes:
+            for i, x in enumerate(node.identifiers):
+                if i != 0:
+                    self.add_dag_komutu(['copy', x, node.identifiers[0]])
 
 
 class DAG:
@@ -723,6 +774,15 @@ class DAG:
             for block in self.fun_basic_blocks[fun_name]:
                 if len(block.komutlar) > 0:
                     self.fun_dags[fun_name].append(DAGBlock(block))
+
+    def generate_new_ara_dil(self):
+        ara_dil = []
+        for fun_name in self.fun_dags:
+            for dag_block in self.fun_dags[fun_name]:
+                ara_dil.extend(dag_block.selef_komutlar)
+                ara_dil.extend(dag_block.dag_komutlari)
+                ara_dil.extend(dag_block.halef_komutlar)
+        return ara_dil
 
 
 class Compiler:
@@ -771,8 +831,13 @@ class Compiler:
         self.ast_optimize_et()
         self.ara_dil_yap()
         self.ara_dil_optimize_et()
+
         dag = DAG(self.ara_dil_satirlari)
         dag.generate_basic_blocks()
+        dag.generate_dag()
+        eski_ara_dil = self.ara_dil_satirlari
+        self.ara_dil_satirlari = dag.generate_new_ara_dil()
+
         self.ara_dildeki_floatlari_int_yap()
         self.assembly_yap()
         self.assembly_optimize_et()
@@ -795,12 +860,12 @@ class Compiler:
 
 if __name__ == '__main__':
     bb = BasicBlock()
-    #bb.add(['mul', 'a', 'b', 'c'])
-    #bb.add(['copy', 'd', 'b'])
-    #bb.add(['mul', 'e', 'd', 'c'])
-    #bb.add(['copy', 'b', 'e'])
-    #bb.add(['add', 'f', 'b', 'c'])
-    #bb.add(['add', 'g', 'd', 'f'])
+    # bb.add(['mul', 'a', 'b', 'c'])
+    # bb.add(['copy', 'd', 'b'])
+    # bb.add(['mul', 'e', 'd', 'c'])
+    # bb.add(['copy', 'b', 'e'])
+    # bb.add(['add', 'f', 'b', 'c'])
+    # bb.add(['add', 'g', 'd', 'f'])
     bb.add(['vector_get', 'x', 'a', 'i'])
     bb.add(['vector_set', 'a', 'j', 'y'])
     bb.add(['vector_get', 'z', 'a', 'i'])
