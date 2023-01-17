@@ -27,19 +27,25 @@ main:
 f:
   addi sp, sp, -168
   sd ra, 160(sp)
-            # copy bes_x_2_arti_4, 14
-  li t0, 0
-  li t1, 14
-  sd t0, 0(sp)
-  sd t1, 8(sp)
-            # sub .tmp0, bes_x_2_arti_4, 2
-  ld a0, 0(sp)
-  ld a1, 8(sp)
+            # sub .tmp0, 14, 2
+  li a0, 0
+  li a1, 14
   li a2, 0
   li a3, 2
   call __vox_sub__
   sd a0, 32(sp)
   sd a1, 40(sp)
+            # ! .tmp1, True
+  li t0, 1
+  xori t0, t0, 1
+  li t2, 2
+  sd t2, 80(sp)
+  sd t0, 88(sp)
+            # copy bes_x_2_arti_4, 14
+  li t0, 0
+  li t1, 14
+  sd t0, 0(sp)
+  sd t1, 8(sp)
             # copy toplam, .tmp0
   ld t0, 32(sp)
   ld t1, 40(sp)
@@ -50,12 +56,6 @@ f:
   li t1, 1
   sd t0, 48(sp)
   sd t1, 56(sp)
-            # ! .tmp1, dogru
-  ld t0, 56(sp)
-  xori t0, t0, 1
-  li t2, 2
-  sd t2, 80(sp)
-  sd t0, 88(sp)
             # copy yanlis, .tmp1
   ld t0, 80(sp)
   ld t1, 88(sp)

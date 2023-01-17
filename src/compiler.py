@@ -637,7 +637,6 @@ class DAGBlock:
         self.var_to_node = {}  # call
 
         self.create_dag_graph()
-        self.reassemble_from_dag()
 
     def kill_nodes_dependent_on(self, x):
         if x is not None:
@@ -764,6 +763,54 @@ class DAGBlock:
                 yeni_komut.append(sozcuk)
         self.dag_komutlari.append(yeni_komut)
 
+    def fold_constants_in_dag(self):
+        for i, node in enumerate(self.nodes):
+            if node.label is None:
+                pass
+            elif node.label in self.binary_ops:
+                if isinstance(node.left.identifiers[0], (int, float)) and isinstance(node.right.identifiers[0],
+                                                                                     (int, float, str, bool)):
+                    if node.label in ['==', '!=']:
+                        node.label = False
+                        if node.label == '==':
+                            node.identifiers.insert(0, node.left.identifiers[0] == node.right.identifiers[0])
+                        else:
+                            node.identifiers.insert(0, node.left.identifiers[0] != node.right.identifiers[0])
+
+                if isinstance(node.left.identifiers[0], (int, float)) and isinstance(node.right.identifiers[0],
+                                                                                     (int, float)):
+                    if node.label in ['add', 'sub', 'mul', 'div', '<', '>', '<=', '>=']:
+                        node.label = None
+                        if node.label == 'add':
+                            node.identifiers.insert(0, node.left.identifiers[0] + node.right.identifiers[0])
+                        elif node.label == 'sub':
+                            node.identifiers.insert(0, node.left.identifiers[0] - node.right.identifiers[0])
+                        elif node.label == 'mul':
+                            node.identifiers.insert(0, node.left.identifiers[0] * node.right.identifiers[0])
+                        elif node.label == 'div':
+                            node.identifiers.insert(0, node.left.identifiers[0] / node.right.identifiers[0])
+                        elif node.label == '<':
+                            node.identifiers.insert(0, node.left.identifiers[0] < node.right.identifiers[0])
+                        elif node.label == '>':
+                            node.identifiers.insert(0, node.left.identifiers[0] > node.right.identifiers[0])
+                        elif node.label == '<=':
+                            node.identifiers.insert(0, node.left.identifiers[0] <= node.right.identifiers[0])
+                        elif node.label == '>=':
+                            node.identifiers.insert(0, node.left.identifiers[0] >= node.right.identifiers[0])
+                elif isinstance(node.left.identifiers[0], bool) and isinstance(node.right.identifiers[0], bool):
+                    # the and and or instructions are not circuited so we dont use them anyways
+                    if node.label == 'and':
+                        node.label = None
+                        node.identifiers.insert(0, node.left.identifiers[0] and node.right.identifiers[0])
+                    elif node.label == 'or':
+                        node.label = None
+                        node.identifiers.insert(0, node.left.identifiers[0] or node.right.identifiers[0])
+
+            elif node.label in self.unary_ops:
+                if node.label == '!' and isinstance(node.left.identifiers[0], bool):
+                    node.label = None
+                    node.identifiers.insert(0, not node.left.identifiers[0])
+
     def reassemble_from_dag(self):
         for node in self.nodes:
             if node.label is None:
@@ -787,8 +834,13 @@ class DAGBlock:
             for i, x in enumerate(node.identifiers):
                 if x != node.identifiers[0] and (not x[0].startswith('.tmp') or x[0].startswith('.tmp_interblock') or (
                         self.block.komutlar and self.block.komutlar[-1][0].startswith(('branch_if', 'return')) and
-                        self.block.komutlar[-1][1] == to_name_id(x))):
+                        len(self.block.komutlar[-1]) > 1 and self.block.komutlar[-1][1] == to_name_id(x))):
                     self.add_dag_komutu(['copy', x, node.identifiers[0]])
+
+    def optimize(self):
+        self.fold_constants_in_dag()
+
+        pass
 
 
 class DAG:
@@ -828,6 +880,16 @@ class DAG:
                 ara_dil.extend(dag_block.halef_komutlar)
         return ara_dil
 
+    def optimize(self):
+        for fun_name in self.fun_dags:
+            for dag_block in self.fun_dags[fun_name]:
+                dag_block.optimize()
+
+    def reassemble(self):
+        for fun_name in self.fun_dags:
+            for dag_block in self.fun_dags[fun_name]:
+                dag_block.reassemble_from_dag()
+
 
 class Compiler:
     def __init__(self, ast: ast_tools.Program, asm_yapici_cls: Type[AssemblyYapici]):
@@ -858,6 +920,8 @@ class Compiler:
         dag = DAG(self.ara_dil_satirlari)
         dag.generate_basic_blocks()
         dag.generate_dag()
+        # dag.optimize()
+        dag.reassemble()
         self.ara_dil_satirlari = dag.generate_new_ara_dil()
 
     def assembly_optimize_et(self):
@@ -877,7 +941,7 @@ class Compiler:
     def compile(self):
         self.ast_optimize_et()
         self.ara_dil_yap()
-        #self.ara_dil_optimize_et()
+        self.ara_dil_optimize_et()
         self.ara_dildeki_floatlari_int_yap()
         self.assembly_yap()
         self.assembly_optimize_et()
@@ -899,16 +963,16 @@ class Compiler:
 
 
 if __name__ == '__main__':
-    #bb = BasicBlock()
+    # bb = BasicBlock()
     # bb.add(['mul', 'a', 'b', 'c'])
     # bb.add(['copy', 'd', 'b'])
     # bb.add(['mul', 'e', 'd', 'c'])
     # bb.add(['copy', 'b', 'e'])
     # bb.add(['add', 'f', 'b', 'c'])
     # bb.add(['add', 'g', 'd', 'f'])
-    #bb.add(['vector_get', 'x', 'a', 'i'])
-    #bb.add(['vector_set', 'a', 'j', 'y'])
-    #bb.add(['vector_get', 'z', 'a', 'i'])
-    #block = DAGBlock(bb)
-    #print(1)
+    # bb.add(['vector_get', 'x', 'a', 'i'])
+    # bb.add(['vector_set', 'a', 'j', 'y'])
+    # bb.add(['vector_get', 'z', 'a', 'i'])
+    # block = DAGBlock(bb)
+    # print(1)
     pass
