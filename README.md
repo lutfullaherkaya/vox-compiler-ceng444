@@ -10,6 +10,8 @@ Havalı özellikler:
 - Vektörler birbiriyle toplanabilir ve bunu yaparken sadece değerler toplanır, tipler atlanır. bunun için stride komutları var.
 - Constant folding yapılarak sabitler derleme zamanında hesaplanır.
 - Ölü kodlar atılır. (return sonrası kodlar, if (true), while(false), vs.)
+- Vektörler pass by reference yapar.
+- Lokal vektör döndürmek yasaktır.
 
 Vox Standart Kütüphanesi
 - `fun len(v: vector|string) -> int`

@@ -1,27 +1,30 @@
 
-var a = 5;
-var b = a;
-var ab = 55;
-fun x(ab) {
-    var a = 6;
-    return a + ab;
-}
-fun main() {
-    return 0;
-}
-print x(22);
-//fun y(ab) {
-//    var a = 7;
-//    if (#a) {
-//        var a = 8;
-//    }
+//var a = 5;
+//var b;
+//var c = b + a;
+//
+//fun id(x) {
+//    return x;
 //}
+//
+//fun herhangi() {
+//    var a = 5;
+//    var b = 7;
+//    var c = a + b;
+//    var d = a + b;
+//    var e = c + d;
+//    print e;
+//    return e;
+//}
+//
+//print id(herhangi());
+
 
 //if (true) {
 //    var c = [1,2,3];
-//    ab = 53;
+//    var ab = 53;
 //    ab = ab + 231;
-
+//
 //    print ab * c * c *c * c * ab;
 //}
 
@@ -79,23 +82,23 @@ print x(22);
 //var b = a;
 
 
-//
-//fun f() {
-//    var bes_x_2_arti_4 = 5 * 2 + 4;
-//    var toplam = bes_x_2_arti_4 - 4 / 2;
-//
-//    var dogru = true;
-//    var yanlis = !#dogru;
-//
-//    if (#yanlis or toplam < bes_x_2_arti_4) {
-//        print #dogru or #yanlis;
-//    } else {
-//        print toplam;
-//    }
-//}
-//
-//print f();
-//
+
+fun f() {
+    var bes_x_2_arti_4 = 5 * 2 + 4;
+    var toplam = bes_x_2_arti_4 - 4 / 2;
+
+    var dogru = true;
+    var yanlis = !#dogru;
+
+    if (#yanlis or toplam < bes_x_2_arti_4) {
+        print #dogru or #yanlis;
+    } else {
+        print toplam;
+    }
+}
+
+print f();
+
 
 
 
