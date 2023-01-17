@@ -16,11 +16,13 @@ def to_tpl(t: Union[NameIdPair, int, str, bool]) -> Union[Tuple[str, int], str, 
     else:
         return t
 
+
 def to_name_id(t: Union[Tuple[str, int], str, int, bool]) -> Union[NameIdPair, int, str, bool]:
     if isinstance(t, tuple):
         return {'name': t[0], 'id': t[1]}
     else:
         return t
+
 
 class ActivationRecord:
     def __init__(self, arg_count: int = 0):
@@ -112,6 +114,13 @@ class AraDilScope:
         if self.activation_record is None:
             raise Exception("Activation record is None")
         tmp = f'.tmp{self.activation_record.tmp_count}'  # encoded with a dot to avoid name conflicts with real variables
+        self.activation_record.tmp_count += 1
+        return self.add(Identifier(tmp, -1, 1))
+
+    def generate_tmp_interblock(self) -> NameIdPair:
+        if self.activation_record is None:
+            raise Exception("Activation record is None")
+        tmp = f'.tmp_interblock{self.activation_record.tmp_count}'  # encoded with a dot to avoid name conflicts with real variables
         self.activation_record.tmp_count += 1
         return self.add(Identifier(tmp, -1, 1))
 
@@ -364,7 +373,7 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
             self._ara_dile_ekle([['label', endelse_label]])
 
     def visit_LBinary(self, lbinary: LBinary):
-        result_name_id_pair = self.current_scope.generate_tmp()
+        result_name_id_pair = self.current_scope.generate_tmp_interblock()
 
         left_name = self.visit(lbinary.left)
         if lbinary.op == 'and':

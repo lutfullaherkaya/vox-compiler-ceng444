@@ -649,7 +649,7 @@ class DAGBlock:
         for komut in self.block.komutlar:
             if komut[0] in ['fun', 'param', 'label']:
                 self.selef_komutlar.append(komut)
-            elif komut[0] in ['return']:
+            elif komut[0] in ['branch_if_true', 'branch_if_false', 'branch', 'return']:
                 self.halef_komutlar.append(komut)
             if komut[0] in self.binary_ops + self.unary_ops + ['copy']:
                 x = to_tpl(komut[1])
@@ -717,14 +717,15 @@ class DAGBlock:
                     x = None
                 else:
                     x = to_tpl(komut[1])
+                    if x in self.var_to_node:
+                        self.var_to_node[x].identifiers.remove(x)
+                        self.var_to_node.pop(x)
                 f = to_tpl(komut[2])
-                if x in self.var_to_node:
-                    self.var_to_node[x].identifiers.remove(x)
-                    self.var_to_node.pop(x)
 
                 n = DAGNode(label='call', left=DAGNode(identifiers=[f]), killed=True)
                 n.identifiers.append(x)
-                self.var_to_node[x] = n
+                if x is not None:
+                    self.var_to_node[x] = n
                 self.nodes.append(n)
                 self.kill_nodes_dependent_on(n.left)
             elif komut[0] == 'vector_set':  # case 3 gibi x[y] = z
@@ -784,7 +785,9 @@ class DAGBlock:
                 self.add_dag_komutu([node.label, node.left.identifiers[0], node.right])
         for node in self.nodes:
             for i, x in enumerate(node.identifiers):
-                if i != 0 and not x[0].startswith('.tmp'):
+                if x != node.identifiers[0] and (not x[0].startswith('.tmp') or x[0].startswith('.tmp_interblock') or (
+                        self.block.komutlar and self.block.komutlar[-1][0].startswith(('branch_if', 'return')) and
+                        self.block.komutlar[-1][1] == to_name_id(x))):
                     self.add_dag_komutu(['copy', x, node.identifiers[0]])
 
 
@@ -874,7 +877,7 @@ class Compiler:
     def compile(self):
         self.ast_optimize_et()
         self.ara_dil_yap()
-        # self.ara_dil_optimize_et()
+        #self.ara_dil_optimize_et()
         self.ara_dildeki_floatlari_int_yap()
         self.assembly_yap()
         self.assembly_optimize_et()
@@ -896,15 +899,16 @@ class Compiler:
 
 
 if __name__ == '__main__':
-    bb = BasicBlock()
+    #bb = BasicBlock()
     # bb.add(['mul', 'a', 'b', 'c'])
     # bb.add(['copy', 'd', 'b'])
     # bb.add(['mul', 'e', 'd', 'c'])
     # bb.add(['copy', 'b', 'e'])
     # bb.add(['add', 'f', 'b', 'c'])
     # bb.add(['add', 'g', 'd', 'f'])
-    bb.add(['vector_get', 'x', 'a', 'i'])
-    bb.add(['vector_set', 'a', 'j', 'y'])
-    bb.add(['vector_get', 'z', 'a', 'i'])
-    block = DAGBlock(bb)
-    print(1)
+    #bb.add(['vector_get', 'x', 'a', 'i'])
+    #bb.add(['vector_set', 'a', 'j', 'y'])
+    #bb.add(['vector_get', 'z', 'a', 'i'])
+    #block = DAGBlock(bb)
+    #print(1)
+    pass

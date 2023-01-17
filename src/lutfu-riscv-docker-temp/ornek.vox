@@ -83,6 +83,7 @@
 
 
 
+
 fun f() {
     var bes_x_2_arti_4 = 5 * 2 + 4;
     var toplam = bes_x_2_arti_4 - 4 / 2;
@@ -92,12 +93,29 @@ fun f() {
 
     if (#yanlis or toplam < bes_x_2_arti_4) {
         print #dogru or #yanlis;
+        print #dogru and #yanlis;
     } else {
         print toplam;
     }
 }
 
 print f();
+
+//fun f() {
+//    var bes_x_2_arti_4 = 5 * 2 + 4;
+//    var toplam = bes_x_2_arti_4 - 4 / 2;
+//
+//    var dogru = true;
+//    var yanlis = !#dogru;
+//
+//    if (#yanlis or toplam < bes_x_2_arti_4) {
+//        print #dogru or #yanlis;
+//    } else {
+//        print toplam;
+//    }
+//}
+//
+//print f();
 
 
 
