@@ -16,7 +16,10 @@ def komut_stringi_yap(komut):
                 elif var_id > 0:
                     args.append(var_name + '-' + str(var_id))
             else:
-                args.append(str(elem))
+                if type(elem) is str:
+                    args.append(f'"{elem}"')
+                else:
+                    args.append(str(elem))
 
     return sonuc + ", ".join(args)
 

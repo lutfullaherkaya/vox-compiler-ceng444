@@ -1,5 +1,5 @@
 # hizli olmasi icin pypy kullanilabilir
-from typing import Dict, Optional, Union, List, Callable, Any, Type
+from typing import Dict, Optional, Union, List, Callable, Any, Type, Tuple
 import ast_tools
 from ast_tools import VarDecl
 from abc import ABC, abstractmethod
@@ -591,8 +591,9 @@ class RiscVAssemblyYapici(AssemblyYapici):
 
 
 class BasicBlock:
-    def __init__(self):
+    def __init__(self, global_vars: Dict[str, VarDecl]):
         self.komutlar: List[List[Any]] = []
+        self.global_vars: Dict[str, VarDecl] = global_vars
 
     def add(self, komut):
         self.komutlar.append(komut)
@@ -634,7 +635,7 @@ class DAGBlock:
         """
         # eksikler: ['branch', 'branch_if_true', 'branch_if_false']
         self.nodes: List[DAGNode] = []
-        self.var_to_node = {}  # call
+        self.var_to_node: Dict[Union[Tuple[str, int], str, int, bool, float], DAGNode] = {}  # call
 
         self.create_dag_graph()
 
@@ -644,13 +645,28 @@ class DAGBlock:
                 if x in [node.left, node.right, node.third]:
                     node.killed = True
 
+    def mark_globals_as_changed_and_kill_dependent(self):
+        global_var_node_tpls = []
+        for global_var in self.block.global_vars.values():
+            tpl = (global_var.identifier.name, -1)
+            if tpl in self.var_to_node:
+                global_var_node_tpls.append(tpl)
+        for tpl in global_var_node_tpls:
+            node = self.var_to_node[tpl]
+            self.kill_nodes_dependent_on(node)
+            # node.identifiers.remove(tpl) # dont delete because other vars can be dependent on it
+            self.var_to_node[tpl] = DAGNode(identifiers=[tpl])
+
     def create_dag_graph(self):
+        # special case: call. globals should be saved before call and after call they can get modified.
+        # the reason of not putting call in new block is for being able to remove temps after end of block
+        # and not have to deal with inter block temps.
         for komut in self.block.komutlar:
             if komut[0] in ['fun', 'param', 'label']:
                 self.selef_komutlar.append(komut)
             elif komut[0] in ['branch_if_true', 'branch_if_false', 'branch', 'return']:
                 self.halef_komutlar.append(komut)
-            if komut[0] in self.binary_ops + self.unary_ops + ['copy']:
+            if komut[0] in self.binary_ops + self.unary_ops + ['copy']:  # x = y op z
                 x = to_tpl(komut[1])
                 y = to_tpl(komut[2])
                 n = None
@@ -687,8 +703,10 @@ class DAGBlock:
                         self.nodes.append(n)
                 elif komut[0] == 'copy':  # case 3 x = y
                     n = self.var_to_node[y]
+
                 if x in self.var_to_node:
-                    self.var_to_node[x].identifiers.remove(x)
+                    if not (self.var_to_node[x].label is None and len(self.var_to_node[x].identifiers) == 1):
+                        self.var_to_node[x].identifiers.remove(x)
                     self.var_to_node.pop(x)
 
                 n.identifiers.append(x)
@@ -698,10 +716,10 @@ class DAGBlock:
                 if y not in self.var_to_node:
                     self.var_to_node[y] = DAGNode(identifiers=[y])
                     self.nodes.append(self.var_to_node[y])
-                n = DAGNode(label='arg', left=self.var_to_node[y])
+                n = DAGNode(label='arg', left=self.var_to_node[y], killed=True)
                 self.nodes.append(n)
-                self.kill_nodes_dependent_on(
-                    self.var_to_node[y])  # because a vector may be passed and it is pass by reference
+                self.kill_nodes_dependent_on(self.var_to_node[y])
+                # because a vector may be passed and it is pass by reference
             elif komut[0] == 'vector':  # var x = [...]
                 x = to_tpl(komut[1])
                 length = komut[2]
@@ -711,13 +729,20 @@ class DAGBlock:
                 n = DAGNode(label='vector', left=self.var_to_node[x], right=length)
                 self.nodes.append(n)
             elif komut[0] == 'call':  # x = f(...)
+                for var in self.var_to_node:
+                    if type(var) == tuple and self.var_to_node[var].identifiers[0] != var and \
+                            var[0] in self.block.global_vars:
+                        self.nodes.append(DAGNode(label='copy', left=DAGNode(identifiers=[var]),
+                                                  right=DAGNode(identifiers=[self.var_to_node[var].identifiers[0]])))
+
                 # no var to node key for f since functions can have same names with variables
                 if komut[1] is None:
                     x = None
                 else:
                     x = to_tpl(komut[1])
                     if x in self.var_to_node:
-                        self.var_to_node[x].identifiers.remove(x)
+                        if not (self.var_to_node[x].label is None and len(self.var_to_node[x].identifiers) == 1):
+                            self.var_to_node[x].identifiers.remove(x)
                         self.var_to_node.pop(x)
                 f = to_tpl(komut[2])
 
@@ -727,6 +752,8 @@ class DAGBlock:
                     self.var_to_node[x] = n
                 self.nodes.append(n)
                 self.kill_nodes_dependent_on(n.left)
+                self.mark_globals_as_changed_and_kill_dependent()
+
             elif komut[0] == 'vector_set':  # case 3 gibi x[y] = z
                 x = to_tpl(komut[1])
                 y = to_tpl(komut[2])
@@ -780,7 +807,7 @@ class DAGBlock:
                 if isinstance(node.left.identifiers[0], (int, float)) and isinstance(node.right.identifiers[0],
                                                                                      (int, float)):
                     if node.label in ['add', 'sub', 'mul', 'div', '<', '>', '<=', '>=']:
-                        node.label = None
+
                         if node.label == 'add':
                             node.identifiers.insert(0, node.left.identifiers[0] + node.right.identifiers[0])
                         elif node.label == 'sub':
@@ -797,6 +824,7 @@ class DAGBlock:
                             node.identifiers.insert(0, node.left.identifiers[0] <= node.right.identifiers[0])
                         elif node.label == '>=':
                             node.identifiers.insert(0, node.left.identifiers[0] >= node.right.identifiers[0])
+                        node.label = None
                 elif isinstance(node.left.identifiers[0], bool) and isinstance(node.right.identifiers[0], bool):
                     # the and and or instructions are not circuited so we dont use them anyways
                     if node.label == 'and':
@@ -812,7 +840,7 @@ class DAGBlock:
                     node.identifiers.insert(0, not node.left.identifiers[0])
 
     def reassemble_from_dag(self):
-        for node in self.nodes:
+        for i, node in enumerate(self.nodes):
             if node.label is None:
                 pass
             elif node.label in self.binary_ops:
@@ -830,12 +858,31 @@ class DAGBlock:
                 self.add_dag_komutu([node.label, node.identifiers[0], node.left.identifiers[0]])
             elif node.label == 'vector':
                 self.add_dag_komutu([node.label, node.left.identifiers[0], node.right])
-        for node in self.nodes:
-            for i, x in enumerate(node.identifiers):
-                if x != node.identifiers[0] and (not x[0].startswith('.tmp') or x[0].startswith('.tmp_interblock') or (
-                        self.block.komutlar and self.block.komutlar[-1][0].startswith(('branch_if', 'return')) and
-                        len(self.block.komutlar[-1]) > 1 and self.block.komutlar[-1][1] == to_name_id(x))):
-                    self.add_dag_komutu(['copy', x, node.identifiers[0]])
+            elif node.label == 'copy':
+                # normally there is no copy node but before call, we copy globals to save them so that callee can use
+                self.add_dag_komutu([node.label, node.left.identifiers[0], node.right.identifiers[0]])
+
+        self.copy_live_variable_current_values()
+
+    def copy_live_variable_current_values(self):
+        for var in self.var_to_node:
+            if type(var) == tuple and self.var_to_node[var].identifiers[0] != var and (
+                    not var[0].startswith('.tmp') or var[0].startswith('.tmp_interblock') or (
+                    self.block.komutlar and self.block.komutlar[-1][0].startswith(('branch_if', 'return')) and
+                    len(self.block.komutlar[-1]) > 1 and self.block.komutlar[-1][1] == to_name_id(var))):
+                self.add_dag_komutu(['copy', var, self.var_to_node[var].identifiers[0]])
+        # for node in self.nodes:
+        #    for i, identifier in enumerate(node.identifiers):
+        #        if identifier != node.identifiers[0] and (
+        #                not identifier[0].startswith('.tmp') or identifier[0].startswith('.tmp_interblock') or (
+        #                self.block.komutlar and self.block.komutlar[-1][0].startswith(('branch_if', 'return')) and
+        #                len(self.block.komutlar[-1]) > 1 and self.block.komutlar[-1][1] == to_name_id(identifier))):
+        #            self.add_dag_komutu(['copy', identifier, node.identifiers[0]])
+
+    def copy_global_current_values(self):
+        for var in self.var_to_node:
+            if type(var) == tuple and self.var_to_node[var].identifiers[0] != var and var[0] in self.block.global_vars:
+                self.add_dag_komutu(['copy', var, self.var_to_node[var].identifiers[0]])
 
     def optimize(self):
         self.fold_constants_in_dag()
@@ -844,23 +891,24 @@ class DAGBlock:
 
 
 class DAG:
-    def __init__(self, ara_dil_satirlari: List[List[Any]]):
+    def __init__(self, ara_dil_satirlari: List[List[Any]], global_vars: Dict[str, VarDecl]):
         self.ara_dil_satirlari: List[List[Any]] = ara_dil_satirlari
         self.fun_basic_blocks: Dict[str, List[BasicBlock]] = {}
         self.fun_dags: Dict[str, List[DAGBlock]] = {}
+        self.global_vars: Dict[str, VarDecl] = global_vars
 
     def generate_basic_blocks(self):
         current_func = None
         for komut in self.ara_dil_satirlari:
             if komut[0] == 'fun':
                 current_func = komut[1]
-                self.fun_basic_blocks[current_func] = [BasicBlock()]
+                self.fun_basic_blocks[current_func] = [BasicBlock(self.global_vars)]
             if komut[0] in ['label']:
-                self.fun_basic_blocks[current_func].append(BasicBlock())
+                self.fun_basic_blocks[current_func].append(BasicBlock(self.global_vars))
                 self.fun_basic_blocks[current_func][-1].add(komut)
             elif komut[0] in ['branch_if_true', 'branch_if_false', 'branch', 'return']:
                 self.fun_basic_blocks[current_func][-1].add(komut)
-                self.fun_basic_blocks[current_func].append(BasicBlock())
+                self.fun_basic_blocks[current_func].append(BasicBlock(self.global_vars))
             else:
                 self.fun_basic_blocks[current_func][-1].add(komut)
 
@@ -917,10 +965,10 @@ class Compiler:
             # print(ast_tools.PrintVisitor().visit(self.ast))
 
     def ara_dil_optimize_et(self):
-        dag = DAG(self.ara_dil_satirlari)
+        dag = DAG(self.ara_dil_satirlari, self.ara_dil_yapici_visitor.global_vars)
         dag.generate_basic_blocks()
         dag.generate_dag()
-        # dag.optimize()
+        dag.optimize()
         dag.reassemble()
         self.ara_dil_satirlari = dag.generate_new_ara_dil()
 

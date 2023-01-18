@@ -10,7 +10,7 @@ class NameIdPair(TypedDict):
     id: int  # -1 means global variable
 
 
-def to_tpl(t: Union[NameIdPair, int, str, bool]) -> Union[Tuple[str, int], str, int, bool]:
+def to_tpl(t: Union[NameIdPair, int, str, bool, float]) -> Union[Tuple[str, int], str, int, bool, float]:
     if isinstance(t, dict):
         return (t['name'], t['id'])
     else:
