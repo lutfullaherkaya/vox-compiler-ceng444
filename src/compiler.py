@@ -115,6 +115,10 @@ class AssemblyYapici(ABC):
     def yap(self) -> List[str]:
         pass
 
+    @abstractmethod
+    def yap_dag_den(self, fun_dags: Dict[str, List["DAGBlock"]]) -> List[str]:
+        pass
+
 
 class RiscVFunctionInfo:
     def __init__(self, activation_record: ActivationRecord):
@@ -122,10 +126,10 @@ class RiscVFunctionInfo:
         self.activation_record: ActivationRecord = activation_record
         self.current_stack_size = activation_record.son_goreli_adres
         self.sp_extra_offset = 0
-        self.fp_extra_offset = 0
+        self.callee_saved_offset = 0
 
     def get_total_stack_size(self):
-        return self.sp_extra_offset + self.fp_extra_offset + self.current_stack_size
+        return self.sp_extra_offset + self.callee_saved_offset + self.current_stack_size
 
     def get_non_reg_arg_count(self):
         return max(self.activation_record.arg_count - 4, 0)
@@ -141,7 +145,7 @@ class RiscVFunctionInfo:
         for reg in regs:
             if reg not in self.callee_saved_regs:
                 self.callee_saved_regs[reg] = True
-                self.fp_extra_offset += 8
+                self.callee_saved_offset += 8
 
 
 class RiscVAssemblyYapici(AssemblyYapici):
@@ -154,8 +158,10 @@ class RiscVAssemblyYapici(AssemblyYapici):
         self.fun_infos: Dict[str, RiscVFunctionInfo] = {fun_name: RiscVFunctionInfo(self.fun_records[fun_name])
                                                         for fun_name in self.fun_records}
         self.current_fun_label = ''
+        self.current_fun_komut_index = -1
         self.current_arg_index = -1
         self.current_param_index = -1
+        self.current_dag_block: Optional["DAGBlock"] = None
         self.aradil_sozlugu = {
             'fun': self.cevir_fun,
             'return': self.cevir_return,
@@ -192,6 +198,23 @@ class RiscVAssemblyYapici(AssemblyYapici):
             'string': 3,
         }
 
+    def yap_dag_den(self, fun_dags: Dict[str, List["DAGBlock"]]) -> List[str]:
+        asm = []
+        asm.extend(self.get_on_soz())
+        for fun_name, dags in fun_dags.items():
+            fun_asm = []
+            for dag_block in dags:
+                self.current_dag_block = dag_block
+                for i, komut in enumerate(dag_block.selef_komutlar):
+                    fun_asm.extend(self.aradilden_asm(komut, i))
+                for i, komut in enumerate(dag_block.dag_komutlari):
+                    fun_asm.extend(self.aradilden_asm(komut, i))
+                for i, komut in enumerate(dag_block.halef_komutlar):
+                    fun_asm.extend(self.aradilden_asm(komut, i))
+            asm.extend(fun_asm)
+        self.init_global_labels(asm)
+        return asm
+
     def yap(self):
         assembly_lines = []
         assembly_lines.extend(self.get_on_soz())
@@ -199,47 +222,49 @@ class RiscVAssemblyYapici(AssemblyYapici):
         for i, komut in enumerate(self.ara_dil_satirlari):
             assembly_lines.extend(self.aradilden_asm(komut, i))
 
-        if len(self.global_vars) > 0 or \
-                len(self.global_string_to_label):
-            assembly_lines.extend(['',
-                                   '  .data'])
+        self.init_global_labels(assembly_lines)
+
+        return assembly_lines
+
+    def init_global_labels(self, asm_to_extend):
+        if len(self.global_vars) > 0 or len(self.global_string_to_label):
+            asm_to_extend.extend(['',
+                                  '  .data'])
         for name, vardecl in self.global_vars.items():
             if vardecl.initializer is not None:
                 if type(vardecl.initializer) == list:
                     global_vector_name = get_global_vector_name(name)
-                    assembly_lines.extend([f'{get_global_type_name(name)}:    .quad {self.tip_rakamlari["vector"]}',
-                                           f'{get_global_value_name(name)}:   .quad {global_vector_name}',
-                                           f'{get_global_length_name(name)}:  .quad {len(vardecl.initializer)}',
-                                           f'{global_vector_name}:'])
+                    asm_to_extend.extend([f'{get_global_type_name(name)}:    .quad {self.tip_rakamlari["vector"]}',
+                                          f'{get_global_value_name(name)}:   .quad {global_vector_name}',
+                                          f'{get_global_length_name(name)}:  .quad {len(vardecl.initializer)}',
+                                          f'{global_vector_name}:'])
                     for i in range(len(vardecl.initializer)):
-                        assembly_lines.append('  .quad 0, 0')
-                    assembly_lines.append('')
+                        asm_to_extend.append('  .quad 0, 0')
+                    asm_to_extend.append('')
                 elif isinstance(vardecl.initializer, ast_tools.ALiteral):
-                    assembly_lines.extend([f'{get_global_type_name(name)}:   .quad {self.tip_rakamlari["int"]}',
-                                           f'{get_global_value_name(name)}:  .quad {int(vardecl.initializer.value)}',
-                                           f''])
+                    asm_to_extend.extend([f'{get_global_type_name(name)}:   .quad {self.tip_rakamlari["int"]}',
+                                          f'{get_global_value_name(name)}:  .quad {int(vardecl.initializer.value)}',
+                                          f''])
                 elif isinstance(vardecl.initializer, ast_tools.SLiteral):
-                    assembly_lines.extend([f'{get_global_type_name(name)}:   .quad {self.tip_rakamlari["string"]}',
-                                           f'{get_global_value_name(name)}:  .quad {self.global_string_to_label[vardecl.initializer.value]}',
-                                           f''])
+                    asm_to_extend.extend([f'{get_global_type_name(name)}:   .quad {self.tip_rakamlari["string"]}',
+                                          f'{get_global_value_name(name)}:  .quad {self.global_string_to_label[vardecl.initializer.value]}',
+                                          f''])
                 elif isinstance(vardecl.initializer, ast_tools.LLiteral):
-                    assembly_lines.extend([f'{get_global_type_name(name)}:   .quad {self.tip_rakamlari["bool"]}',
-                                           f'{get_global_value_name(name)}:  .quad {int(vardecl.initializer.value)}',
-                                           f''])
+                    asm_to_extend.extend([f'{get_global_type_name(name)}:   .quad {self.tip_rakamlari["bool"]}',
+                                          f'{get_global_value_name(name)}:  .quad {int(vardecl.initializer.value)}',
+                                          f''])
                 else:
-                    assembly_lines.extend([f'{get_global_type_name(name)}:   .quad {self.tip_rakamlari["int"]}',
-                                           f'{get_global_value_name(name)}:  .quad 0',
-                                           f''])
+                    asm_to_extend.extend([f'{get_global_type_name(name)}:   .quad {self.tip_rakamlari["int"]}',
+                                          f'{get_global_value_name(name)}:  .quad 0',
+                                          f''])
             else:
-                assembly_lines.extend([f'{get_global_type_name(name)}:   .quad {self.tip_rakamlari["int"]}',
-                                       f'{get_global_value_name(name)}:  .quad 0',
-                                       f''])
+                asm_to_extend.extend([f'{get_global_type_name(name)}:   .quad {self.tip_rakamlari["int"]}',
+                                      f'{get_global_value_name(name)}:  .quad 0',
+                                      f''])
 
         for string_value, string_label in self.global_string_to_label.items():
             # .ascii does not add a null terminator, thus use .string
-            assembly_lines.append(f'{string_label}:  .string "{string_value}"')
-
-        return assembly_lines
+            asm_to_extend.append(f'{string_label}:  .string "{string_value}"')
 
     def get_on_soz(self):
         on_soz = [f'#include "vox_lib.h"',
@@ -324,8 +349,12 @@ class RiscVAssemblyYapici(AssemblyYapici):
         asm = []
         if self.current_arg_index == -1:  # first arg
             arg_count = 1
-            while self.ara_dil_satirlari[komut_indeksi + arg_count][0] != 'call':
-                arg_count += 1
+            if self.current_dag_block is not None:
+                while self.current_dag_block.dag_komutlari[komut_indeksi + arg_count][0] != 'call':
+                    arg_count += 1
+            else:
+                while self.ara_dil_satirlari[komut_indeksi + arg_count][0] != 'call':
+                    arg_count += 1
 
             non_reg_arg_cnt = max(arg_count - 4, 0)
             if non_reg_arg_cnt > 0:
@@ -947,6 +976,7 @@ class Compiler:
         self.ara_dil_satirlari: List[List[Any]] = []
         self.AssemblyYapici: Type[AssemblyYapici] = asm_yapici_cls
         self.asm_yapici: Optional[AssemblyYapici] = None
+        self.USE_DAG_AND_REGISTER_ALLOC = True
 
     def ast_optimize_et(self):
         changes_made = True
@@ -964,13 +994,13 @@ class Compiler:
             changes_made = olu_kod_oldurucu.changes_made or constant_folder.changes_made  # or constant_propagator.changes_made
             # print(ast_tools.PrintVisitor().visit(self.ast))
 
-    def ara_dil_optimize_et(self):
+    def fonksiyon_basic_blocklari_olustur(self):
         dag = DAG(self.ara_dil_satirlari, self.ara_dil_yapici_visitor.global_vars)
         dag.generate_basic_blocks()
         dag.generate_dag()
         dag.optimize()
         dag.reassemble()
-        self.ara_dil_satirlari = dag.generate_new_ara_dil()
+        return dag.fun_dags
 
     def assembly_optimize_et(self):
         pass
@@ -986,12 +1016,24 @@ class Compiler:
                                               self.ara_dil_satirlari)
         self.assembly_lines = self.asm_yapici.yap()
 
+    def dag_den_assembly_yap(self, fun_dags: Dict[str, List[DAGBlock]]):
+        self.asm_yapici = self.AssemblyYapici(self.ara_dil_yapici_visitor.global_vars,
+                                              self.ara_dil_yapici_visitor.func_activation_records,
+                                              self.ara_dil_yapici_visitor.global_string_to_label,
+                                              self.ara_dil_satirlari)
+        self.assembly_lines = self.asm_yapici.yap_dag_den(fun_dags)
+
     def compile(self):
         self.ast_optimize_et()
         self.ara_dil_yap()
-        self.ara_dil_optimize_et()
         self.ara_dildeki_floatlari_int_yap()
-        self.assembly_yap()
+
+        if (self.USE_DAG_AND_REGISTER_ALLOC):
+            fun_dags = self.fonksiyon_basic_blocklari_olustur()
+            self.dag_den_assembly_yap(fun_dags)
+        else:
+            self.assembly_yap()
+
         self.assembly_optimize_et()
 
         return self
