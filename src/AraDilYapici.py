@@ -509,6 +509,7 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
                     self.func_activation_records[self.current_func].calls_another_fun = True
             hedef_ara_dil_sozleri.extend(sozler)
 
+
     def get_func_signature(self, fundecl: Union[FunDecl, str]):
         if isinstance(fundecl, str):
             fundecl = self.fun_decls[fundecl]
