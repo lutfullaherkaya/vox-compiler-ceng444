@@ -82,9 +82,6 @@ def get_global_vector_name(var_name):
     return f'{var_name}_vector'
 
 
-def is_temp(var_name_id: NameIdPair):
-    return var_name_id['name'].startswith('.tmp')
-
 
 class AssemblyYapici(ABC):
     def __init__(self,
@@ -298,7 +295,7 @@ class RiscVRegController:
         asm = []
         for reg_pair in self.reg_pairs:
             for var in reg_pair.vars:
-                if not var['name'].startswith('.tmp'):
+                if (not var['name'].startswith('.tmp')) or var['name'].startswith('.tmp_interblock'):
                     asm.extend([f'    #backend: spilling {var["name"]} at basic block end'])
                     asm.extend(
                         self.risc_v_assembly_yapici.asm_reg_to_var_in_mem('t0', var, reg_pair.type, reg_pair.val))

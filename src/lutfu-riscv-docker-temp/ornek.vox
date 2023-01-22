@@ -1,3 +1,11 @@
+var dogru = true;
+
+fun printer() {
+    print "sa";
+}
+
+print dogru < 4;
+
 //var a = 5;
 //a = a + 1;
 //if (true) {
@@ -5,12 +13,12 @@
 //a = !#a;
 //print a;
 //}
-var a = 5;
-fun f() {
-    return a;
-}
-
-print f();
+//var a = 5;
+//fun f() {
+//    return a;
+//}
+//
+//print f();
 //var a = 5;
 //var b = a;
 //
@@ -73,7 +81,7 @@ print f();
 
 
 
-//var i = 0;
+
 //fun deneme(a,b,c,d,e,f) {
 //var x1 = 5;
 //var x2 = 5;
@@ -97,6 +105,9 @@ print f();
 //
 //    return e;
 //}
+
+//var i = 0;
+//
 //fun modulo(number, i) {
 //    return number - (number / i) * i;
 //}
