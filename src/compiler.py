@@ -154,6 +154,7 @@ class RiscVFunctionInfo:
         self.sp_extra_offset = 0
         self.fp_extra_offset = 0
         self.reg_controller = RiscVRegController(risc_v_assembly_yapici)
+        self.calls_another_fun = False # first pass must set this if fun code contains call
 
     def get_total_stack_size(self):
         return self.sp_extra_offset + self.fp_extra_offset + self.current_stack_size
@@ -414,7 +415,8 @@ class RiscVAssemblyYapici(AssemblyYapici):
         asm.extend(self.get_on_soz())
         for fun_name, dags in fun_dags.items():
             fun_asm = []
-            self.calculated_used_callee_saveds = self.calculate_used_callee_saved_registers(fun_name, dags)
+            self.calculated_used_callee_saveds = self.calculate_used_callee_saved_registers_and_if_calls_another_fun(fun_name, dags)
+
             for dag_block in dags:
                 self.current_dag_block = dag_block
                 for i, komut in enumerate(dag_block.selef_komutlar):
@@ -435,7 +437,7 @@ class RiscVAssemblyYapici(AssemblyYapici):
         self.init_global_labels(asm)
         return asm
 
-    def calculate_used_callee_saved_registers(self, fun_name: str, dags: List["DAGBlock"]):
+    def calculate_used_callee_saved_registers_and_if_calls_another_fun(self, fun_name: str, dags: List["DAGBlock"]):
         # to find out which registers are used, we need to actually compile first and thrash it
         for dag_block in dags:
             self.current_dag_block = dag_block
@@ -446,7 +448,9 @@ class RiscVAssemblyYapici(AssemblyYapici):
             for i, komut in enumerate(dag_block.halef_komutlar):
                 self.aradilden_asm(komut, i)
         regs = self.get_current_fun_reg_controller().callee_saved_regs_used.keys()
+        calls_another_fun = self.fun_infos[self.current_fun_label].calls_another_fun
         self.fun_infos[fun_name] = RiscVFunctionInfo(self.fun_records[fun_name], self)
+        self.fun_infos[fun_name].calls_another_fun = calls_another_fun
         return regs
 
     def get_current_fun_reg_controller(self):
@@ -706,6 +710,7 @@ class RiscVAssemblyYapici(AssemblyYapici):
         non_reg_arg_count = max(arg_count - 4, 0)
         self.current_arg_index = -1
         asm.extend([f'  call {func_name}'])
+        self.fun_infos[self.current_fun_label].calls_another_fun = True
 
         if non_reg_arg_count > 0 or caller_saved_size > 0:
             for i, reg in enumerate(caller_saved_non_free_var_regs):
@@ -728,8 +733,11 @@ class RiscVAssemblyYapici(AssemblyYapici):
         asm = []
 
         komut1_reg = self.get_reg(komut[1], asm, False)
-        komut2_reg = self.get_reg(komut[2], asm)
-        self.asm_reg_to_reg(komut1_reg, komut2_reg, asm)
+        if type(komut[2]) in [int, bool, str, float]:
+            asm.extend(self.asm_var_in_mem_or_const_to_reg(komut[2], komut1_reg.type, komut1_reg.val))
+        else:
+            komut2_reg = self.get_reg(komut[2], asm)
+            self.asm_reg_to_reg(komut1_reg, komut2_reg, asm)
 
         return asm
 
@@ -792,7 +800,7 @@ class RiscVAssemblyYapici(AssemblyYapici):
         param_count = komut[3]
 
         self.current_fun_label = label
-        if self.fun_infos[self.current_fun_label].activation_record.calls_another_fun:
+        if self.fun_infos[self.current_fun_label].calls_another_fun:
             self.fun_infos[self.current_fun_label].add_to_callee_saved_regs(['ra'])
             self.fun_infos[self.current_fun_label].add_to_callee_saved_regs(self.calculated_used_callee_saveds)
 
@@ -897,6 +905,7 @@ class RiscVAssemblyYapici(AssemblyYapici):
         asm.extend(self.asm_var_or_const_to_reg(op0_name, RiscVRegPair('a0', 'a1')))
         asm.extend(self.asm_var_or_const_to_reg(op1_name, RiscVRegPair('a2', 'a3')))
         asm.extend([f'  call __vox_{komut[0]}__'])
+        self.fun_infos[self.current_fun_label].calls_another_fun = True
         result_reg = self.get_current_fun_reg_controller().get_reg_with_type('a0')
         result_reg.vars.append(result_name)
         self.get_current_fun_reg_controller().var_name_id_to_reg[to_tpl(result_name)] = result_reg
@@ -1011,17 +1020,6 @@ class DAGBlock:
         self.binary_ops = ['add', 'sub', 'mul', 'div', 'and', 'or', '<', '>', '<=', '>=', '==', '!=', 'vector_get']
         self.unary_ops = ['!']
 
-        # todo: vector
-        """
-        fun
-        param...
-        
-        arg...
-        call
-        
-        return
-        """
-        # eksikler: ['branch', 'branch_if_true', 'branch_if_false']
         self.nodes: List[DAGNode] = []
         self.var_to_node: Dict[Union[Tuple[str, int], str, int, bool, float], DAGNode] = {}  # call
 

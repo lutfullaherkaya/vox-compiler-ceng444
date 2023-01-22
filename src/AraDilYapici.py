@@ -17,7 +17,7 @@ def to_tpl(t: Union[NameIdPair, int, str, bool, float]) -> Union[Tuple[str, int]
         return t
 
 
-def to_name_id(t: Union[Tuple[str, int], str, int, bool]) -> Union[NameIdPair, int, str, bool]:
+def to_name_id(t: Union[Tuple[str, int], str, int, bool, float]) -> Union[NameIdPair, int, str, bool, float]:
     if isinstance(t, tuple):
         return {'name': t[0], 'id': t[1]}
     else:
@@ -32,7 +32,6 @@ class ActivationRecord:
         self.tmp_count = 0
         self.son_goreli_adres = 0
         self.arg_count = arg_count
-        self.calls_another_fun = False
 
     def degisken_ekle(self, degisken_adi: str, compile_time_degeri: Any = None):
         if degisken_adi not in self.degisken_sayilari:
@@ -437,8 +436,6 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
             '*': 'mul',
             '/': 'div',
         }
-        # vox_add falan kullandığı için
-        self.func_activation_records[self.current_func].calls_another_fun = True
         self._ara_dile_ekle([op_to_instruction[abinary.op], result_name_id, left_name_id, right_name_id])
         return result_name_id
 
@@ -447,7 +444,6 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
         right_name_id = self.visit(auminus.right)
         # vox_add falan kullandığı için
 
-        self.func_activation_records[self.current_func].calls_another_fun = True
         self._ara_dile_ekle(['sub', result_name_id, 0, right_name_id])
         return result_name_id
 
@@ -505,8 +501,7 @@ class AraDilYapiciVisitor(ASTNodeVisitor):
                 sozler = [sozler]
             for soz in sozler:
                 komut = soz[0]
-                if komut == 'call':
-                    self.func_activation_records[self.current_func].calls_another_fun = True
+
             hedef_ara_dil_sozleri.extend(sozler)
 
 
