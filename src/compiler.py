@@ -11,15 +11,8 @@ import optimizer
 import compiler_utils as cu
 import sys
 
-# SORUN: AYNI REGDE BİRDEN COK DEGİSKEN TUTUYORSUN AMA FOR FALAN OLUNCA SIÇIYOR. BASİC BLOCK BİTİNCE AYIRMAN LAZIM REGLERİ
 
-# todo: ÖNEMLİ: hocaya iki farklı sürüm sun. birisi register allocation olmadan, diğeri register allocation ile.
-# todo: ÖNEMLİ: allocaiton olmayan sürümde propogation varsa sil.
-# todo: ÖNEMLİ: her şeyi test etmen lazım
-# todo: currently I allocate stack for all variables and callee saved registers even if I don't actually use it.
 """
-ÖNEMLİ: flow grapha falan girme. direkt register problemini çöz sadece.
-todo: dag'den geri 3 adress kod donusumu gerekiyor.
 http://epgp.inflibnet.ac.in/epgpdata/uploads/epgp_content/S000007CS/P001069/M020249/ET/1495622012Module32_Content_final.pdf
 
     
@@ -27,10 +20,7 @@ http://epgp.inflibnet.ac.in/epgpdata/uploads/epgp_content/S000007CS/P001069/M020
  
 
 https://github.com/riscv-non-isa/riscv-asm-manual/blob/master/riscv-asm.md
-    serbest registerler:
-    a0-a7 caller saved
-    t0-t6 caller-saved: prosedür çağırmadan önce savelenir.
-    s1-s11 callee saved: prosedür eğer değiştirecekse saveler.
+
     
     
     
@@ -48,49 +38,30 @@ https://github.com/riscv-non-isa/riscv-asm-manual/blob/master/riscv-asm.md
     
     After you are done with all of the compulsory steps, you can also implement optional features you'd like Vox to have. 
     These will help you get that Gazozuna Compiler award. Some of them could be:
-    - Lower amount of temporary variables, better register allocation and lower register spill.
-    - Reals in addition to integers (just like Javascript).
-    - Garbage collection.
-    - Runtime errors.
-    ✓ Functions with more than 7 formal parameters.
-    ✓ Vectors can hold a mixture of types and other vectors.
-    - Cool additional syntactic sugar (like list expressions in Python).
+    - ✓ Lower amount of temporary variables, better register allocation and lower register spill.
+    - - Reals in addition to integers (just like Javascript).
+    - - Garbage collection.
+    - - Runtime errors.
+    - ✓ Functions with more than 7 formal parameters.
+    - ✓ Vectors can hold a mixture of types and other vectors.
+    - - Cool additional syntactic sugar (like list expressions in Python).
     
-    Yapılabilecek optimizasyonlar:
-    constant folding yanında constant propogation:
-    https://en.wikipedia.org/wiki/Constant_folding
-    özet: değişiklik olmayana kadar bir folding bir propogation yap.
     
-    https://en.wikipedia.org/wiki/Optimizing_compiler
+    
     
     todo: 
     remove unused  variables
     hata kontrol visitor açıp şunu ekle: Compilation error: Return statement can only be used inside a function.
-    sadece fonksiyon içerisinde değiştirilen registerler savelensin.
-    compiler utils compilation error quit yapmamalı, sadece sonunda dosyaya assembly yazılmasını engellemelidir.
-    
-    vector_set işlemi ve vector_get işlemi grafı bozabilir dikkat et sayfa 538 dragon
-    
-    parametrelerden ayrıca local değişken yapmama gerek yok, direkt stackte var zaten parametreler (a reglerine sığmayan)
-    type checking lazım illa. mesela vektör işlemlerinde vektörlerin tipi sayı olmalı. 
-    Optimizasyon belki
+        
     string + işlemi
     vector negatif index, belki pythondaki gibi atlamali seyler
-    
-    print(a) çalışmıyor
-        
+            
     argumanli ilk call tespit edilip argumanlari herhangi register yerine ax'lara yazilabilir. 
     
     __vox ile başlayan fonksiyonlarda globalleri spillemeye gerek yok sonuçta o fonksiyonların global
     kullanmadığını biliyoruz. hatta call ile çağrılan fonksiyon global kullanıyor mu kontrol edilebilir,
     sadece kullandıkları globalleri spilleriz recursive olarak falan ama o kadar ileri gitmeye gerek yok
-        
-    optimizasyon döngüsü çok uzun sürerse bıraksın onu ayarla. mesela 1 sn sürerse döngüden çıksın.
-    reaching definition kullanmadığım için propogation çok verimli olmayabilir.
-    
-    sabit vektörleri de compile timede propogate et
-    vektor[i] leri de compile timede propogate et
-    
+                
 
 """
 
@@ -1387,10 +1358,11 @@ class Compiler:
             constant_folder.visit(self.ast)
 
             # todo: bu calismiyor.  reaching definition analysis lazım.
+            # zaten dag olustururken bu da yapiliyor gibi
             # constant_propagator = optimizer.ConstantPropogationVisitor()
             # constant_propagator.visit(self.ast)
 
-            olu_kod_oldurucu = optimizer.OluKodOldurucuVisitor()
+            olu_kod_oldurucu = optimizer.OluKodOldurucuVisitor() # bu dag olustuktan sonra yapilmali aslinda
             olu_kod_oldurucu.visit(self.ast)
 
             changes_made = olu_kod_oldurucu.changes_made or constant_folder.changes_made  # or constant_propagator.changes_made

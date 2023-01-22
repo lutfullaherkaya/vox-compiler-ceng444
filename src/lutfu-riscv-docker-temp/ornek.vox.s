@@ -6,72 +6,20 @@
 
 # fun main();
 main:
-  addi sp, sp, -136
-  sd ra, 128(sp)
-  sd s1, 120(sp)
-  sd s2, 112(sp)
-  sd s3, 104(sp)
-  sd s4, 96(sp)
-  sd s9, 88(sp)
-  sd s10, 80(sp)
-  sd s7, 72(sp)
-  sd s8, 64(sp)
-            # copy global_i, 0
-  li s1, 0
-  li s2, 0
-    #backend: spilling i at basic block end
-  la t0, i_type
-  sd s1, (t0)
-  sd s2, 8(t0)
-            # branch ".L_for_cond2"
-  j .L_for_cond2
-            # label ".L_for_body2"
-.L_for_body2:
-            # arg global_i
-  ld a0, i_type
-  ld a1, i_value
-            # call "__vox_print__"
-  call __vox_print__
-            # arg global_i
-  ld a0, i_type
-  ld a1, i_value
-            # call .tmp0, "isPrime"
-  call isPrime
-            # arg .tmp0
-  mv s1, a0  #backend: clearing a0 for return val
-  mv s2, a1  #backend: clearing a1 for return val
-            # call "__vox_print__"
-  call __vox_print__
-            # add .tmp1, global_i, 1
-  ld a0, i_type
-  ld a1, i_value
-  li a2, 0
-  li a3, 1
-  call __vox_add__
-            # copy global_i, .tmp1
-  mv a6, a0
-  mv a7, a1
-    #backend: spilling i at basic block end
-  la t0, i_type
-  sd a6, (t0)
-  sd a7, 8(t0)
-            # label ".L_for_cond2"
-.L_for_cond2:
-            # < .tmp2, global_i, 15
-  ld s1, i_type
-  ld s2, i_value
-  li s3, 0
-  li s4, 15
-  li s5, 2
-  slt s6, s2, s4
-    #backend: spilling i at basic block end
-  la t0, i_type
-  sd s1, (t0)
-  sd s2, 8(t0)
-            # branch_if_true .tmp2, ".L_for_body2"
-  bne s6, zero, .L_for_body2
+  addi sp, sp, -104
+  sd ra, 96(sp)
+  sd s1, 88(sp)
+  sd s2, 80(sp)
+  sd s3, 72(sp)
+  sd s4, 64(sp)
+  sd s5, 56(sp)
+  sd s6, 48(sp)
+  sd s7, 40(sp)
+  sd s8, 32(sp)
+  sd s9, 24(sp)
+  sd s10, 16(sp)
             # arg 1
-  addi sp, sp, -32
+  addi sp, sp, -144
   li a0, 0
   li a1, 1
             # arg 2
@@ -93,336 +41,500 @@ main:
   li s4, 6
   sd s3, 16(sp)
   sd s4, 24(sp)
-            # call .tmp3, "deneme"
-  call deneme
-  addi sp, sp, 32
-            # arg .tmp3
-  mv s3, a0  #backend: clearing a0 for return val
-  mv s4, a1  #backend: clearing a1 for return val
-            # call "__vox_print__"
-  call __vox_print__
+            # arg 7
+  li s5, 0
+  li s6, 7
+  sd s5, 32(sp)
+  sd s6, 40(sp)
+            # arg 8
+  li s7, 0
+  li s8, 8
+  sd s7, 48(sp)
+  sd s8, 56(sp)
+            # arg 9
+  li s9, 0
+  li s10, 9
+  sd s9, 64(sp)
+  sd s10, 72(sp)
+            # arg 10
+  li t3, 0
+  li t4, 10
+  sd t3, 80(sp)
+  sd t4, 88(sp)
+            # arg 11
+  li t5, 0
+  li t6, 11
+  sd t5, 96(sp)
+  sd t6, 104(sp)
+            # arg 12
+  li s1, 0
+  li s2, 12
+  sd s1, 112(sp)
+  sd s2, 120(sp)
+            # arg 13
+  li s3, 0
+  li s4, 13
+  sd s3, 128(sp)
+  sd s4, 136(sp)
+            # call .tmp0, "a"
+  call a
+  addi sp, sp, 144
+            # copy global_temp, .tmp0
+  mv s3, a0
+  mv s4, a1
             # return 
-  ld ra, 128(sp)
-  ld s1, 120(sp)
-  ld s2, 112(sp)
-  ld s3, 104(sp)
-  ld s4, 96(sp)
-  ld s9, 88(sp)
-  ld s10, 80(sp)
-  ld s7, 72(sp)
-  ld s8, 64(sp)
-  addi sp, sp, 136
+  la t0, temp_type  #backend: global spill
+  sd s3, (t0)
+  sd s4, 8(t0)
+  ld ra, 96(sp)
+  ld s1, 88(sp)
+  ld s2, 80(sp)
+  ld s3, 72(sp)
+  ld s4, 64(sp)
+  ld s5, 56(sp)
+  ld s6, 48(sp)
+  ld s7, 40(sp)
+  ld s8, 32(sp)
+  ld s9, 24(sp)
+  ld s10, 16(sp)
+  addi sp, sp, 104
   li a0, 0
   ret
 
-# fun deneme(a, b, c, d, e, f);
-deneme:
-  addi sp, sp, -384
-            # param a
-            # param b
-            # param c
-            # param d
-            # param e
-  ld s1, 384(sp)
-  ld s2, 392(sp)
-            # param f
-  ld s3, 400(sp)
-  ld s4, 408(sp)
-            # copy x1, 5
-  li s5, 0
-  li s6, 5
-            # copy x2, 5
-  li s7, 0
-  li s8, 5
-            # copy x3, 5
-  li s9, 0
-  li s10, 5
-            # copy x4, 5
-  li t3, 0
-  li t4, 5
-            # copy x5, 5
-  li t5, 0
-  li t6, 5
-            # copy x6, 5
-    #backend: spilling e
+# fun a(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13);
+a:
+  addi sp, sp, -296
+  sd ra, 288(sp)
+  sd s1, 280(sp)
+  sd s2, 272(sp)
+  sd s3, 264(sp)
+  sd s4, 256(sp)
+  sd s5, 248(sp)
+  sd s6, 240(sp)
+  sd s7, 232(sp)
+  sd s8, 224(sp)
+  sd s9, 216(sp)
+  sd s10, 208(sp)
+            # param p1
+            # param p2
+            # param p3
+            # param p4
+            # param p5
+  ld s1, 296(sp)
+  ld s2, 304(sp)
+            # param p6
+  ld s3, 312(sp)
+  ld s4, 320(sp)
+            # param p7
+  ld s5, 328(sp)
+  ld s6, 336(sp)
+            # param p8
+  ld s7, 344(sp)
+  ld s8, 352(sp)
+            # param p9
+  ld s9, 360(sp)
+  ld s10, 368(sp)
+            # param p10
+  ld t3, 376(sp)
+  ld t4, 384(sp)
+            # param p11
+  ld t5, 392(sp)
+  ld t6, 400(sp)
+            # param p12
+    #backend: spilling p5
   sd s1, 64(sp)
   sd s2, 72(sp)
-  li s1, 0
-  li s2, 5
-            # copy x7, 5
-    #backend: spilling f
+  ld s1, 408(sp)
+  ld s2, 416(sp)
+            # param p13
+    #backend: spilling p6
   sd s3, 80(sp)
   sd s4, 88(sp)
-  li s3, 0
-  li s4, 5
-            # copy x8, 5
-    #backend: spilling x1
+  ld s3, 424(sp)
+  ld s4, 432(sp)
+            # arg p1
+    #backend: spilling p7
   sd s5, 96(sp)
   sd s6, 104(sp)
-  li s5, 0
-  li s6, 5
-            # copy x9, 5
-    #backend: spilling x2
-  sd s7, 112(sp)
-  sd s8, 120(sp)
-  li s7, 0
-  li s8, 5
-            # copy x10, 5
-    #backend: spilling x3
-  sd s9, 128(sp)
-  sd s10, 136(sp)
-  li s9, 0
-  li s10, 5
-            # copy x11, 5
-    #backend: spilling x4
-  sd t3, 144(sp)
-  sd t4, 152(sp)
-  li t3, 0
-  li t4, 5
-            # copy x12, 5
-    #backend: spilling x5
-  sd t5, 160(sp)
-  sd t6, 168(sp)
-  li t5, 0
-  li t6, 5
-            # copy x13, 5
-    #backend: spilling x6
-  sd s1, 176(sp)
-  sd s2, 184(sp)
-  li s1, 0
-  li s2, 5
-            # copy x14, 5
-    #backend: spilling x7
-  sd s3, 192(sp)
-  sd s4, 200(sp)
-  li s3, 0
-  li s4, 5
-            # copy x15, 5
-    #backend: spilling x8
-  sd s5, 208(sp)
-  sd s6, 216(sp)
-  li s5, 0
-  li s6, 5
-            # copy x16, 5
-    #backend: spilling x9
-  sd s7, 224(sp)
-  sd s8, 232(sp)
-  li s7, 0
-  li s8, 5
-            # copy x17, 5
-    #backend: spilling x10
-  sd s9, 240(sp)
-  sd s10, 248(sp)
-  li s9, 0
-  li s10, 5
-            # copy x18, 5
-    #backend: spilling x11
-  sd t3, 256(sp)
-  sd t4, 264(sp)
-  li t3, 0
-  li t4, 5
-            # return e
-  ld a0, 64(sp)
-  ld a1, 72(sp)
-  addi sp, sp, 384
-  ret
-
-# fun modulo(number, i);
-modulo:
-  addi sp, sp, -152
-  sd ra, 144(sp)
-  sd s1, 136(sp)
-  sd s2, 128(sp)
-  sd s3, 120(sp)
-  sd s4, 112(sp)
-  sd s5, 104(sp)
-  sd s6, 96(sp)
-  sd s7, 88(sp)
-  sd s8, 80(sp)
-            # param number
-            # param i
-            # div .tmp2, number, i
-  mv s1, a0  #backend: clearing a0 for return val
-  mv s2, a1  #backend: clearing a1 for return val
-  call __vox_div__
-            # mul .tmp1, .tmp2, i
-  mv s3, a0  #backend: clearing a0 for return val
-  mv s4, a1  #backend: clearing a1 for return val
-  call __vox_mul__
-            # sub .tmp0, number, .tmp1
   mv s5, a0  #backend: clearing a0 for return val
   mv s6, a1  #backend: clearing a1 for return val
-  mv s7, a2  #backend: clearing a2 for arg
-  mv s8, a3  #backend: clearing a3 for arg
-  mv a0, s1
-  mv a1, s2
-  mv a2, s5
-  mv a3, s6
-  call __vox_sub__
-            # return .tmp0
-  ld ra, 144(sp)
-  ld s1, 136(sp)
-  ld s2, 128(sp)
-  ld s3, 120(sp)
-  ld s4, 112(sp)
-  ld s5, 104(sp)
-  ld s6, 96(sp)
-  ld s7, 88(sp)
-  ld s8, 80(sp)
-  addi sp, sp, 152
-  ret
-
-# fun isPrime(number);
-isPrime:
-  addi sp, sp, -232
-  sd ra, 224(sp)
-  sd s1, 216(sp)
-  sd s2, 208(sp)
-  sd s3, 200(sp)
-  sd s4, 192(sp)
-  sd s5, 184(sp)
-  sd s6, 176(sp)
-  sd s7, 168(sp)
-  sd s8, 160(sp)
-  sd s9, 152(sp)
-  sd s10, 144(sp)
-            # param number
-            # <= .tmp0, number, True
-  li s1, 2
-  li s2, 1
-  li s3, 2
-  slt s4, a1, s2
-  sub t0, a1, s2
-  seqz t0, t0
-  or s4, s4, t0
-            # copy isPrime, True
-  li s5, 2
-  li s6, 1
-    #backend: spilling number at basic block end
-  sd a0, 0(sp)
-  sd a1, 8(sp)
-    #backend: spilling isPrime at basic block end
-  sd s5, 16(sp)
-  sd s6, 24(sp)
-            # branch_if_false .tmp0, ".L_endif1"
-  beq s4, zero, .L_endif1
-            # return False
-  li a0, 2
-  li a1, 0
-  ld ra, 224(sp)
-  ld s1, 216(sp)
-  ld s2, 208(sp)
-  ld s3, 200(sp)
-  ld s4, 192(sp)
-  ld s5, 184(sp)
-  ld s6, 176(sp)
-  ld s7, 168(sp)
-  ld s8, 160(sp)
-  ld s9, 152(sp)
-  ld s10, 144(sp)
-  addi sp, sp, 232
-  ret
-            # branch ".L_endelse1"
-  j .L_endelse1
-            # label ".L_endif1"
-.L_endif1:
-            # > .tmp1, number, 1
-  li s1, 0
-  li s2, 1
-  ld s3, 0(sp)
-  ld s4, 8(sp)
-  li s5, 2
-  slt s6, s2, s4
-    #backend: spilling number at basic block end
-  sd s3, 0(sp)
-  sd s4, 8(sp)
-            # branch_if_false .tmp1, ".L_endif2"
-  beq s6, zero, .L_endif2
-            # copy i, 2
-  li s1, 0
-  li s2, 2
-    #backend: spilling i at basic block end
-  sd s1, 64(sp)
-  sd s2, 72(sp)
-            # branch ".L_for_cond1"
-  j .L_for_cond1
-            # label ".L_for_body1"
-.L_for_body1:
-            # arg number
-  ld a0, 0(sp)
-  ld a1, 8(sp)
-            # arg i
+            # call "__vox_print__"
+    #backend: saving caller saved regs
+  addi sp, sp, -80
+  sd a2, 0(sp)
+  sd a3, 8(sp)
+  sd a4, 16(sp)
+  sd a5, 24(sp)
+  sd a6, 32(sp)
+  sd a7, 40(sp)
+  sd t3, 48(sp)
+  sd t4, 56(sp)
+  sd t5, 64(sp)
+  sd t6, 72(sp)
+  call __vox_print__
+  ld a2, 0(sp)
+  ld a3, 8(sp)
+  ld a4, 16(sp)
+  ld a5, 24(sp)
+  ld a6, 32(sp)
+  ld a7, 40(sp)
+  ld t3, 48(sp)
+  ld t4, 56(sp)
+  ld t5, 64(sp)
+  ld t6, 72(sp)
+  addi sp, sp, 80
+            # arg p2
+  mv a0, a2
+  mv a1, a3
+            # call "__vox_print__"
+    #backend: saving caller saved regs
+  addi sp, sp, -80
+  sd a4, 0(sp)
+  sd a5, 8(sp)
+  sd a6, 16(sp)
+  sd a7, 24(sp)
+  sd t3, 32(sp)
+  sd t4, 40(sp)
+  sd t5, 48(sp)
+  sd t6, 56(sp)
+  sd a2, 64(sp)
+  sd a3, 72(sp)
+  call __vox_print__
+  ld a4, 0(sp)
+  ld a5, 8(sp)
+  ld a6, 16(sp)
+  ld a7, 24(sp)
+  ld t3, 32(sp)
+  ld t4, 40(sp)
+  ld t5, 48(sp)
+  ld t6, 56(sp)
   ld a2, 64(sp)
   ld a3, 72(sp)
-            # call .tmp3, "modulo"
-  call modulo
-            # == .tmp2, .tmp3, 0
-  li a6, 0
-  li a7, 0
-  li a4, 2
-  sub t0, a1, a7
-  seqz a5, t0
-            # branch_if_false .tmp2, ".L_endif3"
-  beq a5, zero, .L_endif3
-            # copy isPrime, False
-  li s1, 2
-  li s2, 0
-    #backend: spilling isPrime at basic block end
-  sd s1, 16(sp)
-  sd s2, 24(sp)
-            # label ".L_endif3"
-.L_endif3:
-            # add .tmp4, i, 1
+  addi sp, sp, 80
+            # arg p3
+  mv a0, a4
+  mv a1, a5
+            # call "__vox_print__"
+    #backend: saving caller saved regs
+  addi sp, sp, -80
+  sd a6, 0(sp)
+  sd a7, 8(sp)
+  sd t3, 16(sp)
+  sd t4, 24(sp)
+  sd t5, 32(sp)
+  sd t6, 40(sp)
+  sd a2, 48(sp)
+  sd a3, 56(sp)
+  sd a4, 64(sp)
+  sd a5, 72(sp)
+  call __vox_print__
+  ld a6, 0(sp)
+  ld a7, 8(sp)
+  ld t3, 16(sp)
+  ld t4, 24(sp)
+  ld t5, 32(sp)
+  ld t6, 40(sp)
+  ld a2, 48(sp)
+  ld a3, 56(sp)
+  ld a4, 64(sp)
+  ld a5, 72(sp)
+  addi sp, sp, 80
+            # arg p4
+  mv a0, a6
+  mv a1, a7
+            # call "__vox_print__"
+    #backend: saving caller saved regs
+  addi sp, sp, -80
+  sd t3, 0(sp)
+  sd t4, 8(sp)
+  sd t5, 16(sp)
+  sd t6, 24(sp)
+  sd a2, 32(sp)
+  sd a3, 40(sp)
+  sd a4, 48(sp)
+  sd a5, 56(sp)
+  sd a6, 64(sp)
+  sd a7, 72(sp)
+  call __vox_print__
+  ld t3, 0(sp)
+  ld t4, 8(sp)
+  ld t5, 16(sp)
+  ld t6, 24(sp)
+  ld a2, 32(sp)
+  ld a3, 40(sp)
+  ld a4, 48(sp)
+  ld a5, 56(sp)
+  ld a6, 64(sp)
+  ld a7, 72(sp)
+  addi sp, sp, 80
+            # arg p5
   ld a0, 64(sp)
   ld a1, 72(sp)
-  li a2, 0
-  li a3, 1
-  call __vox_add__
-            # copy i, .tmp4
-  mv s1, a0
-  mv s2, a1
-    #backend: spilling i at basic block end
-  sd s1, 64(sp)
-  sd s2, 72(sp)
-            # label ".L_for_cond1"
-.L_for_cond1:
-            # < .tmp5, i, number
-  ld s1, 64(sp)
-  ld s2, 72(sp)
-  ld s3, 0(sp)
-  ld s4, 8(sp)
-  li s5, 2
-  slt s6, s2, s4
-    #backend: spilling i at basic block end
-  sd s1, 64(sp)
-  sd s2, 72(sp)
-    #backend: spilling number at basic block end
-  sd s3, 0(sp)
-  sd s4, 8(sp)
-            # branch_if_true .tmp5, ".L_for_body1"
-  bne s6, zero, .L_for_body1
-            # label ".L_endif2"
-.L_endif2:
-            # label ".L_endelse1"
-.L_endelse1:
-            # return isPrime
-  ld a0, 16(sp)
-  ld a1, 24(sp)
-  ld ra, 224(sp)
-  ld s1, 216(sp)
-  ld s2, 208(sp)
-  ld s3, 200(sp)
-  ld s4, 192(sp)
-  ld s5, 184(sp)
-  ld s6, 176(sp)
-  ld s7, 168(sp)
-  ld s8, 160(sp)
-  ld s9, 152(sp)
-  ld s10, 144(sp)
-  addi sp, sp, 232
+            # call "__vox_print__"
+    #backend: saving caller saved regs
+  addi sp, sp, -80
+  sd t3, 0(sp)
+  sd t4, 8(sp)
+  sd t5, 16(sp)
+  sd t6, 24(sp)
+  sd a2, 32(sp)
+  sd a3, 40(sp)
+  sd a4, 48(sp)
+  sd a5, 56(sp)
+  sd a6, 64(sp)
+  sd a7, 72(sp)
+  call __vox_print__
+  ld t3, 0(sp)
+  ld t4, 8(sp)
+  ld t5, 16(sp)
+  ld t6, 24(sp)
+  ld a2, 32(sp)
+  ld a3, 40(sp)
+  ld a4, 48(sp)
+  ld a5, 56(sp)
+  ld a6, 64(sp)
+  ld a7, 72(sp)
+  addi sp, sp, 80
+            # arg p6
+  ld a0, 80(sp)
+  ld a1, 88(sp)
+            # call "__vox_print__"
+    #backend: saving caller saved regs
+  addi sp, sp, -80
+  sd t3, 0(sp)
+  sd t4, 8(sp)
+  sd t5, 16(sp)
+  sd t6, 24(sp)
+  sd a2, 32(sp)
+  sd a3, 40(sp)
+  sd a4, 48(sp)
+  sd a5, 56(sp)
+  sd a6, 64(sp)
+  sd a7, 72(sp)
+  call __vox_print__
+  ld t3, 0(sp)
+  ld t4, 8(sp)
+  ld t5, 16(sp)
+  ld t6, 24(sp)
+  ld a2, 32(sp)
+  ld a3, 40(sp)
+  ld a4, 48(sp)
+  ld a5, 56(sp)
+  ld a6, 64(sp)
+  ld a7, 72(sp)
+  addi sp, sp, 80
+            # arg p7
+  ld a0, 96(sp)
+  ld a1, 104(sp)
+            # call "__vox_print__"
+    #backend: saving caller saved regs
+  addi sp, sp, -80
+  sd t3, 0(sp)
+  sd t4, 8(sp)
+  sd t5, 16(sp)
+  sd t6, 24(sp)
+  sd a2, 32(sp)
+  sd a3, 40(sp)
+  sd a4, 48(sp)
+  sd a5, 56(sp)
+  sd a6, 64(sp)
+  sd a7, 72(sp)
+  call __vox_print__
+  ld t3, 0(sp)
+  ld t4, 8(sp)
+  ld t5, 16(sp)
+  ld t6, 24(sp)
+  ld a2, 32(sp)
+  ld a3, 40(sp)
+  ld a4, 48(sp)
+  ld a5, 56(sp)
+  ld a6, 64(sp)
+  ld a7, 72(sp)
+  addi sp, sp, 80
+            # arg p8
+  mv a0, s7
+  mv a1, s8
+            # call "__vox_print__"
+    #backend: saving caller saved regs
+  addi sp, sp, -80
+  sd t3, 0(sp)
+  sd t4, 8(sp)
+  sd t5, 16(sp)
+  sd t6, 24(sp)
+  sd a2, 32(sp)
+  sd a3, 40(sp)
+  sd a4, 48(sp)
+  sd a5, 56(sp)
+  sd a6, 64(sp)
+  sd a7, 72(sp)
+  call __vox_print__
+  ld t3, 0(sp)
+  ld t4, 8(sp)
+  ld t5, 16(sp)
+  ld t6, 24(sp)
+  ld a2, 32(sp)
+  ld a3, 40(sp)
+  ld a4, 48(sp)
+  ld a5, 56(sp)
+  ld a6, 64(sp)
+  ld a7, 72(sp)
+  addi sp, sp, 80
+            # arg p9
+  mv a0, s9
+  mv a1, s10
+            # call "__vox_print__"
+    #backend: saving caller saved regs
+  addi sp, sp, -80
+  sd t3, 0(sp)
+  sd t4, 8(sp)
+  sd t5, 16(sp)
+  sd t6, 24(sp)
+  sd a2, 32(sp)
+  sd a3, 40(sp)
+  sd a4, 48(sp)
+  sd a5, 56(sp)
+  sd a6, 64(sp)
+  sd a7, 72(sp)
+  call __vox_print__
+  ld t3, 0(sp)
+  ld t4, 8(sp)
+  ld t5, 16(sp)
+  ld t6, 24(sp)
+  ld a2, 32(sp)
+  ld a3, 40(sp)
+  ld a4, 48(sp)
+  ld a5, 56(sp)
+  ld a6, 64(sp)
+  ld a7, 72(sp)
+  addi sp, sp, 80
+            # arg p10
+  mv a0, t3
+  mv a1, t4
+            # call "__vox_print__"
+    #backend: saving caller saved regs
+  addi sp, sp, -80
+  sd t5, 0(sp)
+  sd t6, 8(sp)
+  sd a2, 16(sp)
+  sd a3, 24(sp)
+  sd a4, 32(sp)
+  sd a5, 40(sp)
+  sd a6, 48(sp)
+  sd a7, 56(sp)
+  sd t3, 64(sp)
+  sd t4, 72(sp)
+  call __vox_print__
+  ld t5, 0(sp)
+  ld t6, 8(sp)
+  ld a2, 16(sp)
+  ld a3, 24(sp)
+  ld a4, 32(sp)
+  ld a5, 40(sp)
+  ld a6, 48(sp)
+  ld a7, 56(sp)
+  ld t3, 64(sp)
+  ld t4, 72(sp)
+  addi sp, sp, 80
+            # arg p11
+  mv a0, t5
+  mv a1, t6
+            # call "__vox_print__"
+    #backend: saving caller saved regs
+  addi sp, sp, -80
+  sd a2, 0(sp)
+  sd a3, 8(sp)
+  sd a4, 16(sp)
+  sd a5, 24(sp)
+  sd a6, 32(sp)
+  sd a7, 40(sp)
+  sd t3, 48(sp)
+  sd t4, 56(sp)
+  sd t5, 64(sp)
+  sd t6, 72(sp)
+  call __vox_print__
+  ld a2, 0(sp)
+  ld a3, 8(sp)
+  ld a4, 16(sp)
+  ld a5, 24(sp)
+  ld a6, 32(sp)
+  ld a7, 40(sp)
+  ld t3, 48(sp)
+  ld t4, 56(sp)
+  ld t5, 64(sp)
+  ld t6, 72(sp)
+  addi sp, sp, 80
+            # arg p12
+  mv a0, s1
+  mv a1, s2
+            # call "__vox_print__"
+    #backend: saving caller saved regs
+  addi sp, sp, -80
+  sd a2, 0(sp)
+  sd a3, 8(sp)
+  sd a4, 16(sp)
+  sd a5, 24(sp)
+  sd a6, 32(sp)
+  sd a7, 40(sp)
+  sd t3, 48(sp)
+  sd t4, 56(sp)
+  sd t5, 64(sp)
+  sd t6, 72(sp)
+  call __vox_print__
+  ld a2, 0(sp)
+  ld a3, 8(sp)
+  ld a4, 16(sp)
+  ld a5, 24(sp)
+  ld a6, 32(sp)
+  ld a7, 40(sp)
+  ld t3, 48(sp)
+  ld t4, 56(sp)
+  ld t5, 64(sp)
+  ld t6, 72(sp)
+  addi sp, sp, 80
+            # arg p13
+  mv a0, s3
+  mv a1, s4
+            # call "__vox_print__"
+    #backend: saving caller saved regs
+  addi sp, sp, -80
+  sd a2, 0(sp)
+  sd a3, 8(sp)
+  sd a4, 16(sp)
+  sd a5, 24(sp)
+  sd a6, 32(sp)
+  sd a7, 40(sp)
+  sd t3, 48(sp)
+  sd t4, 56(sp)
+  sd t5, 64(sp)
+  sd t6, 72(sp)
+  call __vox_print__
+  ld a2, 0(sp)
+  ld a3, 8(sp)
+  ld a4, 16(sp)
+  ld a5, 24(sp)
+  ld a6, 32(sp)
+  ld a7, 40(sp)
+  ld t3, 48(sp)
+  ld t4, 56(sp)
+  ld t5, 64(sp)
+  ld t6, 72(sp)
+  addi sp, sp, 80
+            # return 
+  ld ra, 288(sp)
+  ld s1, 280(sp)
+  ld s2, 272(sp)
+  ld s3, 264(sp)
+  ld s4, 256(sp)
+  ld s5, 248(sp)
+  ld s6, 240(sp)
+  ld s7, 232(sp)
+  ld s8, 224(sp)
+  ld s9, 216(sp)
+  ld s10, 208(sp)
+  addi sp, sp, 296
   ret
 
   .data
-i_type:   .quad 0
-i_value:  .quad 0
+temp_type:   .quad 0
+temp_value:  .quad 0
 
