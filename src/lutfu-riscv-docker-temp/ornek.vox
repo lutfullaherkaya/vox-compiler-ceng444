@@ -5,7 +5,12 @@
 //a = !#a;
 //print a;
 //}
+var a = 5;
+fun f() {
+    return a;
+}
 
+print f();
 //var a = 5;
 //var b = a;
 //

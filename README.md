@@ -2,6 +2,20 @@
 
 Bu, Vox dilinin Risc V derleyicisidir.
 
+Derleme:
+```
+python3 compile --save dosya.vox
+```
+Assemble etme (vox_lib.c ve vox_lib_vector.s dosyaları gerekir.):
+```
+riscv64-unknown-linux-gnu-gcc -march=rv64gcv -static ornek.vox.s vox_lib.c lib_vox_vector.s -o dosya
+```
+Çalıştırma:
+```
+spike --isa=RV64IMAFDCV $(which pk) ornek
+```
+
+
 Havalı özellikler:
 - Değişkenler tamamen dinamik tiplidir.
 - Vektörler heterojendir.
