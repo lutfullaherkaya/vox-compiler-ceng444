@@ -64,22 +64,48 @@
 //print global;
 
 
+
+
+
+
 var i = 0;
+fun deneme(a,b,c,d,e,f) {
+var x1 = 5;
+var x2 = 5;
+var x3 = 5;
+var x4 = 5;
+var x5 = 5;
+var x6 = 5;
+var x7 = 5;
+var x8 = 5;
+var x9 = 5;
+var x10 = 5;
+var x11 = 5;
+var x12 = 5;
+var x13 = 5;
+var x14 = 5;
+var x15 = 5;
+var x16 = 5;
+var x17 = 5;
+var x18 = 5;
+
+
+    return e;
+}
 fun modulo(number, i) {
     return number - (number / i) * i;
 }
-
 
 //* function to check if a number is prime or not*/
 fun isPrime(number) {
     var isPrime = true;
     // check if number is equal to 1
-    if (number <= 1) {
+    if number <= 1 {
         return false;
     }
 
     // check if number is greater than 1
-    else if (number > 1) {
+    else if number > 1 {
 
         // looping through 2 to number-1
         var i;
@@ -97,7 +123,7 @@ for (i = 0; i < 15; i = i + 1) {
     print i;
     print isPrime(i);
 }
-
+print deneme(1,2,3,4,5,6);
 
 //fun faktoriyel(n) {
 //    if n <= 1 {

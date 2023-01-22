@@ -6,12 +6,16 @@
 
 # fun main();
 main:
-  addi sp, sp, -88
-  sd ra, 80(sp)
-  sd s1, 72(sp)
-  sd s2, 64(sp)
-  sd s3, 56(sp)
-  sd s4, 48(sp)
+  addi sp, sp, -136
+  sd ra, 128(sp)
+  sd s1, 120(sp)
+  sd s2, 112(sp)
+  sd s3, 104(sp)
+  sd s4, 96(sp)
+  sd s9, 88(sp)
+  sd s10, 80(sp)
+  sd s7, 72(sp)
+  sd s8, 64(sp)
             # copy global_i, 0
   li s1, 0
   li s2, 0
@@ -34,11 +38,8 @@ main:
             # call .tmp0, "isPrime"
   call isPrime
             # arg .tmp0
-    #backend: clear first 1 args
-  mv s1, a0  #backend: clearing arg a0
-  mv s2, a1  #backend: clearing arg a1
-  mv a0, s1
-  mv a1, s2
+  mv s1, a0  #backend: clearing a0 for return val
+  mv s2, a1  #backend: clearing a1 for return val
             # call "__vox_print__"
   call __vox_print__
             # add .tmp1, global_i, 1
@@ -69,14 +70,161 @@ main:
   sd s2, 8(t0)
             # branch_if_true .tmp2, ".L_for_body2"
   bne s6, zero, .L_for_body2
-            # return 
-  ld ra, 80(sp)
-  ld s1, 72(sp)
-  ld s2, 64(sp)
-  ld s3, 56(sp)
-  ld s4, 48(sp)
-  addi sp, sp, 88
+            # arg 1
+  addi sp, sp, -32
   li a0, 0
+  li a1, 1
+            # arg 2
+  li a2, 0
+  li a3, 2
+            # arg 3
+  li a4, 0
+  li a5, 3
+            # arg 4
+  li a6, 0
+  li a7, 4
+            # arg 5
+  li s1, 0
+  li s2, 5
+  sd s1, 0(sp)
+  sd s2, 8(sp)
+            # arg 6
+  li s3, 0
+  li s4, 6
+  sd s3, 16(sp)
+  sd s4, 24(sp)
+            # call .tmp3, "deneme"
+  call deneme
+  addi sp, sp, 32
+            # arg .tmp3
+  mv s3, a0  #backend: clearing a0 for return val
+  mv s4, a1  #backend: clearing a1 for return val
+            # call "__vox_print__"
+  call __vox_print__
+            # return 
+  ld ra, 128(sp)
+  ld s1, 120(sp)
+  ld s2, 112(sp)
+  ld s3, 104(sp)
+  ld s4, 96(sp)
+  ld s9, 88(sp)
+  ld s10, 80(sp)
+  ld s7, 72(sp)
+  ld s8, 64(sp)
+  addi sp, sp, 136
+  li a0, 0
+  ret
+
+# fun deneme(a, b, c, d, e, f);
+deneme:
+  addi sp, sp, -384
+            # param a
+            # param b
+            # param c
+            # param d
+            # param e
+  ld s1, 384(sp)
+  ld s2, 392(sp)
+            # param f
+  ld s3, 400(sp)
+  ld s4, 408(sp)
+            # copy x1, 5
+  li s5, 0
+  li s6, 5
+            # copy x2, 5
+  li s7, 0
+  li s8, 5
+            # copy x3, 5
+  li s9, 0
+  li s10, 5
+            # copy x4, 5
+  li t3, 0
+  li t4, 5
+            # copy x5, 5
+  li t5, 0
+  li t6, 5
+            # copy x6, 5
+    #backend: spilling e
+  sd s1, 64(sp)
+  sd s2, 72(sp)
+  li s1, 0
+  li s2, 5
+            # copy x7, 5
+    #backend: spilling f
+  sd s3, 80(sp)
+  sd s4, 88(sp)
+  li s3, 0
+  li s4, 5
+            # copy x8, 5
+    #backend: spilling x1
+  sd s5, 96(sp)
+  sd s6, 104(sp)
+  li s5, 0
+  li s6, 5
+            # copy x9, 5
+    #backend: spilling x2
+  sd s7, 112(sp)
+  sd s8, 120(sp)
+  li s7, 0
+  li s8, 5
+            # copy x10, 5
+    #backend: spilling x3
+  sd s9, 128(sp)
+  sd s10, 136(sp)
+  li s9, 0
+  li s10, 5
+            # copy x11, 5
+    #backend: spilling x4
+  sd t3, 144(sp)
+  sd t4, 152(sp)
+  li t3, 0
+  li t4, 5
+            # copy x12, 5
+    #backend: spilling x5
+  sd t5, 160(sp)
+  sd t6, 168(sp)
+  li t5, 0
+  li t6, 5
+            # copy x13, 5
+    #backend: spilling x6
+  sd s1, 176(sp)
+  sd s2, 184(sp)
+  li s1, 0
+  li s2, 5
+            # copy x14, 5
+    #backend: spilling x7
+  sd s3, 192(sp)
+  sd s4, 200(sp)
+  li s3, 0
+  li s4, 5
+            # copy x15, 5
+    #backend: spilling x8
+  sd s5, 208(sp)
+  sd s6, 216(sp)
+  li s5, 0
+  li s6, 5
+            # copy x16, 5
+    #backend: spilling x9
+  sd s7, 224(sp)
+  sd s8, 232(sp)
+  li s7, 0
+  li s8, 5
+            # copy x17, 5
+    #backend: spilling x10
+  sd s9, 240(sp)
+  sd s10, 248(sp)
+  li s9, 0
+  li s10, 5
+            # copy x18, 5
+    #backend: spilling x11
+  sd t3, 256(sp)
+  sd t4, 264(sp)
+  li t3, 0
+  li t4, 5
+            # return e
+  ld a0, 64(sp)
+  ld a1, 72(sp)
+  addi sp, sp, 384
   ret
 
 # fun modulo(number, i);
@@ -94,37 +242,24 @@ modulo:
             # param number
             # param i
             # div .tmp2, number, i
-    #backend: clear first 2 args
-  mv s1, a0  #backend: clearing arg a0
-  mv s2, a1  #backend: clearing arg a1
-  mv s3, a2  #backend: clearing arg a2
-  mv s4, a3  #backend: clearing arg a3
-  mv a0, s1
-  mv a1, s2
-  mv a2, s3
-  mv a3, s4
+  mv s1, a0  #backend: clearing a0 for return val
+  mv s2, a1  #backend: clearing a1 for return val
   call __vox_div__
             # mul .tmp1, .tmp2, i
-    #backend: clear first 2 args
-  mv s5, a0  #backend: clearing arg a0
-  mv s6, a1  #backend: clearing arg a1
-  mv a0, s5
-  mv a1, s6
-  mv a2, s3
-  mv a3, s4
+  mv s3, a0  #backend: clearing a0 for return val
+  mv s4, a1  #backend: clearing a1 for return val
   call __vox_mul__
             # sub .tmp0, number, .tmp1
-    #backend: clear first 2 args
-  mv s7, a0  #backend: clearing arg a0
-  mv s8, a1  #backend: clearing arg a1
+  mv s5, a0  #backend: clearing a0 for return val
+  mv s6, a1  #backend: clearing a1 for return val
+  mv s7, a2  #backend: clearing a2 for arg
+  mv s8, a3  #backend: clearing a3 for arg
   mv a0, s1
   mv a1, s2
-  mv a2, s7
-  mv a3, s8
+  mv a2, s5
+  mv a3, s6
   call __vox_sub__
             # return .tmp0
-  mv a0, a0
-  mv a1, a1
   ld ra, 144(sp)
   ld s1, 136(sp)
   ld s2, 128(sp)
