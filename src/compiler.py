@@ -189,8 +189,15 @@ class RiscVRegController:
         self.callee_saved_regs = ['s1', 's2', 's3', 's4', 's5', 's6', 's7', 's8', 's9', 's10', 's11']
         self.callee_saved_regs_used: Dict[str, bool] = {}
         self.caller_saved_regs = ['t3', 't4', 't5', 't6', 'a0', 'a1', 'a2', 'a3', 'a4', 'a5', 'a6', 'a7']
-        self.reg_pairs: List[RiscVRegPair] = [  # frees -> least-recently-used -> most-recently-used
-            # important: dont mix caller saved and callee saved registers here.
+        self.reg_pairs: List[RiscVRegPair] = []
+        self.var_name_id_to_reg: Dict[Tuple[str, int], RiscVRegPair] = {}
+        self.risc_v_assembly_yapici: "RiscVAssemblyYapici" = risc_v_assembly_yapici
+
+        self.reset_reg_pairs()
+
+    def reset_reg_pairs(self):
+        self.reg_pairs = [  # frees -> least-recently-used -> most-recently-used
+            # important: dont mix caller saved and callee saved registers in pairs here.
             # todo: use calle saved registers first
             RiscVRegPair('s1', 's2'),
             RiscVRegPair('s3', 's4'),
@@ -204,8 +211,6 @@ class RiscVRegController:
             RiscVRegPair('a4', 'a5'),
             RiscVRegPair('a6', 'a7'),
         ]
-        self.var_name_id_to_reg: Dict[Tuple[str, int], RiscVRegPair] = {}
-        self.risc_v_assembly_yapici: "RiscVAssemblyYapici" = risc_v_assembly_yapici
 
     def asm_get_free_reg_pair(self, asm_to_extend):
         asm = []
@@ -245,17 +250,21 @@ class RiscVRegController:
         return least_var_count_reg_pair
 
     def asm_clear_first_n_args(self, arg_count, asm_to_extend):
-        asm = [f'    #b: clear first {arg_count} args']
+        asm = []
         if arg_count < 1:
             arg_count = 1  # always clear return registers a0 and a1
         for i in range(arg_count):
             reg_pair = self.get_reg_with_type(f'a{i * 2}')
             if reg_pair:
                 reg_pair.is_spillable = False
+        cleared = False
         for i in range(arg_count):
             reg_pair = self.get_reg_with_type(f'a{i * 2}')
             if reg_pair:
                 if reg_pair.vars:
+                    if not cleared:
+                        asm.append(f'    #backend: clear first {arg_count} args')
+                    cleared = True
                     self.asm_move_and_clear_reg_to_new_reg(reg_pair, asm)
         asm_to_extend.extend(asm)
 
@@ -275,25 +284,39 @@ class RiscVRegController:
         for var_name_tpl in self.var_name_id_to_reg:
             if self.var_name_id_to_reg[var_name_tpl] == reg_pair:
                 self.var_name_id_to_reg[var_name_tpl] = new_reg_pair
-        asm.append(f'  mv {new_reg_pair.type}, {reg_pair.type}  #b: clearing arg {reg_pair.type}')
-        asm.append(f'  mv {new_reg_pair.val}, {reg_pair.val}  #b: clearing arg {reg_pair.val}')
+        asm.append(f'  mv {new_reg_pair.type}, {reg_pair.type}  #backend: clearing arg {reg_pair.type}')
+        asm.append(f'  mv {new_reg_pair.val}, {reg_pair.val}  #backend: clearing arg {reg_pair.val}')
 
         asm_to_extend.extend(asm)
 
     def asm_spill_reg_pair(self, reg_pair: RiscVRegPair, asm_to_extend):
         asm = []
         for var in reg_pair.vars:
-            asm.extend([f'    #b: spilling {var["name"]}'])
+            asm.extend([f'    #backend: spilling {var["name"]}'])
             asm.extend(self.risc_v_assembly_yapici.asm_reg_to_var_in_mem('t0', var, reg_pair.type, reg_pair.val))
             self.var_name_id_to_reg.pop((var['name'], var['id']))
         reg_pair.vars.clear()
         asm_to_extend.extend(asm)
 
+    def asm_spill_non_tmps_at_basic_block_end_without_removing_from_regs(self, asm_to_extend):
+        asm = []
+        for reg_pair in self.reg_pairs:
+            for var in reg_pair.vars:
+                if not var['name'].startswith('.tmp'):
+                    asm.extend([f'    #backend: spilling {var["name"]} at basic block end'])
+                    asm.extend(
+                        self.risc_v_assembly_yapici.asm_reg_to_var_in_mem('t0', var, reg_pair.type, reg_pair.val))
+        asm_to_extend.extend(asm)
+
+    def clear_regs(self):
+        self.reset_reg_pairs()
+        self.var_name_id_to_reg = {}
+
     def asm_mark_as_recently_used(self, reg_pair: RiscVRegPair, asm_to_extend):
         asm = []
         total_stack_size = self.risc_v_assembly_yapici.get_ttl_stack_size()
         if reg_pair.type in self.callee_saved_regs:
-            self.callee_save(reg_pair, total_stack_size, asm)
+            self.add_to_used_callee_saveds(reg_pair)
         self.reg_pairs.remove(reg_pair)
         self.reg_pairs.append(reg_pair)
         asm_to_extend.extend(asm)
@@ -303,7 +326,7 @@ class RiscVRegController:
         self.reg_pairs.insert(0, reg_pair)
 
     def remove_var_from_regs(self, var: NameIdPair):
-        var_tpl = name_id_to_tuple(var)
+        var_tpl = to_tpl(var)
         if var_tpl in self.var_name_id_to_reg:
             reg_pair = self.var_name_id_to_reg[var_tpl]
             reg_pair.vars.remove(var)
@@ -318,34 +341,21 @@ class RiscVRegController:
                 if var['id'] == -1:
                     global_vars.append(var)
             for var in global_vars:
-                asm.append(f'  la t0, {get_global_type_name(var["name"])}  #b: global spill')
+                asm.append(f'  la t0, {get_global_type_name(var["name"])}  #backend: global spill')
                 asm.append(f'  sd {reg_pair.type}, (t0)')
                 asm.append(f'  sd {reg_pair.val}, 8(t0)')
                 reg_pair.vars.remove(var)
-                self.var_name_id_to_reg.pop(name_id_to_tuple(var))
+                self.var_name_id_to_reg.pop(to_tpl(var))
 
             if not reg_pair.vars:
                 self.mark_as_free(reg_pair)
 
         asm_to_extend.extend(asm)
 
-    def callee_save(self, reg_pair, total_stack_size: int, asm_to_extend):
-        asm = []
+    def add_to_used_callee_saveds(self, reg_pair):
         for reg in [reg_pair.type, reg_pair.val]:
             if reg not in self.callee_saved_regs_used:
                 self.callee_saved_regs_used[reg] = True
-                reg_index = self.callee_saved_regs.index(reg) + 1
-                asm.append(f'  sd {reg}, {total_stack_size - 8 * (reg_index + 1)}(sp)  #b: callee save {reg}')
-
-        asm_to_extend.extend(asm)
-
-    def callee_load_all(self, total_stack_size: int, asm_to_extend):
-        asm = []
-        asm.append(f'    #b: callee load {list(self.callee_saved_regs_used.keys())}')
-        for i, reg_to_save in enumerate(self.callee_saved_regs):
-            if reg_to_save in self.callee_saved_regs_used:
-                asm.append(f'  ld {reg_to_save}, {total_stack_size - 8 * (i + 1 + 1)}(sp)')
-        asm_to_extend.extend(asm)
 
 
 class RiscVAssemblyYapici(AssemblyYapici):
@@ -362,6 +372,7 @@ class RiscVAssemblyYapici(AssemblyYapici):
         self.current_arg_index = -1
         self.current_param_index = -1
         self.current_dag_block: Optional["DAGBlock"] = None
+        self.calculated_used_callee_saveds: List[str] = []
         self.aradil_sozlugu = {
             'fun': self.cevir_fun,
             'return': self.cevir_return,
@@ -403,17 +414,40 @@ class RiscVAssemblyYapici(AssemblyYapici):
         asm.extend(self.get_on_soz())
         for fun_name, dags in fun_dags.items():
             fun_asm = []
+            self.calculated_used_callee_saveds = self.calculate_used_callee_saved_registers(fun_name, dags)
             for dag_block in dags:
                 self.current_dag_block = dag_block
                 for i, komut in enumerate(dag_block.selef_komutlar):
                     fun_asm.extend(self.aradilden_asm(komut, i))
                 for i, komut in enumerate(dag_block.dag_komutlari):
                     fun_asm.extend(self.aradilden_asm(komut, i))
+
+                if not (len(dag_block.halef_komutlar) == 1 and dag_block.halef_komutlar[0][0] == 'return'):
+                    # no need to save local variables when returning
+                    # cevir_return spills globals, so we don't need to spill them here anyway
+                    self.get_current_fun_reg_controller().asm_spill_non_tmps_at_basic_block_end_without_removing_from_regs(
+                        fun_asm)
                 for i, komut in enumerate(dag_block.halef_komutlar):
                     fun_asm.extend(self.aradilden_asm(komut, i))
+                self.get_current_fun_reg_controller().clear_regs()
+
             asm.extend(fun_asm)
         self.init_global_labels(asm)
         return asm
+
+    def calculate_used_callee_saved_registers(self, fun_name: str, dags: List["DAGBlock"]):
+        # to find out which registers are used, we need to actually compile first and thrash it
+        for dag_block in dags:
+            self.current_dag_block = dag_block
+            for i, komut in enumerate(dag_block.selef_komutlar):
+                self.aradilden_asm(komut, i)
+            for i, komut in enumerate(dag_block.dag_komutlari):
+                self.aradilden_asm(komut, i)
+            for i, komut in enumerate(dag_block.halef_komutlar):
+                self.aradilden_asm(komut, i)
+        regs = self.get_current_fun_reg_controller().callee_saved_regs_used.keys()
+        self.fun_infos[fun_name] = RiscVFunctionInfo(self.fun_records[fun_name], self)
+        return regs
 
     def get_current_fun_reg_controller(self):
         return self.fun_infos[self.current_fun_label].reg_controller
@@ -484,7 +518,7 @@ class RiscVAssemblyYapici(AssemblyYapici):
             reg_pair = self.get_current_fun_reg_controller().asm_get_free_reg_pair(asm)
             asm.extend(self.asm_var_in_mem_or_const_to_reg(var_name_id, reg_pair.type, reg_pair.val))
         elif type(var_name_id) == dict:
-            var_name_id_tpl = name_id_to_tuple(var_name_id)
+            var_name_id_tpl = to_tpl(var_name_id)
             if var_name_id_tpl in self.get_current_fun_reg_controller().var_name_id_to_reg:
                 reg_pair = self.get_current_fun_reg_controller().var_name_id_to_reg[var_name_id_tpl]
                 self.get_current_fun_reg_controller().asm_mark_as_recently_used(reg_pair, asm)
@@ -511,8 +545,8 @@ class RiscVAssemblyYapici(AssemblyYapici):
         if type(var_name_id) in [int, bool, str]:
             asm.extend(self.asm_var_in_mem_or_const_to_reg(var_name_id, reg_pair.type, reg_pair.val))
         elif type(var_name_id) == dict:
-            if name_id_to_tuple(var_name_id) in self.get_current_fun_reg_controller().var_name_id_to_reg:
-                var_reg_pair = self.get_current_fun_reg_controller().var_name_id_to_reg[name_id_to_tuple(var_name_id)]
+            if to_tpl(var_name_id) in self.get_current_fun_reg_controller().var_name_id_to_reg:
+                var_reg_pair = self.get_current_fun_reg_controller().var_name_id_to_reg[to_tpl(var_name_id)]
                 self.get_current_fun_reg_controller().asm_mark_as_recently_used(var_reg_pair, asm)
                 self.asm_reg_to_reg(reg_pair, var_reg_pair, asm)
             else:
@@ -524,8 +558,8 @@ class RiscVAssemblyYapici(AssemblyYapici):
     def asm_reg_to_var(self, var_name_id: NameIdPair, reg_pair: RiscVRegPair):
         asm = []
 
-        if name_id_to_tuple(var_name_id) in self.get_current_fun_reg_controller().var_name_id_to_reg:
-            var_reg_pair = self.get_current_fun_reg_controller().var_name_id_to_reg[name_id_to_tuple(var_name_id)]
+        if to_tpl(var_name_id) in self.get_current_fun_reg_controller().var_name_id_to_reg:
+            var_reg_pair = self.get_current_fun_reg_controller().var_name_id_to_reg[to_tpl(var_name_id)]
             self.get_current_fun_reg_controller().asm_mark_as_recently_used(var_reg_pair, asm)
             self.asm_reg_to_reg(var_reg_pair, reg_pair, asm)
         else:
@@ -661,6 +695,7 @@ class RiscVAssemblyYapici(AssemblyYapici):
         caller_saved_size = len(caller_saved_non_free_var_regs) * 8
         if caller_saved_size > 0:
             self.fun_infos[self.current_fun_label].sp_extra_offset += caller_saved_size
+            asm.append(f'    #backend: saving caller saved regs')
             asm.append(f'  addi sp, sp, -{caller_saved_size}')
             for i, reg in enumerate(caller_saved_non_free_var_regs):
                 asm.append(f'  sd {reg}, {8 * i}(sp)')
@@ -681,7 +716,7 @@ class RiscVAssemblyYapici(AssemblyYapici):
         if ret_val_name_id is not None:
             return_reg = self.get_current_fun_reg_controller().get_reg_with_type('a0')
             return_reg.vars.append(ret_val_name_id)
-            self.get_current_fun_reg_controller().var_name_id_to_reg[name_id_to_tuple(ret_val_name_id)] = return_reg
+            self.get_current_fun_reg_controller().var_name_id_to_reg[to_tpl(ret_val_name_id)] = return_reg
 
         self.get_current_fun_reg_controller().mark_first_n_args_as_spillable(arg_count)
         return asm
@@ -759,9 +794,7 @@ class RiscVAssemblyYapici(AssemblyYapici):
         self.current_fun_label = label
         if self.fun_infos[self.current_fun_label].activation_record.calls_another_fun:
             self.fun_infos[self.current_fun_label].add_to_callee_saved_regs(['ra'])
-
-        self.fun_infos[self.current_fun_label].add_to_callee_saved_regs(
-            self.get_current_fun_reg_controller().callee_saved_regs)
+            self.fun_infos[self.current_fun_label].add_to_callee_saved_regs(self.calculated_used_callee_saveds)
 
         total_stack_size = self.get_ttl_stack_size()
         asm = [f'',
@@ -770,9 +803,8 @@ class RiscVAssemblyYapici(AssemblyYapici):
         if total_stack_size > 0:
             asm.append(f'  addi sp, sp, -{total_stack_size}')
 
-        # for i, reg_to_save in enumerate(self.fun_infos[self.current_fun_label].callee_saved_regs):
-        #    asm.append(f'  sd {reg_to_save}, {total_stack_size - 8 * (i + 1)}(sp)')
-        asm.append(f'  sd ra, {total_stack_size - 8}(sp)')
+        for i, reg_to_save in enumerate(self.fun_infos[self.current_fun_label].callee_saved_regs):
+            asm.append(f'  sd {reg_to_save}, {total_stack_size - 8 * (i + 1)}(sp)')
 
         return asm
 
@@ -784,7 +816,7 @@ class RiscVAssemblyYapici(AssemblyYapici):
             type_reg = f'a{2 * self.current_param_index}'
             param_reg = self.get_current_fun_reg_controller().get_reg_with_type(type_reg)
             param_reg.vars.append(param_name_id)
-            self.get_current_fun_reg_controller().var_name_id_to_reg[name_id_to_tuple(param_name_id)] = param_reg
+            self.get_current_fun_reg_controller().var_name_id_to_reg[to_tpl(param_name_id)] = param_reg
 
         else:
             param_reg = self.get_reg(param_name_id, asm, False)
@@ -799,14 +831,16 @@ class RiscVAssemblyYapici(AssemblyYapici):
 
     def cevir_return(self, komut, komut_indeksi=None):
         asm = []
-        self.get_current_fun_reg_controller().asm_spill_all_globals(asm)
+
         if len(komut) >= 2:
             asm.extend(self.asm_var_or_const_to_reg(komut[1], RiscVRegPair('a0', 'a1')))
 
+        self.get_current_fun_reg_controller().asm_spill_all_globals(asm)
+
         total_stack_size = self.get_ttl_stack_size()
-        asm.append(f'  ld ra, {total_stack_size - 8}(sp)')
-        self.get_current_fun_reg_controller().callee_load_all(
-            self.get_ttl_stack_size(), asm)
+
+        for i, reg_to_save in enumerate(self.fun_infos[self.current_fun_label].callee_saved_regs):
+            asm.append(f'  ld {reg_to_save}, {total_stack_size - 8 * (i + 1)}(sp)')
         if total_stack_size > 0:
             asm.extend([f'  addi sp, sp, {total_stack_size}'])
         if self.current_fun_label == 'main':
@@ -865,7 +899,7 @@ class RiscVAssemblyYapici(AssemblyYapici):
         asm.extend([f'  call __vox_{komut[0]}__'])
         result_reg = self.get_current_fun_reg_controller().get_reg_with_type('a0')
         result_reg.vars.append(result_name)
-        self.get_current_fun_reg_controller().var_name_id_to_reg[name_id_to_tuple(result_name)] = result_reg
+        self.get_current_fun_reg_controller().var_name_id_to_reg[to_tpl(result_name)] = result_reg
         self.get_current_fun_reg_controller().mark_first_n_args_as_spillable(2)
         return asm
 

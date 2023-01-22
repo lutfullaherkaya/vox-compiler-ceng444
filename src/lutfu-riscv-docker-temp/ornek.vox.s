@@ -8,62 +8,82 @@
 main:
   addi sp, sp, -24
   sd ra, 16(sp)
-            # arg 2
-  li a0, 0
-  li a1, 2
-            # call .tmp0, "f"
-  call f
-  sd a0, 0(sp)
-  sd a1, 8(sp)
-            # copy global_j, .tmp0
-  ld t0, 0(sp)
-  ld t1, 8(sp)
-  la t2, j_type
-  sd t0, (t2)
-  sd t1, 8(t2)
+            # call .tmp0, "x"
+  call x
+            # arg .tmp0
+    #backend: clear first 1 args
+  mv a6, a0  #backend: clearing arg a0
+  mv a7, a1  #backend: clearing arg a1
+  mv a0, a6
+  mv a1, a7
+            # call "__vox_print__"
+    #backend: saving caller saved regs
+  addi sp, sp, -16
+  sd a6, 0(sp)
+  sd a7, 8(sp)
+  call __vox_print__
+  ld a6, 0(sp)
+  ld a7, 8(sp)
+  addi sp, sp, 16
+            # arg global_global
+  ld a0, global_type
+  ld a1, global_value
+            # call "__vox_print__"
+    #backend: saving caller saved regs
+  addi sp, sp, -16
+  sd a6, 0(sp)
+  sd a7, 8(sp)
+  call __vox_print__
+  ld a6, 0(sp)
+  ld a7, 8(sp)
+  addi sp, sp, 16
             # return 
   ld ra, 16(sp)
   addi sp, sp, 24
   li a0, 0
   ret
 
-# fun f(a);
-f:
-  addi sp, sp, -72
-  sd ra, 64(sp)
-            # param a
-  sd a0, 0(sp)
-  sd a1, 8(sp)
-            # mul .tmp0, a, a
-  ld a0, 0(sp)
-  ld a1, 8(sp)
-  ld a2, 0(sp)
-  ld a3, 8(sp)
-  call __vox_mul__
-  sd a0, 48(sp)
-  sd a1, 56(sp)
-            # arg .tmp0
-  ld a0, 48(sp)
-  ld a1, 56(sp)
-            # call "__vox_print__"
-  call __vox_print__
-            # copy x, 5
-  li t0, 0
-  li t1, 5
-  sd t0, 16(sp)
-  sd t1, 24(sp)
-            # copy y, "str"
-  li t0, 3
-  la t1, .L_string1
-  sd t0, 32(sp)
-  sd t1, 40(sp)
-            # return 
-  ld ra, 64(sp)
-  addi sp, sp, 72
+# fun x();
+x:
+  addi sp, sp, -104
+  sd ra, 96(sp)
+  sd s1, 88(sp)
+  sd s2, 80(sp)
+  sd s3, 72(sp)
+  sd s4, 64(sp)
+  sd s5, 56(sp)
+  sd s6, 48(sp)
+  sd s7, 40(sp)
+  sd s8, 32(sp)
+            # copy local, 6
+  li s3, 0
+  li s4, 6
+  mv s1, s3
+  mv s2, s4
+            # copy global_global, 12
+  li s7, 0
+  li s8, 12
+  mv s5, s7
+  mv s6, s8
+            # return global_global
+  mv a0, s5
+  mv a1, s6
+  la t0, global_type  #backend: global spill
+  sd s5, (t0)
+  sd s6, 8(t0)
+  ld ra, 96(sp)
+  ld s1, 88(sp)
+  ld s2, 80(sp)
+  ld s3, 72(sp)
+  ld s4, 64(sp)
+  ld s5, 56(sp)
+  ld s6, 48(sp)
+  ld s7, 40(sp)
+  ld s8, 32(sp)
+  addi sp, sp, 104
   ret
 
   .data
-j_type:   .quad 0
-j_value:  .quad 0
+global_type:   .quad 0
+global_value:  .quad 5
 
-.L_string1:  .string "str"

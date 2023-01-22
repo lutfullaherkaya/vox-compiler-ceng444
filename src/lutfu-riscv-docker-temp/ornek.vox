@@ -45,15 +45,23 @@
 //    print ab * c * c *c * c * ab;
 //}
 
-var j = f(2);
-fun f(a) {
-    var x = 5;
-    var y = "str";
-    print a * a;
+//var j = f(2);
+//fun f(a) {
+//    var x = 5;
+//    var y = "str";
+//    print a * a;
+//}
+
+var global = 5;
+
+fun x() {
+    var local = 6;
+    global = local + local;
+    return global;
 }
 
-
-
+print x();
+print global;
 //var i = 0;
 //fun modulo(number, i) {
 //    return number - (number / i) * i;
@@ -89,11 +97,12 @@ fun f(a) {
 //    print "\n";
 //}
 
+
 //fun faktoriyel(n) {
 //    if n <= 1 {
 //        return 1;
 //    } else {
-//        return n * faktoriyel(n-1);
+//        return n * faktoriyel(n - 1);
 //    }
 //}
 //
