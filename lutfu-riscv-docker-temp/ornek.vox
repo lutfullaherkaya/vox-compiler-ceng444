@@ -1,0 +1,399 @@
+//var a = 5;
+//var b = 3;
+//if (a > b) {
+//    print a * b;
+//} else {
+//    print a / b;
+//}
+//print a + b;
+
+fun kare(a) {
+    return a * a;
+}
+print kare(2);
+
+//var a;
+//var b = "string";
+//var x = 1;
+//var d = 123;
+//var e = "string";
+//var vektor2 = [4,5,6];
+//var vektor = [1,2,3,vektor2, "123"];
+//
+//
+//
+//fun fib(n){
+//  if n <= 1 return 1;
+//  return fib(n-1)+fib(n-2);
+//}
+//
+//fun even(n){
+//  if n == 0 return true;
+//  else if n < 0 return false;
+//  return odd(n-1);
+//}
+//
+//fun odd(n){
+//  return even(n-1);
+//}
+//
+//print fib(5);
+//print even(10);
+
+//print even(10000000);
+
+
+//var i = 0;
+//
+//fun modulo(number, i) {
+//    return number - (number / i) * i;
+//}
+//
+////* function to check if a number is prime or not*/
+//fun isPrime(number) {
+//    var isPrime = true;
+//    // check if number is equal to 1
+//    if number <= 1 {
+//        return false;
+//    }
+//
+//    // check if number is greater than 1
+//    else if number > 1 {
+//
+//        // looping through 2 to number-1
+//        var i;
+//        for (i = 2; i < number; i = i + 1) {
+//            if (modulo(number, i) == 0) {
+//
+//                isPrime = false;
+//            }
+//        }
+//    }
+//    return isPrime;
+//}
+//
+//for (i = 0; i < 15; i = i + 1) {
+//    print i;
+//    print isPrime(i);
+//}
+//print deneme(1,2,3,4,5,6);
+
+
+
+
+
+//var dogru = true;
+//
+//fun printer() {
+//    print "sa";
+//}
+//
+//print dogru < 4;
+
+//var a = 5;
+//a = a + 1;
+//if (true) {
+//var a = false;
+//a = !#a;
+//print a;
+//}
+//var a = 5;
+//fun f() {
+//    return a;
+//}
+//
+//print f();
+//var a = 5;
+//var b = a;
+//
+//
+//fun change_a() {
+//    a = 6;
+//}
+//print change_a();
+//print b;
+
+//var a = 5;
+//var b;
+//var c = b + a;
+//
+//fun id(x) {
+//    return x;
+//}
+//
+//fun herhangi() {
+//    var a = 5;
+//    var b = 7;
+//    var c = a + b;
+//    var d = a + b;
+//    var e = c + d;
+//    print e;
+//    return e;
+//}
+//
+//print id(herhangi());
+
+
+//if (true) {
+//    var c = [1,2,3];
+//    var ab = 53;
+//    ab = ab + 231;
+//
+//    print ab * c * c *c * c * ab;
+//}
+
+//var j = f(2);
+//fun f(a) {
+//    var x = 5;
+//    var y = "str";
+//    print a * a;
+//}
+
+//var global = 5;
+
+//fun x() {
+//    var local = 6;
+//    global = local + local;
+//    return global;
+//}
+
+//print x();
+//print global;
+
+
+
+
+
+
+
+//fun deneme(a,b,c,d,e,f) {
+//var x1 = 5;
+//var x2 = 5;
+//var x3 = 5;
+//var x4 = 5;
+//var x5 = 5;
+//var x6 = 5;
+//var x7 = 5;
+//var x8 = 5;
+//var x9 = 5;
+//var x10 = 5;
+//var x11 = 5;
+//var x12 = 5;
+//var x13 = 5;
+//var x14 = 5;
+//var x15 = 5;
+//var x16 = 5;
+//var x17 = 5;
+//var x18 = 5;
+//
+//
+//    return e;
+//}
+
+
+
+//fun faktoriyel(n) {
+//    if n <= 1 {
+//        return 1;
+//    } else {
+//        return n * faktoriyel(n - 1);
+//    }
+//}
+//
+//print faktoriyel(4);
+
+
+
+
+
+
+//var a = 5;
+//var b = a;
+//
+//
+//
+//
+//fun f() {
+//    var bes_x_2_arti_4 = 5 * 2 + 4;
+//    var toplam = bes_x_2_arti_4 - 4 / 2;
+//
+//    var dogru = true;
+//    var yanlis = !#dogru;
+//
+//    if (#yanlis or toplam < bes_x_2_arti_4) {
+//        print #dogru or #yanlis;
+//        print #dogru and #yanlis;
+//    } else {
+//        print toplam;
+//    }
+//}
+//
+//print f();
+
+
+
+
+
+
+
+
+
+
+//var a = (10 * 5) - 23 + (128 / 32)*2;
+//var b = a * a;
+//var c = [1,3,4,"bes"];
+
+// sabiti temp degisken yapmama testi
+//var x = 5;
+//var a = [0,false,x];
+//fun f() {
+//    var a;
+//    for (a = 0; a < 10; a = a + 1) {
+//        print a;
+//        return 123;
+//        print a;
+//
+//    }
+//}
+//a[0] = 2 + 17;
+//print f();
+
+
+//if (b > (10 * 5) - 23 + (128 / 32)*2) {
+//  print "b ondan büyüktür";
+//} else {
+//  print "b ondan küçüktür";
+//}
+//
+//print c;
+
+//print 1-a;
+//print a-1;
+//print -a;
+//print a-b;
+//print b-a;
+//print b / a;
+//print a / b;
+//print 10 / b;
+//print b / 2;
+//print a * b;
+//print a * 2;
+//print 10 / b;
+
+
+//
+//print a + b;
+//print a - b;
+//print a * b;
+//print a / b;
+//var c = [1, 22, 3];
+//var d = ["bu", "bir", "global", "arrayidir", "\n"];
+//var i;
+//print c;
+//
+//if (true) {
+//    var c = [1, 2, "string"];
+//    var d = ["bu", "bir", "string", "arrayidir"];
+//    var i;
+//    print c;
+//
+//    for (i = 0; i < 4; i = i + 1) {
+//        print d[i];
+//    }
+//    print d;
+//    print "\n";
+//}
+//
+//for (i = 0; i < 4; i = i + 1) {
+//    print d[i];
+//}
+//print d;
+//var temp;
+//fun a(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13) {
+//    print p1;
+//    print p2;
+//    print p3;
+//    print p4;
+//    print p5;
+//    print p6;
+//    print p7;
+//    print p8;
+//    print p9;
+//    print p10;
+//    print p11;
+//    print p12;
+//    print p13;
+//
+//}
+//
+//temp = a(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13);
+
+
+//fun f(a,b,c,d,e) {
+//    return a + b + c + d + e;
+//}
+
+
+//var toplam = 0;
+//var temp = 0;
+//var a = 123;
+//fun yuze_kadar_toplama_ekle() {
+//    var temp = 5;
+//    if (toplam < 100) {
+//        toplam = toplam + 1;
+//        temp = yuze_kadar_toplama_ekle();
+//    }
+//}
+//
+//print yuze_kadar_toplama_ekle();
+//print temp;
+//a = 2 + 1;
+//print a;
+//
+//if (2 + 2 <= 4) {
+//    if (#a) {
+//        print 1;
+//    } else {
+//        print 2;
+//    }
+//} else {
+//    print 3;
+//}
+
+//print true or true;
+
+
+//var t = true;
+//var f = false;
+//
+//var bes = 5;
+//var eksi_dort = -4;
+//
+//
+//print #t and #f;
+//print #t and #f ;
+//print #f and #f;
+//print #t and #t;
+//
+//print #t or #f;
+//print #f or #f;
+//print #t or #t;
+//
+//print 5 < 4;
+//print 5 > 4;
+//print 5 == 4;
+//print 5 != 4;
+//print 5 >= 4;
+//print 5 <= 4;
+//
+//print bes < eksi_dort;
+//print bes > eksi_dort;
+//print bes == eksi_dort;
+//print bes != eksi_dort;
+//print bes >= eksi_dort;
+//print bes <= eksi_dort;
+//
+//print 5 <= 5;
+//print 5 >= 5;
+//
+//print !false;
