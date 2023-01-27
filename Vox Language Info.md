@@ -2,11 +2,8 @@ The language to be compiled will be the same for project 1 and project 2.
 
 - Project 1 is about lexical analysis, syntactic analysis, AST generation, and a bit of error reporting.
 
-PROJECT 1 DUE DATE: December 4, 23.59
-
 - Project 2 is about code generation and execution. You can assume that the input is well-formed.
 
-PROJECT 2 DUE DATE: Last day of classes, 23.59
 
 This term's language is <code>Vox</code>, a modified version of <a href="https://github.com/Darksecond/lox">Lox</a>.
 
