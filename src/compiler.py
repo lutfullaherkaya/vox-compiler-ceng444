@@ -753,7 +753,7 @@ class RiscVAssemblyYapici(AssemblyYapici):
             i_first_elm = self._vector_first_elm_sp_index(name_id)
             reg = self.get_reg(name_id, asm)
             asm.extend([f'  li {reg.type}, {self.tip_rakamlari["vector"]}',
-                        f'  add {reg.val}, sp, {i_first_elm}'])
+                        f'  addi {reg.val}, sp, {i_first_elm}'])
             asm.extend([f'  li t0, {length}',
                         f'  sd t0, {length_addr}'])
         elif name_id["name"] in self.global_vars:
